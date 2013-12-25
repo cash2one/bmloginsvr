@@ -1,7 +1,7 @@
 package server
 
 import (
-	//"log"
+	"log"
 	"net"
 )
 
@@ -15,6 +15,10 @@ const (
 	CONNEVT_CONNECT    = 0x1
 	CONNEVT_DISCONNECT = 0x2
 	CONNEVT_CUSTOM     = 0x10
+)
+
+const (
+	CONS_MSGHEAD_LENGTH = 4
 )
 
 type ConnEvent struct {
@@ -36,11 +40,34 @@ func CreateDefaultServerHandler(queuesize uint32) *DefaultServerHandler {
 }
 
 func (this *DefaultServerHandler) RunConnectionProcessLoop(conn Connection) {
-
+	go this.RunConnectionWriteLoop(conn)
+	this.RunConnectionReadLoop(conn)
 }
 
 func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
+	buf := make([]byte, 1024)
+	totalread := 0
 
+	for {
+		//	First length
+		totalread = 0
+		length, err := conn.conn.Read(buf)
+
+		if err != nil {
+			evt := &ConnEvent{
+				Evtid: CONNEVT_DISCONNECT,
+			}
+			this.GetEventQueue() <- evt
+			log.Println("Connection read error,connection cut...Error info[", err, "]")
+			break
+		}
+
+		if length < CONS_MSGHEAD_LENGTH {
+			//	go on reading
+			totalread += length
+			continue
+		}
+	}
 }
 
 func (this *DefaultServerHandler) RunConnectionWriteLoop(conn Connection) {
