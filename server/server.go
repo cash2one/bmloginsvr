@@ -3,7 +3,7 @@ package server
 import (
 	"log"
 	"net"
-	"time"
+	//"time"
 )
 
 type Server struct {
@@ -25,8 +25,13 @@ type ServerConfig struct {
 }
 
 func CreateWithConfig(cfg *ServerConfig) *Server {
-	svr := &Server{SConfig: *cfg}
+	svr := &Server{}
 	return svr
+}
+
+func (this *Server) SetOutputEvtSum(sum uint32) {
+	if this.EvtHandler != nil {
+	}
 }
 
 func (this *Server) StartListen(listenaddr string) bool {
@@ -45,28 +50,28 @@ func (this *Server) StartListen(listenaddr string) bool {
 	this.ListenAddr = listenaddr
 
 	//	Create a goroutine to handle the accept event
-	ctrlSignal := make(chan int, 10)
-	go this.go_handleAccept(listener, ctrlSignal)
+	go this.go_handleAccept(listener)
 
 	return true
 }
 
-func (this *Server) go_handleAccept(listener net.Listener, ctrlSignal <-chan int) {
+func (this *Server) go_handleAccept(listener net.Listener) {
 	log.Println("Goroutine [go_handleAccept] begin...")
 
 	for {
-		select {
-		case variable := <-ctrlSignal:
-			{
-				if variable == 1 {
-					break
-				}
-			}
-		case <-time.After(10 * time.Millisecond):
-			{
-				break
-			}
+		connevt := &ConnEvent{
+			Evtid: CONNEVT_CONNECT,
 		}
+		aconn, err := listener.Accept()
+		if err != nil {
+			log.Fatalln("Server listen failed...Server force to quit... Error info[", err, "]")
+			break
+		}
+
+		connevt.Conn = Connection{
+			conn: aconn,
+		}
+		this.EvtHandler.GetEventQueue() <- connevt
 	}
 
 	log.Println("Goroutine [go_handleAccept quit...]")
