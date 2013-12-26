@@ -186,6 +186,7 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
 				return
 			}
 			leftlength -= recl
+			log.Printf("rec %d left %d", recl, leftlength)
 		}
 		log.Println("get the full msg")
 
