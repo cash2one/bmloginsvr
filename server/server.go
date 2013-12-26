@@ -17,6 +17,10 @@ type IServerHandler interface {
 	RunConnectionReadLoop(conn Connection)
 	RunConnectionWriteLoop(conn Connection)
 
+	createDisconnectEvt(conn Connection) *ConnEvent
+	createConnectEvt(conn Connection) *ConnEvent
+	createReadReadyEvt(conn Connection, msg []byte) *ConnEvent
+
 	GetEventQueue() chan *ConnEvent
 }
 
@@ -56,22 +60,26 @@ func (this *Server) StartListen(listenaddr string) bool {
 }
 
 func (this *Server) go_handleAccept(listener net.Listener) {
-	log.Println("Goroutine [go_handleAccept] begin...")
+	log.Println("Goroutine [go_handleAccept] start...")
 
 	for {
-		connevt := &ConnEvent{
-			Evtid: CONNEVT_CONNECT,
-		}
 		aconn, err := listener.Accept()
 		if err != nil {
 			log.Fatalln("Server listen failed...Server force to quit... Error info[", err, "]")
 			break
 		}
 
-		connevt.Conn = Connection{
+		//	Process the new connection
+		/*newconn := Connection{
 			conn: aconn,
-		}
-		this.EvtHandler.GetEventQueue() <- connevt
+			tag:  0,
+			wrtch: make(chan []byte, 50)
+		}*/
+		newconn := CreateConnection(aconn, 50)
+
+		log.Println("New connection [", newconn.conn.RemoteAddr(), "]")
+		go this.EvtHandler.RunConnectionProcessLoop(*newconn)
+		this.EvtHandler.GetEventQueue() <- this.EvtHandler.createConnectEvt(*newconn)
 	}
 
 	log.Println("Goroutine [go_handleAccept quit...]")
