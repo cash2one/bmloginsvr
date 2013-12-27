@@ -13,13 +13,13 @@ type Server struct {
 }
 
 type IServerHandler interface {
-	RunConnectionProcessLoop(conn Connection)
-	RunConnectionReadLoop(conn Connection)
-	RunConnectionWriteLoop(conn Connection)
+	RunConnectionProcessLoop(conn *Connection)
+	RunConnectionReadLoop(conn *Connection)
+	RunConnectionWriteLoop(conn *Connection, stpch chan bool)
 
-	createDisconnectEvt(conn Connection) *ConnEvent
-	createConnectEvt(conn Connection) *ConnEvent
-	createReadReadyEvt(conn Connection, msg []byte) *ConnEvent
+	createDisconnectEvt(conn *Connection) *ConnEvent
+	createConnectEvt(conn *Connection) *ConnEvent
+	createReadReadyEvt(conn *Connection, msg []byte) *ConnEvent
 
 	GetEventQueue() chan *ConnEvent
 }
@@ -78,8 +78,8 @@ func (this *Server) go_handleAccept(listener net.Listener) {
 		newconn := CreateConnection(aconn, 50)
 
 		log.Println("New connection [", newconn.conn.RemoteAddr(), "]")
-		go this.EvtHandler.RunConnectionProcessLoop(*newconn)
-		this.EvtHandler.GetEventQueue() <- this.EvtHandler.createConnectEvt(*newconn)
+		go this.EvtHandler.RunConnectionProcessLoop(newconn)
+		this.EvtHandler.GetEventQueue() <- this.EvtHandler.createConnectEvt(newconn)
 	}
 
 	log.Println("Goroutine [go_handleAccept quit...]")

@@ -13,16 +13,17 @@ type Connection struct {
 	wrtch chan []byte
 }
 
-func WriteMsgLittleEndian(conn Connection, opcode uint32, body []byte) uint32 {
+func WriteMsgLittleEndian(conn *Connection, opcode uint32, body []byte) uint32 {
 	buf := new(bytes.Buffer)
-	length := 4 + 4 + 1
+	var length uint32 = 4 + 4
 	if body != nil {
-		length -= 1
-		length += len(body)
+		length += uint32(len(body))
 	}
-	binary.Write(buf, binary.BigEndian, length)
-	binary.Write(buf, binary.LittleEndian, opcode)
-	binary.Write(buf, binary.LittleEndian, body)
+	binary.Write(buf, binary.BigEndian, &length)
+	binary.Write(buf, binary.LittleEndian, &opcode)
+	if body != nil {
+		binary.Write(buf, binary.LittleEndian, body)
+	}
 	data := buf.Bytes()
 	return conn.WriteMsg(data)
 }
@@ -68,7 +69,7 @@ const (
 
 type ConnEvent struct {
 	Evtid uint32
-	Conn  Connection
+	Conn  *Connection
 	Msg   []byte
 }
 
@@ -92,7 +93,7 @@ func (this *DefaultServerHandler) checkError(err error, info string) bool {
 	return true
 }
 
-func (this *DefaultServerHandler) createDisconnectEvt(conn Connection) *ConnEvent {
+func (this *DefaultServerHandler) createDisconnectEvt(conn *Connection) *ConnEvent {
 	evt := &ConnEvent{
 		Evtid: CONNEVT_DISCONNECT,
 		Conn:  conn,
@@ -101,7 +102,7 @@ func (this *DefaultServerHandler) createDisconnectEvt(conn Connection) *ConnEven
 	return evt
 }
 
-func (this *DefaultServerHandler) createConnectEvt(conn Connection) *ConnEvent {
+func (this *DefaultServerHandler) createConnectEvt(conn *Connection) *ConnEvent {
 	evt := &ConnEvent{
 		Evtid: CONNEVT_CONNECT,
 		Conn:  conn,
@@ -110,7 +111,7 @@ func (this *DefaultServerHandler) createConnectEvt(conn Connection) *ConnEvent {
 	return evt
 }
 
-func (this *DefaultServerHandler) createReadReadyEvt(conn Connection, msg []byte) *ConnEvent {
+func (this *DefaultServerHandler) createReadReadyEvt(conn *Connection, msg []byte) *ConnEvent {
 	evt := &ConnEvent{
 		Evtid: CONNEVT_READREADY,
 		Conn:  conn,
@@ -121,24 +122,32 @@ func (this *DefaultServerHandler) createReadReadyEvt(conn Connection, msg []byte
 	return evt
 }
 
-func (this *DefaultServerHandler) RunConnectionProcessLoop(conn Connection) {
+func (this *DefaultServerHandler) RunConnectionProcessLoop(conn *Connection) {
+	var stpch chan bool
+
 	defer func() {
 		err := recover()
 		if err != nil {
 			log.Println("Error occurs,Error[", err, "]")
 		}
+		if stpch != nil {
+			close(stpch)
+		}
 		conn.conn.Close()
 		this.createDisconnectEvt(conn)
+		log.Println("Goroutine [RunConnectionProcessLoop] on ", conn.GetConnTag(), " quit...")
 	}()
 
-	go this.RunConnectionWriteLoop(conn)
+	stpch = make(chan bool)
+	go this.RunConnectionWriteLoop(conn, stpch)
 	this.RunConnectionReadLoop(conn)
+	stpch <- true
 }
 
-func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
+func (this *DefaultServerHandler) RunConnectionReadLoop(conn *Connection) {
 	buf := make([]byte, CONS_MSGHEADBODY_MAXLENGTH)
 
-	defer log.Println("Connection readloop of[", conn.GetConnTag(), "] quit...")
+	//defer log.Println("Connection readloop of[", conn.GetConnTag(), "] quit...")
 
 	for {
 		//	First length
@@ -174,7 +183,7 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
 			log.Println("invalid msg,msg too long...")
 			break
 		}
-		log.Println("head read ,[head length: ", length, " msg length", msglength)
+		//log.Println("head read ,[head length: ", length, " msg length", msglength)
 
 		//	Get the full message
 		leftlength := int(msglength - CONS_MSGHEAD_LENGTH)
@@ -186,9 +195,8 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
 				return
 			}
 			leftlength -= recl
-			log.Printf("rec %d left %d", recl, leftlength)
+			//log.Printf("rec %d left %d", recl, leftlength)
 		}
-		log.Println("get the full msg")
 
 		//	OK
 		if msglength < 8 {
@@ -199,16 +207,18 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn Connection) {
 	}
 }
 
-func (this *DefaultServerHandler) RunConnectionWriteLoop(conn Connection) {
+func (this *DefaultServerHandler) RunConnectionWriteLoop(conn *Connection, stpch chan bool) {
 	defer func() {
 		err := recover()
 		if err != nil {
 			log.Println("Exception.Error occurs,Error[", err, "]")
 		}
-		conn.conn.Close()
-		this.createDisconnectEvt(conn)
+		log.Println("Connection writeloop of[", conn.GetConnTag(), "] quit...")
+		//conn.conn.Close()
+		//this.createDisconnectEvt(conn)
 	}()
 
+	log.Println("Goroutine [RunConnectionWriteLoop] begin...")
 	for {
 		select {
 		case msg := <-conn.wrtch:
@@ -216,13 +226,16 @@ func (this *DefaultServerHandler) RunConnectionWriteLoop(conn Connection) {
 				_, err := conn.conn.Write(msg)
 				if err != nil {
 					this.checkError(err, "Write msg error...")
-					break
+					return
 				}
+			}
+		case <-stpch:
+			{
+				log.Println("rec stop signal")
+				return
 			}
 		}
 	}
-
-	log.Println("Connection writeloop of[", conn.GetConnTag(), "] quit...")
 }
 
 func (this *DefaultServerHandler) GetEventQueue() chan *ConnEvent {

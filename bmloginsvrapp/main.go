@@ -7,18 +7,28 @@ import (
 )
 
 var (
-	g_ServerS  *server.Server
-	g_UserList *UserInfoList
-	g_CtrlCh   chan uint8
+	g_ServerS    *server.Server
+	g_ServerC    *server.Server
+	g_UserList   *UserInfoList
+	g_ServerList *UserInfoList
+	g_CtrlCh     chan uint8
 )
 
 func main() {
+	//	for server
 	handler := server.CreateDefaultServerHandler(50)
 	g_ServerS = server.CreateWithConfig(nil)
 	g_ServerS.EvtHandler = handler
+	g_ServerList = &UserInfoList{
+		allusers: make(map[uint32]IUserInterface),
+	}
 
+	//	for client
+	chandler := server.CreateDefaultServerHandler(50)
+	g_ServerC = server.CreateWithConfig(nil)
+	g_ServerC.EvtHandler = chandler
 	g_UserList = &UserInfoList{
-		allusers: make(map[uint32]*User),
+		allusers: make(map[uint32]IUserInterface),
 	}
 
 	g_CtrlCh = make(chan uint8, 10)
@@ -27,14 +37,20 @@ func main() {
 	go go_handleInput(ch)
 
 	server.InitSeed(0)
-	if g_ServerS.StartListen("127.0.0.1:8300") {
-		log.Println("Start process connection event...")
+	ipaddrclient := "127.0.0.1:8300"
+	ipaddrserver := "127.0.0.1:8200"
+	if g_ServerS.StartListen(ipaddrserver) && g_ServerC.StartListen(ipaddrclient) {
+		log.Println("Start process event.listen server:", ipaddrserver, " listen client:", ipaddrclient)
 
 		for {
 			select {
 			case evt := <-handler.GetEventQueue():
 				{
 					ProcessServerSEvent(evt)
+				}
+			case evt := <-chandler.GetEventQueue():
+				{
+					ProcessServerCEvent(evt)
 				}
 			case input := <-ch:
 				{
@@ -50,22 +66,44 @@ func main() {
 		}
 	}
 
+	log.Println("Quit process event...")
 	close(g_CtrlCh)
+}
+
+func ProcessServerCEvent(evt *server.ConnEvent) {
+	switch evt.Evtid {
+	case server.CONNEVT_CONNECT:
+		{
+			HandleCConnect(evt)
+		}
+	case server.CONNEVT_READREADY:
+		{
+			HandleCMsg(evt)
+		}
+	case server.CONNEVT_DISCONNECT:
+		{
+			HandleCDisconnect(evt)
+		}
+	default:
+		{
+			log.Println("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
+		}
+	}
 }
 
 func ProcessServerSEvent(evt *server.ConnEvent) {
 	switch evt.Evtid {
 	case server.CONNEVT_CONNECT:
 		{
-			HandleConnect(evt)
+			HandleSConnect(evt)
 		}
 	case server.CONNEVT_READREADY:
 		{
-			HandleMsg(evt)
+			HandleSMsg(evt)
 		}
 	case server.CONNEVT_DISCONNECT:
 		{
-			HandleDisconnect(evt)
+			HandleSDisconnect(evt)
 		}
 	default:
 		{
@@ -75,10 +113,11 @@ func ProcessServerSEvent(evt *server.ConnEvent) {
 }
 
 func ProcessInput(input string) {
+	log.Println("rec ", input)
 	var cmd, param string = "", ""
-	_, err := fmt.Scanf("-%s %s", &cmd, &param)
+	_, err := fmt.Sscanf(input, "%s_%s", &cmd, &param)
 	if err != nil {
-		log.Println("Parse user input error!")
+		log.Println("Parse user input error!Error[", err, "]")
 		return
 	}
 	switch cmd {
@@ -94,12 +133,11 @@ func go_handleInput(ch chan string) {
 	log.Println("Goroutine [go_handleInput] start...")
 
 	var (
-		cmd   string
-		param string
+		cmd string
 	)
 
 	for {
-		_, err := fmt.Scanf("-%s %s", &cmd, &param)
+		_, err := fmt.Scanln(&cmd)
 		if err != nil {
 			log.Println("Receive user input failed...Error[", err, "]")
 			break
