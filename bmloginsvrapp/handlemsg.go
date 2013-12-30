@@ -14,6 +14,12 @@ var (
 	//	+1	server verify
 	//	+2	client verify
 	//	+3	verify result
+	//	+4	client request to add game role
+	//	+5	add role result
+	//	+6	client request to delete game role
+	//	+7	delete role result
+	//	+8	client request to login gamesvr
+	//	+9	login gamesvr result
 )
 
 type IUserInterface interface {
@@ -53,10 +59,179 @@ func (this *User) OnDisconnect() {
 	this.SendUserMsg(loginopstart, nil)
 }
 
+func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
+	if opcode < loginopstart {
+		return false
+	}
+
+	switch opcode {
+	case loginopstart + 0:
+		{
+			server.WriteMsgLittleEndian(this.conn, opcode, nil)
+		}
+	case loginopstart + 3:
+		{
+			//	peer regist success,1bytes
+			//	Get values
+			//	bool 1byte
+			var suc uint8 = 0
+			for i, v := range args {
+				if i == 0 {
+					switch argtype := v.(type) {
+					case *uint8:
+						{
+							suc = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint8")
+							return false
+						}
+					}
+				} else {
+					logSendMsgFieldErr(opcode, 1)
+					return false
+				}
+			}
+			buf := new(bytes.Buffer)
+			binary.Write(buf, binary.LittleEndian, &suc)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
+	case loginopstart + 5:
+		{
+			//	add role success
+			//	ret 1byte
+			var suc uint8 = 0
+			for i, v := range args {
+				if i == 0 {
+					switch argtype := v.(type) {
+					case *uint8:
+						{
+							suc = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint8")
+							return false
+						}
+					}
+				} else {
+					logSendMsgFieldErr(opcode, 1)
+					return false
+				}
+			}
+			buf := new(bytes.Buffer)
+			binary.Write(buf, binary.LittleEndian, &suc)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
+	case loginopstart + 7:
+		{
+			//	delete role success
+			//	ret 1byte
+			var suc uint8 = 0
+			for i, v := range args {
+				if i == 0 {
+					switch argtype := v.(type) {
+					case *uint8:
+						{
+							suc = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint8")
+							return false
+						}
+					}
+				} else {
+					logSendMsgFieldErr(opcode, 1)
+					return false
+				}
+			}
+			buf := new(bytes.Buffer)
+			binary.Write(buf, binary.LittleEndian, &suc)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
+	case loginopstart + 9:
+		{
+			//	lgoin gamesvr result
+			//	ret 1byte;client index uint32;addrlen 1byte;addr addrlen
+			var suc uint8 = 0
+			var cindex uint32 = 0
+			var addrlen uint8 = 0
+			var addr *string
+
+			for i, v := range args {
+				if i == 0 {
+					switch argtype := v.(type) {
+					case *uint8:
+						{
+							suc = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint8")
+							return false
+						}
+					}
+				} else if i == 1 {
+					switch argtype := v.(type) {
+					case *uint32:
+						{
+							cindex = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint32")
+							return false
+						}
+					}
+				} else if i == 2 {
+					switch argtype := v.(type) {
+					case *uint8:
+						{
+							addrlen = *argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*string")
+							return false
+						}
+					}
+				} else if i == 3 {
+					switch argtype := v.(type) {
+					case *string:
+						{
+							addr = argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "*uint8")
+							return false
+						}
+					}
+				} else {
+					logSendMsgFieldErr(opcode, 1)
+					return false
+				}
+			}
+
+			//	write buffer
+			buf := new(bytes.Buffer)
+			binary.Write(buf, binary.LittleEndian, &suc)
+			binary.Write(buf, binary.LittleEndian, &cindex)
+			binary.Write(buf, binary.LittleEndian, &addrlen)
+			binary.Write(buf, binary.LittleEndian, addr)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
+	}
+	return true
+}
+
 func (this *User) OnUserMsg(msg []byte) {
 	var headreader server.IMsgReader = &server.DefaultMsgReader{}
 	headreader.SetDataSource(msg)
 	opcode := headreader.ReadMsgOpCode()
+	packetlen := len(msg)
 
 	switch opcode {
 	case loginopstart:
@@ -84,7 +259,68 @@ func (this *User) OnUserMsg(msg []byte) {
 				}
 			}
 		}
+	case loginopstart + 4:
+		{
+			//	player request to add game role
+			//	namelen 1byte;name namelen;job 1byte;sex 1byte
+			var namelen uint8 = 0
+			binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+			reqlength := int(8 + 1 + namelen + 2)
+			if packetlen == reqlength {
+				this.OnRequestAddGameRole(msg)
+			}
+		}
+	case loginopstart + 6:
+		{
+			//	player request to delete a game role
+			//	namelen 1byte;name namelen
+			var namelen uint8 = 0
+			binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+			reqlength := int(8 + 1 + namelen)
+			if packetlen == reqlength {
+				this.OnRequestDelGameRole(msg)
+			}
+		}
+	case loginopstart + 8:
+		{
+			//	player request to login gamesvr
+			//	namelen 1byte;name namelen;svrindex 1byte
+			var namelen uint8 = 0
+			binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+			reqlength := int(8 + 1 + namelen + 1)
+			if packetlen == reqlength {
+				this.OnRequestDelGameRole(msg)
+			}
+		}
 	}
+}
+
+func (this *User) OnRequestAddGameRole(msg []byte) {
+	var namelen uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+1 : 8+1+namelen])
+	var job uint8 = 0
+	var sex uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &job)
+	binary.Read(bytes.NewBuffer(msg[8+1+namelen+1:8+1+namelen+1+1]), binary.LittleEndian, &sex)
+	//	Add a role
+}
+
+func (this *User) OnRequestDelGameRole(msg []byte) {
+	var namelen uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+1 : 8+1+namelen])
+	//	delete a role
+}
+
+func (this *User) OnRequestLoginGameSvr(msg []byte) {
+	var namelen uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+1 : 8+1+namelen])
+	var svrindex uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &svrindex)
+	//	read role data
+	//	send the data to the gamesvr
 }
 
 func (this *User) GetUserTag() uint32 {
@@ -105,48 +341,6 @@ func logSendMsgTypeErr(opcode uint32, destype string, reqtype string) {
 
 func logErr(err error, info string) {
 	log.Println("Error occurs, Error[", err, "]")
-}
-
-func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
-	if opcode < loginopstart {
-		return false
-	}
-
-	switch opcode {
-	case loginopstart + 0:
-		{
-			server.WriteMsgLittleEndian(this.conn, opcode, nil)
-		}
-	case loginopstart + 3:
-		{
-			//	peer regist success,1bytes
-			//	Get values
-			//	bool 1byte
-			var suc byte = 0
-			for i, v := range args {
-				if i == 0 {
-					switch argtype := v.(type) {
-					case *byte:
-						{
-							suc = *argtype
-						}
-					default:
-						{
-							logSendMsgTypeErr(opcode, "", "*byte")
-							return false
-						}
-					}
-				} else {
-					logSendMsgFieldErr(opcode, 1)
-					return false
-				}
-			}
-			buf := new(bytes.Buffer)
-			binary.Write(buf, binary.LittleEndian, &suc)
-			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
-		}
-	}
-	return true
 }
 
 func (this *User) VerifyUser(account, password string) {
@@ -204,6 +398,31 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				}
 			}
 		}
+	case loginopstart + 9:
+		{
+			//	login gamesvr result
+			//	ret 1byte;client index uint32;addrlen 1byte;addr addrlen
+			var ret uint8 = 0
+			var addrlen uint8 = 0
+			binary.Read(bytes.NewBuffer(msg[9:9+1]), binary.LittleEndian, &addrlen)
+			reqlength := int(8 + 1 + 1 + addrlen)
+			if len(msg) == reqlength {
+				this.OnResponseClientLogin(msg)
+			}
+		}
+	}
+}
+
+func (this *ServerUser) OnResponseClientLogin(msg []byte) {
+	var ret uint8 = 0
+	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &ret)
+	if ret == 1 {
+		var clientindex uint32 = 0
+		binary.Read(bytes.NewBuffer(msg[8+1:8+1+4]), binary.LittleEndian, &ret)
+		var addrlen uint8 = 0
+		binary.Read(bytes.NewBuffer(msg[8+1+4:8+1+4+1]), binary.LittleEndian, &addrlen)
+		var addr string = string(msg[8+1+4+1 : 8+1+4+1+addrlen])
+		//	send to client
 	}
 }
 
