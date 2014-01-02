@@ -9,10 +9,26 @@
 //////////////////////////////////////////////////////////////////////////
 //	Create a new hum save, 0:success|1:file already exists|2:create file failed
 BM_EXPORT int CreateHumSave(const char* _pszPath);
+//	Delete a exist hum save 0:success|1:delete failed|2:non-exist file
+BM_EXPORT int DeleteHumSave(const char* _pszPath);
+//	Open a new hum save, 0:failed|
 BM_EXPORT int OpenHumSave(const char* _pszPath);
 BM_EXPORT void CloseHumSave(int _hFileHandle);
+//	Create a new gamerole, 0:success|1:no empty room|2:Invalid save handle|3:index already exist|4:data invalid|5:data empty|6:repeated name
 BM_EXPORT int AddGameRole(int _hFileHandle, const char* _pszRoleName, char _job, char _sex);
+//	Delete a exist gamerole, 0:success|1:invalid hum
 BM_EXPORT int DelGameRole(int _hFileHandle, const char* _pszRoleName);
-BM_EXPORT int GetGameRoleInfo(int _index, char* _pszRoleName, char* _job, char* _sex);
+//	Get a gamerole information, 0:success|1:invalid index
+BM_EXPORT int GetGameRoleInfo_Value(int _hFileHandle, int _index, char* _job, char* _sex, unsigned short* _level);
+//	Get a gamerole information, 0:failed
+BM_EXPORT char* GetGameRoleInfo_Name(int _hFileHandle, int _index);
+//	Get name index < 0 || > 2 failed
+BM_EXPORT int GetGameRoleIndex(int _hFileHandle, const char* _pszRoleName);
+//	Read gamerole data 0:failed
+BM_EXPORT char* ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, int* _outsize);
+//	Write gamerole data 0:success|1:non-exist gamerole
+BM_EXPORT int WriteGameRoleData(int _hFileHandle, const char* _pszRoleName, const char* _pData, int _datalen);
+//	Update gamerole head 0:success|1:non-exist gamerole
+BM_EXPORT int WriteGameRoleInfo(int _hFileHandle, const char* _pszRoleName, char _job, char _sex, unsigned short _level);
 //////////////////////////////////////////////////////////////////////////
 #endif
