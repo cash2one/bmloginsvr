@@ -1,11 +1,17 @@
 package main
 
+//#include <stdlib.h>
+import "C"
+
 import (
 	"bytes"
 	"encoding/binary"
 	"log"
+	"os"
 	"server"
+	"strconv"
 	"time"
+	"unsafe"
 )
 
 var (
@@ -20,6 +26,7 @@ var (
 	//	+7	delete role result
 	//	+8	client request to login gamesvr
 	//	+9	login gamesvr result
+	//	+10 client request to save
 )
 
 type IUserInterface interface {
@@ -29,6 +36,7 @@ type IUserInterface interface {
 	SendUserMsg(opcode uint32, args ...interface{}) bool
 	GetUserTag() uint32
 	IsVerified() bool
+	OnVerified()
 }
 
 type User struct {
@@ -57,6 +65,29 @@ func (this *User) OnConnect() {
 func (this *User) OnDisconnect() {
 	log.Println("Peer ", this.ipaddr, " disconnected...")
 	this.SendUserMsg(loginopstart, nil)
+}
+
+func (this *User) OnVerified() {
+	//	Get the uid,so we create the directory and file
+	if !PathExist("./netusers") {
+		err := os.Mkdir("./netusers", os.ModeDir)
+		if err != nil {
+			log.Println("Can't create parent directory.Error:", err)
+			return
+		}
+	}
+	//	Create sub directory
+	userpath := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10)
+	if !PathExist(userpath) {
+		err := os.Mkdir(userpath, os.ModeDir)
+		if err != nil {
+			log.Println("Cant't create user directory.Error:", err)
+			return
+		}
+	}
+	//	Create save file
+	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 }
 
 func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
@@ -304,6 +335,44 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &job)
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen+1:8+1+namelen+1+1]), binary.LittleEndian, &sex)
 	//	Add a role
+	log.Println(name)
+	if !PathExist("./netusers") {
+		err := os.Mkdir("./netusers", os.ModeDir)
+		if err != nil {
+			log.Println("Can't create parent directory.Error:", err)
+			return
+		}
+	}
+	//	Create sub directory
+	userpath := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10)
+	if !PathExist(userpath) {
+		err := os.Mkdir(userpath, os.ModeDir)
+		if err != nil {
+			log.Println("Cant't create user directory.Error:", err)
+			return
+		}
+	}
+	//	Create save file
+	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	Open it
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	if r1 == 0 {
+		log.Println("Can't open hum save.Err:", r1)
+		return
+	}
+	//	Add game role
+	var filehandle uintptr = r1
+	r1, _, _ = g_procMap["AddGameRole"].Call(filehandle,
+		uintptr(unsafe.Pointer(C.CString(name))))
+	if r1 == 0 {
+		//	Success
+	} else {
+		//	failed
+	}
+
+	//	Close
+	g_procMap["CloseHumSave"].Call(filehandle)
 }
 
 func (this *User) OnRequestDelGameRole(msg []byte) {
@@ -311,6 +380,7 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
 	var name string = string(msg[8+1 : 8+1+namelen])
 	//	delete a role
+	log.Println(name)
 }
 
 func (this *User) OnRequestLoginGameSvr(msg []byte) {
@@ -321,6 +391,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &svrindex)
 	//	read role data
 	//	send the data to the gamesvr
+	log.Println(name)
 }
 
 func (this *User) GetUserTag() uint32 {
@@ -367,6 +438,14 @@ func CreateServerUser(clientconn *server.Connection) *ServerUser {
 	return user
 }
 
+func (this *ServerUser) OnConnect() {
+	log.Println("GameServer ", this.ipaddr, " connected...")
+}
+
+func (this *ServerUser) OnVerified() {
+
+}
+
 func (this *ServerUser) OnUserMsg(msg []byte) {
 	var headreader server.IMsgReader = &server.DefaultMsgReader{}
 	headreader.SetDataSource(msg)
@@ -404,7 +483,8 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			//	ret 1byte;client index uint32;addrlen 1byte;addr addrlen
 			var ret uint8 = 0
 			var addrlen uint8 = 0
-			binary.Read(bytes.NewBuffer(msg[9:9+1]), binary.LittleEndian, &addrlen)
+			binary.Read(bytes.NewBuffer(msg[9:9+1]), binary.LittleEndian, &ret)
+			binary.Read(bytes.NewBuffer(msg[9+1:9+2]), binary.LittleEndian, &addrlen)
 			reqlength := int(8 + 1 + 1 + addrlen)
 			if len(msg) == reqlength {
 				this.OnResponseClientLogin(msg)
@@ -423,6 +503,8 @@ func (this *ServerUser) OnResponseClientLogin(msg []byte) {
 		binary.Read(bytes.NewBuffer(msg[8+1+4:8+1+4+1]), binary.LittleEndian, &addrlen)
 		var addr string = string(msg[8+1+4+1 : 8+1+4+1+addrlen])
 		//	send to client
+		log.Println(clientindex)
+		log.Println(addr)
 	}
 }
 

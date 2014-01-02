@@ -1,9 +1,16 @@
 package main
 
+//#include <stdlib.h>
+import "C"
+
+//	Go
 import (
+	"dbgutil"
 	"fmt"
 	"log"
 	"server"
+	"syscall"
+	//"unsafe"
 )
 
 var (
@@ -14,7 +21,56 @@ var (
 	g_CtrlCh     chan uint8
 )
 
+var (
+	g_dllHumSave syscall.DLL
+	g_procMap    = make(map[string]*syscall.Proc)
+
+	g_procDllName = []string{
+		"CreateHumSave",
+		"OpenHumSave",
+		"CloseHumSave",
+		"AddGameRole",
+		"DelGameRole",
+		"GetGameRoleInfo_Value",
+		"GetGameRoleInfo_Name",
+		"GetGameRoleIndex",
+		"ReadGameRoleData",
+		"WriteGameRoleData",
+		"WriteGameRoleInfo",
+	}
+)
+
+func initDllModule(name string) {
+	g_dllHumSave, err := syscall.LoadDLL(name)
+	if err != nil {
+		log.Println("Can't load [", name, "]")
+		return
+	}
+	//	Get all module
+	for _, str := range g_procDllName {
+		proc, err := g_dllHumSave.FindProc(str)
+		if err == nil {
+			g_procMap[str] = proc
+			//log.Println("Proccess address[", str, "] loaded...")
+			dbgutil.Display("ProcName", str, "ProcAddr", proc)
+		} else {
+			log.Println("ProcName[", str, "] load failed...", err)
+		}
+	}
+}
+
+func releaseDllModule() {
+	if len(g_dllHumSave.Name) != 0 {
+		for _, str := range g_procDllName {
+			delete(g_procMap, str)
+		}
+		log.Println(g_dllHumSave.Name, " has been released...")
+		g_dllHumSave.Release()
+	}
+}
+
 func main() {
+	bmDllTest()
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
 	g_ServerS = server.CreateWithConfig(nil)
@@ -68,6 +124,7 @@ func main() {
 
 	log.Println("Quit process event...")
 	close(g_CtrlCh)
+	releaseDllModule()
 }
 
 func ProcessServerCEvent(evt *server.ConnEvent) {
