@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	loginopstart uint32 = 1000
+	loginopstart uint32 = 10000
 	//	+0	force quit
 	//	+1	server verify
 	//	+2	client verify
