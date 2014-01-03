@@ -6,12 +6,12 @@ import "C"
 //	Go
 import (
 	"database/sql"
-	"dbgutil"
+	//	"dbgutil"
 	"fmt"
 	"log"
 	"os"
 	"server"
-	"syscall"
+	//	"syscall"
 	//"unsafe"
 )
 
@@ -24,67 +24,23 @@ var (
 	g_DBUser     *sql.DB
 )
 
-var (
-	g_dllHumSave syscall.DLL
-	g_procMap    = make(map[string]*syscall.Proc)
-
-	g_procDllName = []string{
-		"CreateHumSave",
-		"OpenHumSave",
-		"CloseHumSave",
-		"AddGameRole",
-		"DelGameRole",
-		"GetGameRoleInfo_Value",
-		"GetGameRoleInfo_Name",
-		"GetGameRoleIndex",
-		"ReadGameRoleData",
-		"WriteGameRoleData",
-		"WriteGameRoleInfo",
-	}
-)
-
-func initDllModule(name string) {
-	g_dllHumSave, err := syscall.LoadDLL(name)
-	if err != nil {
-		log.Println("Can't load [", name, "]")
-		return
-	}
-	//	Get all module
-	for _, str := range g_procDllName {
-		proc, err := g_dllHumSave.FindProc(str)
-		if err == nil {
-			g_procMap[str] = proc
-			//log.Println("Proccess address[", str, "] loaded...")
-			dbgutil.Display("ProcName", str, "ProcAddr", proc)
-		} else {
-			log.Println("ProcName[", str, "] load failed...", err)
-		}
-	}
-}
-
-func releaseDllModule() {
-	if len(g_dllHumSave.Name) != 0 {
-		for _, str := range g_procDllName {
-			delete(g_procMap, str)
-		}
-		log.Println(g_dllHumSave.Name, " has been released...")
-		g_dllHumSave.Release()
-	}
-}
-
 func main() {
-	//bmDllTest()
 	defer func() {
 		log.Println("Server terminated.")
 		var input string
 		fmt.Scanln(&input)
 	}()
-	//	Initialize the database
-	//	Create database directory first
-	if !PathExist("./db") {
-		os.Mkdir("./db", os.ModeDir)
+	//	Initialize directory
+	if !PathExist("./login") {
+		os.Mkdir("./login", os.ModeDir)
 	}
-	g_DBUser = initDatabase("./db/users.db")
+	//	Initialize dll module
+	if !initDllModule("./login/BMHumSaveControl.dll") {
+		log.Println("Can't load the save control module.")
+		return
+	}
+	//	Initialize the database
+	g_DBUser = initDatabase("./login/users.db")
 	if nil == g_DBUser {
 		log.Println("Initialize database failed.")
 		return

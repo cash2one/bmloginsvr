@@ -69,15 +69,15 @@ func (this *User) OnDisconnect() {
 
 func (this *User) OnVerified() {
 	//	Get the uid,so we create the directory and file
-	if !PathExist("./netusers") {
+	/*if !PathExist("./netusers") {
 		err := os.Mkdir("./netusers", os.ModeDir)
 		if err != nil {
 			log.Println("Can't create parent directory.Error:", err)
 			return
 		}
-	}
+	}*/
 	//	Create sub directory
-	userpath := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10)
+	userpath := "./login/" + strconv.FormatUint(uint64(this.uid), 10)
 	if !PathExist(userpath) {
 		err := os.Mkdir(userpath, os.ModeDir)
 		if err != nil {
@@ -86,7 +86,7 @@ func (this *User) OnVerified() {
 		}
 	}
 	//	Create save file
-	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 }
 
@@ -335,16 +335,16 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &job)
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen+1:8+1+namelen+1+1]), binary.LittleEndian, &sex)
 	//	Add a role
-	log.Println(name)
+	/*log.Println(name)
 	if !PathExist("./netusers") {
 		err := os.Mkdir("./netusers", os.ModeDir)
 		if err != nil {
 			log.Println("Can't create parent directory.Error:", err)
 			return
 		}
-	}
+	}*/
 	//	Create sub directory
-	userpath := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10)
+	userpath := "./login/" + strconv.FormatUint(uint64(this.uid), 10)
 	if !PathExist(userpath) {
 		err := os.Mkdir(userpath, os.ModeDir)
 		if err != nil {
@@ -353,7 +353,7 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		}
 	}
 	//	Create save file
-	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	//	Open it
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
@@ -382,7 +382,7 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	//	delete a role
 	log.Println(name)
 
-	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	if !PathExist(userfile) {
 		log.Printf("non-exist user[%d] request to delete gamerole")
 		return
@@ -393,16 +393,20 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 		return
 	}
 
-	r1, _, _ = g_procMap["DelGameRole"].Call(filehandle,
+	r1, _, _ := g_procMap["DelGameRole"].Call(filehandle,
 		uintptr(unsafe.Pointer(C.CString(name))))
 	if r1 != 0 {
 		log.Println("Can't remove gamerole ", name)
 	}
 
 	//	success , send a packet
-	//	delete role result,namelen 1byte;name namelen
+	//	delete role result,namelen 4byte;name namelen
 	buf := new(bytes.Buffer)
-	namelen := len(name)
+	namelen = uint8(len(name))
+	namedata := []byte(name)
+	binary.Write(buf, binary.LittleEndian, &namelen)
+	binary.Write(buf, binary.LittleEndian, namedata[0:])
+	this.SendUserMsg(loginopstart + 7)
 	g_procMap["CloseHumSave"].Call(filehandle)
 }
 
