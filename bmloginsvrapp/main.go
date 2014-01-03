@@ -5,9 +5,11 @@ import "C"
 
 //	Go
 import (
+	"database/sql"
 	"dbgutil"
 	"fmt"
 	"log"
+	"os"
 	"server"
 	"syscall"
 	//"unsafe"
@@ -19,6 +21,7 @@ var (
 	g_UserList   *UserInfoList
 	g_ServerList *UserInfoList
 	g_CtrlCh     chan uint8
+	g_DBUser     *sql.DB
 )
 
 var (
@@ -70,7 +73,22 @@ func releaseDllModule() {
 }
 
 func main() {
-	bmDllTest()
+	//bmDllTest()
+	defer func() {
+		log.Println("Server terminated.")
+		var input string
+		fmt.Scanln(&input)
+	}()
+	//	Initialize the database
+	//	Create database directory first
+	if !PathExist("./db") {
+		os.Mkdir("./db", os.ModeDir)
+	}
+	g_DBUser = initDatabase("./db/users.db")
+	if nil == g_DBUser {
+		log.Println("Initialize database failed.")
+		return
+	}
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
 	g_ServerS = server.CreateWithConfig(nil)

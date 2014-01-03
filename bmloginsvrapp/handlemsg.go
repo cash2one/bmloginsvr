@@ -381,6 +381,29 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	var name string = string(msg[8+1 : 8+1+namelen])
 	//	delete a role
 	log.Println(name)
+
+	userfile := "./netusers/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	if !PathExist(userfile) {
+		log.Printf("non-exist user[%d] request to delete gamerole")
+		return
+	}
+	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	if filehandle == 0 {
+		log.Println("Can't open hum save.")
+		return
+	}
+
+	r1, _, _ = g_procMap["DelGameRole"].Call(filehandle,
+		uintptr(unsafe.Pointer(C.CString(name))))
+	if r1 != 0 {
+		log.Println("Can't remove gamerole ", name)
+	}
+
+	//	success , send a packet
+	//	delete role result,namelen 1byte;name namelen
+	buf := new(bytes.Buffer)
+	namelen := len(name)
+	g_procMap["CloseHumSave"].Call(filehandle)
 }
 
 func (this *User) OnRequestLoginGameSvr(msg []byte) {
@@ -414,8 +437,27 @@ func logErr(err error, info string) {
 	log.Println("Error occurs, Error[", err, "]")
 }
 
-func (this *User) VerifyUser(account, password string) {
+func (this *User) VerifyUser(account, password string) int {
+	var ret int = 0
+	if !dbUserAccountExist(g_DBUser, account) {
+		// non-exist account
+		ret = 1
+	}
 
+	var info UserAccountInfo
+	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
+	if !dbret {
+		ret = 1
+	} else {
+		if password != info.password {
+			ret = 2
+		} else {
+			//	pass
+			this.uid = info.uid
+		}
+	}
+
+	return ret
 }
 
 type ServerUser struct {
@@ -580,7 +622,17 @@ func HandleCMsg(msg *server.ConnEvent) {
 					binary.Read(bytes.NewBuffer(data[12+namelen+4:12+namelen+4+pswlen]), binary.BigEndian, namebuf)
 					var pswstr string = string(namebuf)
 
-					cltuser.VerifyUser(namestr, pswstr)
+					var ret int = cltuser.VerifyUser(namestr, pswstr)
+					if 0 != ret {
+						//	failed
+						var bret byte = byte(ret)
+						cltuser.SendUserMsg(loginopstart+3, &bret)
+					} else {
+						var bret byte = 0
+						cltuser.SendUserMsg(loginopstart+3, &bret)
+						cltuser.verified = true
+						cltuser.OnVerified()
+					}
 				}
 			}
 		} else {
