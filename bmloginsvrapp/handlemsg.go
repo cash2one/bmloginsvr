@@ -27,7 +27,16 @@ var (
 	//	+8	client request to login gamesvr
 	//	+9	login gamesvr result
 	//	+10 client request to save
+	//	+11 send gamerole data to gameserver
+	//	+12 send quick message
 )
+
+/*
+//	quick message
+	0:none
+	1:没有可用的游戏服务器
+	2:任务存档不存在
+*/
 
 type IUserInterface interface {
 	OnConnect()
@@ -406,7 +415,7 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	namedata := []byte(name)
 	binary.Write(buf, binary.LittleEndian, &namelen)
 	binary.Write(buf, binary.LittleEndian, namedata[0:])
-	this.SendUserMsg(loginopstart + 7)
+	this.SendUserMsg(loginopstart+7, buf.Bytes())
 	g_procMap["CloseHumSave"].Call(filehandle)
 }
 
@@ -419,6 +428,36 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	//	read role data
 	//	send the data to the gamesvr
 	log.Println(name)
+
+	if len(g_ServerList.allusers) == 0 {
+		//	no available game server
+		buf := new(bytes.Buffer)
+		var qm uint16 = 1
+		binary.Write(buf, binary.LittleEndian, &qm)
+		this.SendUserMsg(loginopstart+13, buf.Bytes())
+	} else {
+		userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+		if !PathExist(userfile) {
+			log.Printf("non-exist user[%d] request to delete gamerole")
+			buf := new(bytes.Buffer)
+			var qm uint16 = 2
+			binary.Write(buf, binary.LittleEndian, &qm)
+			this.SendUserMsg(loginopstart+13, buf.Bytes())
+			return
+		}
+		filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+		if filehandle == 0 {
+			log.Println("Can't open hum save.")
+			buf := new(bytes.Buffer)
+			var qm uint16 = 2
+			binary.Write(buf, binary.LittleEndian, &qm)
+			this.SendUserMsg(loginopstart+13, buf.Bytes())
+			return
+		}
+		//var dtsize uint32 = 0
+		//r1, _, _ := g_procMap["GetGameRoleData"].Call(filehandle,)
+		//buf := new(bytes.Buffer)
+	}
 }
 
 func (this *User) GetUserTag() uint32 {

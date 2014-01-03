@@ -30,6 +30,7 @@ func main() {
 		var input string
 		fmt.Scanln(&input)
 	}()
+	log.Println("Server started.")
 	//	Initialize directory
 	if !PathExist("./login") {
 		os.Mkdir("./login", os.ModeDir)
