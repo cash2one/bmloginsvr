@@ -22,7 +22,23 @@ var (
 		"ReadGameRoleData",
 		"WriteGameRoleData",
 		"WriteGameRoleInfo",
+		"ReadGameRoleSize",
 	}
+)
+
+const (
+	FUNC_CreateHumSave = iota
+	FUNC_OpenHumSave
+	FUNC_CloseHumSave
+	FUNC_AddGameRole
+	FUNC_DelGameRole
+	FUNC_GetGameRoleInfo_Value
+	FUNC_GetGameRoleInfo_Name
+	FUNC_GetGameRoleIndex
+	FUNC_ReadGameRoleData
+	FUNC_WriteGameRoleData
+	FUNC_WriteGameROleInfo
+	FUNC_ReadGameRoleSize
 )
 
 func initDllModule(name string) bool {

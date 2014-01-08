@@ -24,8 +24,10 @@ BM_EXPORT int GetGameRoleInfo_Value(int _hFileHandle, int _index, char* _job, ch
 BM_EXPORT char* GetGameRoleInfo_Name(int _hFileHandle, int _index);
 //	Get name index < 0 || > 2 failed
 BM_EXPORT int GetGameRoleIndex(int _hFileHandle, const char* _pszRoleName);
-//	Read gamerole data 0:failed
-BM_EXPORT char* ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, int* _outsize);
+//	Read gamerole size |ret:size
+BM_EXPORT int ReadGameRoleSize(int _hFileHandle, const char* _pszRoleName);
+//	Read gamerole data 0:success|1:failed
+BM_EXPORT int ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, void* _pData);
 //	Write gamerole data 0:success|1:non-exist gamerole
 BM_EXPORT int WriteGameRoleData(int _hFileHandle, const char* _pszRoleName, const char* _pData, int _datalen);
 //	Update gamerole head 0:success|1:non-exist gamerole

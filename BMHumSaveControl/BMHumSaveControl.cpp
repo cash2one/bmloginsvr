@@ -349,6 +349,88 @@ int GetGameRoleIndex(int _hFileHandle, const char* _pszRoleName){
 	return nIndex;
 }
 
+int ReadGameRoleSize(int _hFileHandle, const char* _pszRoleName)
+{
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+	char* pData = NULL;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+#ifdef _DEBUG
+		printf("\nCan't find head %s\n",
+			_pszRoleName);
+#endif
+		return 0;
+	}
+
+	ZIP_INDEX_TYPE zIndex = 0;
+	zIndex = pSave->pFile->FindFile(g_szData[nIndex]);
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
+		return pHeader->m_uUncomprSize;
+	}
+	else
+	{
+#ifdef _DEBUG
+		printf("\ncan't locate %s\n",
+			_pszRoleName);
+#endif
+	}
+
+	return 0;
+}
+
+int ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, void* _pData)
+{
+	char* pBuf = (char*)_pData;
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+#ifdef _DEBUG
+		printf("\nCan't find head %s\n",
+			_pszRoleName);
+#endif
+		return 0;
+	}
+
+	ZIP_INDEX_TYPE zIndex = 0;
+	zIndex = pSave->pFile->FindFile(g_szData[nIndex]);
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
+		if(NULL != pHeader){
+			pSave->pFile->OpenFile(zIndex);
+			pSave->pFile->ReadFile(pBuf, pHeader->m_uUncomprSize);
+			pSave->pFile->CloseFile();
+			return 0;
+		}
+	}
+	else
+	{
+#ifdef _DEBUG
+		printf("\ncan't locate %s\n",
+			_pszRoleName);
+#endif
+	}
+
+	return 1;
+}
+
+/*
 char* ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, int* _outsize){
 	*_outsize = 0;
 	PHumSave pSave = (PHumSave)_hFileHandle;
@@ -392,7 +474,7 @@ char* ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, int* _outsize
 	}
 
 	return pData;
-}
+}*/
 
 int WriteGameRoleData(int _hFileHandle, const char* _pszRoleName, const char* _pData, int _datalen){
 	PHumSave pSave = (PHumSave)_hFileHandle;
