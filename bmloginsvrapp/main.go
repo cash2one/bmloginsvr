@@ -7,6 +7,7 @@ import "C"
 import (
 	"database/sql"
 	//	"dbgutil"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -30,6 +31,18 @@ func main() {
 		var input string
 		fmt.Scanln(&input)
 	}()
+
+	//	Load config
+	ipaddrclient := flag.String("lsaddr", "", "Listen clients")
+	ipaddrserver := flag.String("lsgsaddr", "", "Listen gameserver")
+	flag.Parse()
+	if len(*ipaddrclient) == 0 || len(*ipaddrserver) == 0 {
+		log.Println("invalid input parameters.")
+		flag.PrintDefaults()
+		return
+	}
+	server.InitSeed(0)
+
 	log.Println("Server started.")
 	//	Initialize directory
 	if !PathExist("./login") {
@@ -67,10 +80,7 @@ func main() {
 	ch := make(chan string, 10)
 	go go_handleInput(ch)
 
-	server.InitSeed(0)
-	ipaddrclient := "127.0.0.1:8300"
-	ipaddrserver := "127.0.0.1:8200"
-	if g_ServerS.StartListen(ipaddrserver) && g_ServerC.StartListen(ipaddrclient) {
+	if g_ServerS.StartListen(*ipaddrserver) && g_ServerC.StartListen(*ipaddrclient) {
 		log.Println("Start process event.listen server:", ipaddrserver, " listen client:", ipaddrclient)
 
 		for {
