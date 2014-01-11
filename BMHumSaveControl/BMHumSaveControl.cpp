@@ -23,15 +23,15 @@
 const char* g_szHeader[] =
 {
 	"head",
-	"head1",
-	"head2"
+		"head1",
+		"head2"
 };
 
 const char* g_szData[] =
 {
 	"data",
-	"data1",
-	"data2"
+		"data1",
+		"data2"
 };
 
 typedef struct _tagHumHead{
@@ -208,76 +208,76 @@ int AddGameRole(int _hFileHandle, const char* _pszRoleName, char _job, char _sex
 	//	Data valid
 	if(strlen(_pszRoleName) > 19 ||
 		_pszRoleName[0] == 0){
-		return 4;
-	}
-	if(_job < 0 ||
-		_job > 2){
 			return 4;
 		}
-	if(_sex < 1 ||
-		_sex > 2)
-	{
-		return 4;
-	}
+		if(_job < 0 ||
+			_job > 2){
+				return 4;
+			}
+			if(_sex < 1 ||
+				_sex > 2)
+			{
+				return 4;
+			}
 
-	PHumSave pSave = (PHumSave)_hFileHandle;
-	if(pSave == NULL){
-		return 2;
-	}
-	if(pSave->pFile == NULL){
-		return 2;
-	}
-	if(pSave->pFile->IsClosed()){
-		return 2;
-	}
+			PHumSave pSave = (PHumSave)_hFileHandle;
+			if(pSave == NULL){
+				return 2;
+			}
+			if(pSave->pFile == NULL){
+				return 2;
+			}
+			if(pSave->pFile->IsClosed()){
+				return 2;
+			}
 
-	//	Repeated name
-	for(int i = 0; i < 3; ++i){
-		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
-			return 6;
-		}
-	}
+			//	Repeated name
+			for(int i = 0; i < 3; ++i){
+				if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+					return 6;
+				}
+			}
 
-	//	Get the valid index
-	for(int i = 0; i < 3; ++i){
-		if(pSave->head[i].szName[0] == 0){
-			nIndex = i;
-			break;
-		}
-	}
+			//	Get the valid index
+			for(int i = 0; i < 3; ++i){
+				if(pSave->head[i].szName[0] == 0){
+					nIndex = i;
+					break;
+				}
+			}
 
-	if(nIndex == -1){
-		return 1;
-	}
+			if(nIndex == -1){
+				return 1;
+			}
 
-	ZIP_INDEX_TYPE zIndex = pSave->pFile->FindFile(g_szHeader[nIndex]);
-	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
-		return 3;
-	}
-	CZipFileHeader zHeader;
-	zHeader.SetFileName(g_szHeader[nIndex]);
-	pSave->pFile->OpenNewFile(zHeader);
-	//	Write it
-	int nDatalen = 0;
-	ZeroMemory(buf, sizeof(buf));
-	strcpy(pSave->head[nIndex].szName, _pszRoleName);
-	pSave->head[nIndex].job = _job;
-	pSave->head[nIndex].sex = _sex;
-	pSave->head[nIndex].level = 1;
-	nDatalen = WriteHumHeadToData(buf, &pSave->head[nIndex]);
+			ZIP_INDEX_TYPE zIndex = pSave->pFile->FindFile(g_szHeader[nIndex]);
+			if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+				return 3;
+			}
+			CZipFileHeader zHeader;
+			zHeader.SetFileName(g_szHeader[nIndex]);
+			pSave->pFile->OpenNewFile(zHeader);
+			//	Write it
+			int nDatalen = 0;
+			ZeroMemory(buf, sizeof(buf));
+			strcpy(pSave->head[nIndex].szName, _pszRoleName);
+			pSave->head[nIndex].job = _job;
+			pSave->head[nIndex].sex = _sex;
+			pSave->head[nIndex].level = 1;
+			nDatalen = WriteHumHeadToData(buf, &pSave->head[nIndex]);
 
-	int nRet = 0;
-	if(nDatalen != 0){
-		pSave->pFile->WriteNewFile(buf, nDatalen);
-	}else{
-		ZeroMemory(&pSave->head[nIndex], sizeof(HumHead));
-		nRet = 5;
-	}
-	pSave->pFile->CloseNewFile();
+			int nRet = 0;
+			if(nDatalen != 0){
+				pSave->pFile->WriteNewFile(buf, nDatalen);
+			}else{
+				ZeroMemory(&pSave->head[nIndex], sizeof(HumHead));
+				nRet = 5;
+			}
+			pSave->pFile->CloseNewFile();
 #ifdef _DEBUG
-	printf("\nCreate %s in save.", g_szHeader[nIndex]);
+			printf("\nCreate %s in save.", g_szHeader[nIndex]);
 #endif
-	return nRet;
+			return nRet;
 }
 
 int DelGameRole(int _hFileHandle, const char* _pszRoleName){
@@ -432,48 +432,48 @@ int ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, void* _pData)
 
 /*
 char* ReadGameRoleData(int _hFileHandle, const char* _pszRoleName, int* _outsize){
-	*_outsize = 0;
-	PHumSave pSave = (PHumSave)_hFileHandle;
-	int nIndex = -1;
-	char* pData = NULL;
+*_outsize = 0;
+PHumSave pSave = (PHumSave)_hFileHandle;
+int nIndex = -1;
+char* pData = NULL;
 
-	for(int i = 0; i < 3; ++i){
-		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
-			nIndex = i;
-			break;
-		}
-	}
+for(int i = 0; i < 3; ++i){
+if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+nIndex = i;
+break;
+}
+}
 
-	if(nIndex == -1){
+if(nIndex == -1){
 #ifdef _DEBUG
-		printf("\nCan't find head %s\n",
-			_pszRoleName);
+printf("\nCan't find head %s\n",
+_pszRoleName);
 #endif
-		return 0;
-	}
+return 0;
+}
 
-	ZIP_INDEX_TYPE zIndex = 0;
-	zIndex = pSave->pFile->FindFile(g_szData[nIndex]);
-	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
-		CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
-		if(NULL != pHeader){
-			pData = (char*)malloc(pHeader->m_uUncomprSize + 1);
-			pSave->pFile->OpenFile(zIndex);
-			pSave->pFile->ReadFile(pData, pHeader->m_uUncomprSize);
-			pSave->pFile->CloseFile();
-			*_outsize = pHeader->m_uUncomprSize;
-			pData[pHeader->m_uUncomprSize] = 0;
-		}
-	}
-	else
-	{
+ZIP_INDEX_TYPE zIndex = 0;
+zIndex = pSave->pFile->FindFile(g_szData[nIndex]);
+if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
+if(NULL != pHeader){
+pData = (char*)malloc(pHeader->m_uUncomprSize + 1);
+pSave->pFile->OpenFile(zIndex);
+pSave->pFile->ReadFile(pData, pHeader->m_uUncomprSize);
+pSave->pFile->CloseFile();
+*_outsize = pHeader->m_uUncomprSize;
+pData[pHeader->m_uUncomprSize] = 0;
+}
+}
+else
+{
 #ifdef _DEBUG
-		printf("\ncan't locate %s\n",
-			_pszRoleName);
+printf("\ncan't locate %s\n",
+_pszRoleName);
 #endif
-	}
+}
 
-	return pData;
+return pData;
 }*/
 
 int WriteGameRoleData(int _hFileHandle, const char* _pszRoleName, const char* _pData, int _datalen){
@@ -554,6 +554,78 @@ int WriteGameRoleInfo(int _hFileHandle, const char* _pszRoleName, char _job, cha
 	}
 
 	return 0;
+}
+
+int UpdateGameRoleInfo(int _hFileHandle, const char* _pszRoleName, unsigned short _level){
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+		return 1;
+	}
+
+	pSave->head[nIndex].level = _level;
+
+	char buf[512] = {0};
+	int nDatalen = WriteHumHeadToData(buf, &pSave->head[nIndex]);
+	ZIP_INDEX_TYPE zIndex = pSave->pFile->FindFile(g_szHeader[nIndex]);
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		pSave->pFile->RemoveFile(zIndex);
+		CZipFileHeader header;
+		header.SetFileName(g_szHeader[nIndex]);
+		pSave->pFile->RemoveFile(zIndex);
+		pSave->pFile->OpenNewFile(header);
+		pSave->pFile->WriteNewFile(buf, nDatalen);
+		pSave->pFile->CloseNewFile();
+	}
+	else
+	{
+		return 2;
+	}
+
+	return 0;
+}
+
+int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData)
+{
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	char* pData = (char*)_pData;
+	int nWriteSize = 0;
+	
+	if(_index < 0 ||
+		_index > 2)
+	{
+		return 0;
+	}
+
+	if(pSave->head[_index].szName[0] != 0)
+	{
+		char nameLen = strlen(pSave->head[_index].szName);
+		memcpy(pData, &nameLen, 1);
+		pData += 1;
+		nWriteSize += 1;
+		memcpy(pData, pSave->head[_index].szName, nameLen);
+		pData += nameLen;
+		nWriteSize += nameLen;
+		memcpy(pData, &pSave->head[_index].job, 1);
+		pData += 1;
+		nWriteSize += 1;
+		memcpy(pData, &pSave->head[_index].sex, 1);
+		pData += 1;
+		nWriteSize += 1;
+		memcpy(pData, &pSave->head[_index].level, 2);
+		pData += 2;
+		nWriteSize += 2;
+	}
+
+	return nWriteSize;
 }
 
 

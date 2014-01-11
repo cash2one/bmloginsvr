@@ -59,6 +59,8 @@ func main() {
 		log.Println("Initialize database failed.")
 		return
 	}
+	defer g_DBUser.Close()
+
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
 	g_ServerS = server.CreateWithConfig(nil)

@@ -24,13 +24,17 @@ var (
 	//	+5	add role result	//	ret 1byte;namelen 1byte;name namelen;job 1byte;sex 1byte
 	//	+6	client request to delete game role	//	namelen 1byte;name namelen
 	//	+7	delete role result	//	namelen 1byte;name namelen
-	//	+8	client request to login gamesvr	//	namelen 1byte;name namelen;svrindex 1byte
+	//	+8	client request to login gamesvr	//	namelen 1byte;name namelen;svrindex 2byte
 	//	+9	login gamesvr result	//	0
 	//	+10 client request to save
-	//	+11 send gamerole data to gameserver
+	//	+11 send gamerole data to gameserver // svrconnidx 4bytes;datalen 4bytes;data datalen
 	//	+12 send quick message	//	msg 2bytes
-	//	+13 game type 1:normal 2:login
+	//	+13 game type //	type 1byte(1:normal 2:login);connindex 4bytes
 	//	+14	client start game	//	0
+	//	+15	server address info //	iplen 1byte;ip iplen;server index 2bytes
+	//	+16	login-game connindex //	login connindex 4bytes;game connindex 4bytes
+	//	+17	send gamerole data to loginserver // lsvrconnidx 4bytes;namelen 1byte;name namelen;level 2bytes;datalen 4bytes;data datalen
+	//	+18	send gamerole head data to client	//	roleidx 1byte;namelen 1byte;name namelen;job 1byte;sex 1byte;level 2byte
 )
 
 /*
@@ -39,6 +43,12 @@ var (
 	1:没有可用的游戏服务器
 	2:任务存档不存在
 	3:异常的存档读取
+	4:角色名存在
+	5:不存在的玩家数据
+	6:无法创建角色
+	7:无可用的游戏服务器
+	8:用户名或者密码错误
+	9:存档失败
 */
 
 ////////////////////////////////////////////////////////

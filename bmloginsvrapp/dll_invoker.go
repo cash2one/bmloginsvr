@@ -23,6 +23,8 @@ var (
 		"WriteGameRoleData",
 		"WriteGameRoleInfo",
 		"ReadGameRoleSize",
+		"UpdateGameRoleInfo",
+		"ReadGameRoleHeadInfo",
 	}
 )
 
@@ -39,6 +41,8 @@ const (
 	FUNC_WriteGameRoleData
 	FUNC_WriteGameROleInfo
 	FUNC_ReadGameRoleSize
+	FUNC_UpdateGameRoleInfo
+	FUNC_ReadGameRoleHeadInfo
 )
 
 func initDllModule(name string) bool {

@@ -1,11 +1,15 @@
 package main
 
+import "C"
+
 import (
 	"bytes"
 	"encoding/binary"
 	"log"
 	"server"
+	"strconv"
 	"time"
+	"unsafe"
 )
 
 type ServerUser struct {
@@ -80,6 +84,11 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				this.OnResponseClientLogin(msg)
 			}
 		}
+	case loginopstart + 10:
+		{
+			//	player request to save
+			this.OnRequestSave(msg)
+		}
 	}
 }
 
@@ -96,4 +105,46 @@ func (this *ServerUser) OnResponseClientLogin(msg []byte) {
 		log.Println(clientindex)
 		log.Println(addr)
 	}
+}
+
+func (this *ServerUser) OnRequestSave(msg []byte) {
+	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	//	Open it
+	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	if r1 == 0 {
+		log.Println("Can't open hum save.Err:", r1)
+		return
+	}
+	var filehandle uintptr = r1
+	//	Close
+	defer g_procMap["CloseHumSave"].Call(filehandle)
+
+	//	write
+	var lsvrconnidx uint32
+	var namelen byte
+	var name string
+	var level uint16
+	var datalen uint32
+
+	buf := bytes.NewBuffer(msg[8:])
+	binary.Read(buf, binary.LittleEndian, &lsvrconnidx)
+	binary.Read(buf, binary.LittleEndian, &namelen)
+	name = string(msg[8+4+1 : 8+4+1+namelen])
+	buf = bytes.NewBuffer(msg[8+4+1+namelen:])
+	binary.Read(buf, binary.LittleEndian, &level)
+	binary.Read(buf, binary.LittleEndian, &datalen)
+	humdata := msg[8+4+1+namelen:]
+
+	cname := C.CString(name)
+	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle,
+		uintptr(unsafe.Pointer(cname)),
+		uintptr(unsafe.Pointer(&humdata[0])),
+		uintptr(datalen))
+	if r1 != 0 {
+		var qm uint16 = 9
+		this.SendUserMsg(loginopstart+12, &qm)
+		return
+	}
+	g_procMap["UpdateGameRoleInfo"].Call(filehandle,
+		uintptr(level))
 }
