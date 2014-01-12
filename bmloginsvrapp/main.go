@@ -17,12 +17,13 @@ import (
 )
 
 var (
-	g_ServerS    *server.Server
-	g_ServerC    *server.Server
-	g_UserList   *UserInfoList
-	g_ServerList *UserInfoList
-	g_CtrlCh     chan uint8
-	g_DBUser     *sql.DB
+	g_ServerS     *server.Server
+	g_ServerC     *server.Server
+	g_UserList    *UserInfoList
+	g_ServerList  *UserInfoList
+	g_CtrlCh      chan uint8
+	g_DBUser      *sql.DB
+	g_AvaliableGS uint32
 )
 
 func main() {
@@ -48,6 +49,13 @@ func main() {
 	if !PathExist("./login") {
 		os.Mkdir("./login", os.ModeDir)
 	}
+	//	Set log file
+	/*logfile, lferr := os.Create("./login/login.log")
+	if lferr != nil {
+		log.Println(lferr)
+	} else {
+		log.SetOutput(logfile)
+	}*/
 	//	Initialize dll module
 	if !initDllModule("./login/BMHumSaveControl.dll") {
 		log.Println("Can't load the save control module.")
@@ -83,7 +91,7 @@ func main() {
 	go go_handleInput(ch)
 
 	if g_ServerS.StartListen(*ipaddrserver) && g_ServerC.StartListen(*ipaddrclient) {
-		log.Println("Start process event.listen server:", ipaddrserver, " listen client:", ipaddrclient)
+		log.Println("Start process event.listen server:", *ipaddrserver, " listen client:", *ipaddrclient)
 
 		for {
 			select {

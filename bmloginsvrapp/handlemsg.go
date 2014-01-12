@@ -17,7 +17,7 @@ import (
 var (
 	loginopstart uint32 = 10000
 	//	+0	force quit
-	//	+1	server verify	//	verify msg,serverid 4bytes;verifycode 4bytes
+	//	+1	server verify	//	verify msg,serverid 4bytes;verifycode 4bytes;addrlen  1bytes;addr addrlen
 	//	+2	client verify	//	namelen 4bytes;name namelen;pswlen 4bytes;psw pswlen
 	//	+3	verify result	//	ret:1byte
 	//	+4	client request to add game role	//	namelen 1byte;name namelen;job 1byte;sex 1byte
@@ -27,13 +27,13 @@ var (
 	//	+8	client request to login gamesvr	//	namelen 1byte;name namelen;svrindex 2byte
 	//	+9	login gamesvr result	//	0
 	//	+10 client request to save
-	//	+11 send gamerole data to gameserver // svrconnidx 4bytes;datalen 4bytes;data datalen
+	//	+11 send gamerole data to gameserver // svrconnidx 4bytes;lsconnidx 4bytes;heroheader;datalen 4bytes;data datalen
 	//	+12 send quick message	//	msg 2bytes
 	//	+13 game type //	type 1byte(1:normal 2:login);connindex 4bytes
 	//	+14	client start game	//	0
-	//	+15	server address info //	iplen 1byte;ip iplen;server index 2bytes
+	//	+15	server address info //	iplen 4byte;ip iplen;server index 2bytes
 	//	+16	login-game connindex //	login connindex 4bytes;game connindex 4bytes
-	//	+17	send gamerole data to loginserver // lsvrconnidx 4bytes;namelen 1byte;name namelen;level 2bytes;datalen 4bytes;data datalen
+	//	+17	send gamerole data to loginserver // lsvrconnidx 4bytes;uid 4bytes;namelen 1byte;name namelen;level 2bytes;datalen 4bytes;data datalen
 	//	+18	send gamerole head data to client	//	roleidx 1byte;namelen 1byte;name namelen;job 1byte;sex 1byte;level 2byte
 )
 
@@ -77,7 +77,7 @@ func HandleCMsg(msg *server.ConnEvent) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]")
+			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 		}
 	}()
 
@@ -90,16 +90,18 @@ func HandleCMsg(msg *server.ConnEvent) {
 			if ok {
 				if opcode == loginopstart+2 {
 					//	user name and password	namelen 4bytes;name namelen;pswlen 4bytes;psw pswlen
-					var namelen uint32 = 0
-					binary.Read(bytes.NewBuffer(data[8:8+4]), binary.LittleEndian, &namelen)
+					var namelen uint8 = 0
+					binary.Read(bytes.NewBuffer(data[8:8+1]), binary.LittleEndian, &namelen)
 					namebuf := make([]byte, namelen)
-					binary.Read(bytes.NewBuffer(data[12:12+namelen]), binary.BigEndian, namebuf)
+					binary.Read(bytes.NewBuffer(data[9:9+namelen]), binary.BigEndian, namebuf)
 					var namestr string = string(namebuf)
-					var pswlen uint32 = 0
-					binary.Read(bytes.NewBuffer(data[12+namelen:12+namelen+4]), binary.LittleEndian, &pswlen)
+					var pswlen uint8 = 0
+					binary.Read(bytes.NewBuffer(data[9+namelen:9+namelen+1]), binary.LittleEndian, &pswlen)
 					namebuf = make([]byte, pswlen)
-					binary.Read(bytes.NewBuffer(data[12+namelen+4:12+namelen+4+pswlen]), binary.BigEndian, namebuf)
+					binary.Read(bytes.NewBuffer(data[9+namelen+1:9+namelen+1+pswlen]), binary.BigEndian, namebuf)
 					var pswstr string = string(namebuf)
+
+					log.Println("Begin to verify user " + namestr)
 
 					var ret int = cltuser.VerifyUser(namestr, pswstr)
 					if 0 != ret {
@@ -144,7 +146,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]")
+			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 		}
 	}()
 
@@ -157,22 +159,28 @@ func HandleSMsg(msg *server.ConnEvent) {
 			if !user.IsVerified() {
 				//	Only handle the verify message
 				if opcode == loginopstart+1 {
-					//	verify msg,serverid 4bytes;verifycode 4bytes
-					if length == 8+2+4 {
+					//	verify msg,serverid 4bytes;verifycode 4bytes;addrlen 1byte;addr addrlen
+					if length >= 8+2+4+1 {
 						var serverid uint16 = 0
 						var verifycode uint32 = 0
+						var iplen uint8 = 0
 						binary.Read(bytes.NewBuffer(data[8:8+2]), binary.LittleEndian, &serverid)
 						binary.Read(bytes.NewBuffer(data[10:10+4]), binary.LittleEndian, &verifycode)
+						binary.Read(bytes.NewBuffer(data[10+4:10+4+1]), binary.LittleEndian, &iplen)
 
-						verifyok := false
-						verifyok = true
-						if verifyok {
-							svruser.serverid = serverid
-							svruser.verified = true
+						if length == 8+2+4+1+uint32(iplen) {
+							verifyok := false
+							verifyok = true
+							if verifyok {
+								svruser.serverid = serverid
+								svruser.verified = true
+								svruser.serverlsaddr = string(data[10+4+1 : 10+4+1+iplen])
 
-							var vok uint8 = 1
-							user.SendUserMsg(loginopstart+3, &vok)
-							log.Println("Server[", serverid, "] registed...")
+								var vok uint8 = 1
+								user.SendUserMsg(loginopstart+3, &vok)
+								g_AvaliableGS = msg.Conn.GetConnTag()
+								log.Println("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
+							}
 						}
 					}
 				}

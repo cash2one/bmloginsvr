@@ -55,9 +55,9 @@ int ReadHumHeadFromData(const char* _pszBuf, HumHead* _pHead){
 	int nNameLength = *(int*)pData;
 	pData += 4;
 	nDatalen += 4;
-	memcpy(_pHead->szName, pData, nNameLength);
-	pData += nNameLength;
-	nDatalen += nNameLength;
+	memcpy(_pHead->szName, pData, nNameLength + 1);
+	pData += nNameLength + 1;
+	nDatalen += nNameLength + 1;
 	_pHead->job = *pData;
 	pData += 1;
 	nDatalen += 1;
@@ -81,9 +81,9 @@ int WriteHumHeadToData(char* _pszBuf, const HumHead* _pHead){
 	pData += 4;
 	nDatalen += 4;
 	//	name content
-	memcpy(pData, _pHead->szName, nNamelen);
-	pData += nNamelen;
-	nDatalen += nNamelen;
+	memcpy(pData, _pHead->szName, nNamelen + 1);
+	pData += nNamelen + 1;
+	nDatalen += nNamelen + 1;
 	//	job
 	memcpy(pData, &_pHead->job, sizeof(char));
 	pData += 1;
@@ -608,12 +608,12 @@ int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData)
 	if(pSave->head[_index].szName[0] != 0)
 	{
 		char nameLen = strlen(pSave->head[_index].szName);
-		memcpy(pData, &nameLen, 1);
+		memcpy(pData, &nameLen, sizeof(int));
 		pData += 1;
 		nWriteSize += 1;
-		memcpy(pData, pSave->head[_index].szName, nameLen);
-		pData += nameLen;
-		nWriteSize += nameLen;
+		memcpy(pData, pSave->head[_index].szName, nameLen + 1);
+		pData += nameLen + 1;
+		nWriteSize += nameLen + 1;
 		memcpy(pData, &pSave->head[_index].job, 1);
 		pData += 1;
 		nWriteSize += 1;

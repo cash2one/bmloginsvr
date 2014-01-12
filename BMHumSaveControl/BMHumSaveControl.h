@@ -33,7 +33,7 @@ BM_EXPORT int WriteGameRoleData(int _hFileHandle, const char* _pszRoleName, cons
 //	Update gamerole head 0:success|1:non-exist gamerole
 BM_EXPORT int WriteGameRoleInfo(int _hFileHandle, const char* _pszRoleName, char _job, char _sex, unsigned short _level);
 //	Update gamerole head 0:success|1:failed
-BM_EXPORT int UpdateGameRoleInfo(int _hFileHandle, unsigned short _level);
+BM_EXPORT int UpdateGameRoleInfo(int _hFileHandle, const char* _pszRoleName, unsigned short _level);
 //	Read gamerole head data 0:failed|other:size
 BM_EXPORT int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData);
 //////////////////////////////////////////////////////////////////////////

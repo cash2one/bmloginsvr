@@ -15,7 +15,8 @@ import (
 type ServerUser struct {
 	User
 	//	for server
-	serverid uint16
+	serverid     uint16
+	serverlsaddr string
 }
 
 func CreateServerUser(clientconn *server.Connection) *ServerUser {
@@ -89,7 +90,62 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			//	player request to save
 			this.OnRequestSave(msg)
 		}
+	case loginopstart + 16:
+		{
+			//	connidx
+			var gsidx uint32 = 0
+			var lsidx uint32 = 0
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &gsidx)
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &lsidx)
+
+			cuser := g_UserList.GetUser(lsidx)
+			if cuser == nil {
+				log.Println("Can't registe user[", lsidx, "]")
+			} else {
+				user := cuser.(*User)
+				user.svrconnidx = gsidx
+				log.Println("Registe user gs index ok!")
+			}
+		}
+	case loginopstart + 17:
+		{
+			//	player request to save data
+			var namelen uint8
+			var userindex uint32
+			binary.Read(bytes.NewBuffer(msg[8+8:8+8+1]), binary.LittleEndian, &namelen)
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &userindex)
+			var uid uint32
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
+			var datalen uint32
+			binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
+			var calclen int = int(uint32(namelen) + datalen + 1 + 4 + 4 + 2 + 8 + 4)
+
+			iuser := g_UserList.GetUser(userindex)
+			var cuser *User
+			var ok bool = false
+			if nil == iuser {
+				log.Println("Can't get the player wants save data")
+				this.OnOfflineSave(msg)
+				return
+			} else {
+				cuser, ok = iuser.(*User)
+				if !ok {
+					log.Println("Can't transform IUser to *User")
+					return
+				}
+			}
+
+			if len(msg) != calclen {
+				log.Println("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
+			} else {
+				cuser.OnRequestSaveGameRole(msg)
+			}
+		}
 	}
+}
+
+func (this *ServerUser) OnOfflineSave(msg []byte) {
+
 }
 
 func (this *ServerUser) OnResponseClientLogin(msg []byte) {

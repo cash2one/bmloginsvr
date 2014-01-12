@@ -66,7 +66,7 @@ func dbGetUserAccountInfo(db *sql.DB, account string, info *UserAccountInfo) (bo
 
 	//	Select
 	fetched := false
-	sqlexpr := "select uid,password,online from useraccount where account = '" + account + "'"
+	sqlexpr := "select uid,password,online,name0,name1,name2 from useraccount where account = '" + account + "'"
 	rows, err := db.Query(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
@@ -92,7 +92,7 @@ func dbGetUserAccountInfoByUID(db *sql.DB, uid uint32, info *UserAccountInfo) bo
 
 	//	Select
 	fetched := false
-	sqlexpr := "select account,password,online,name0,name1,name2 from useraccount where account = '" + strconv.FormatUint(uint64(uid), 10) + "'"
+	sqlexpr := "select account,password,online,name0,name1,name2 from useraccount where uid = " + strconv.FormatUint(uint64(uid), 10)
 	rows, err := db.Query(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
@@ -208,10 +208,11 @@ func dbResetUserAccountOnlineState(db *sql.DB) bool {
 }
 
 func dbUserNameExist(db *sql.DB, name string) bool {
-	sqlexpr := "select account from useraccount where name0 ='" + name + "' or where name1 ='" + name + "' or name2 ='" + name + "'"
+	sqlexpr := "select account from useraccount where name0 ='" + name + "' or name1 ='" + name + "' or name2 ='" + name + "'"
 	rows, err := db.Query(sqlexpr)
 
 	if err != nil {
+		log.Println(err)
 		return true
 	} else {
 		defer rows.Close()
@@ -236,7 +237,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 	}
 
 	if len(info.name0) == 0 {
-		sqlexpr := "update useraccount set name0 = " + name + "'"
+		sqlexpr := "update useraccount set name0 = '" + name + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -244,7 +245,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 			return false
 		}
 	} else if len(info.name1) == 0 {
-		sqlexpr := "update useraccount set name1 = " + name + "'"
+		sqlexpr := "update useraccount set name1 = '" + name + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -252,7 +253,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 			return false
 		}
 	} else if len(info.name2) == 0 {
-		sqlexpr := "update useraccount set name2 = " + name + "'"
+		sqlexpr := "update useraccount set name2 = '" + name + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -284,7 +285,7 @@ func dbRemoveUserName(db *sql.DB, account string, name string) bool {
 		return false
 	}
 
-	sqlexpr := "delete from useraccount where name" + strconv.FormatInt(int64(nameindex), 10) + " = '" + name + "'"
+	sqlexpr := "update useraccount set name" + strconv.FormatInt(int64(nameindex), 10) + " = ''"
 	_, err := db.Exec(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s] Error[%s]",

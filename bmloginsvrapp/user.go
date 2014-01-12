@@ -5,6 +5,7 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"os"
 	"server"
@@ -45,6 +46,14 @@ func CreateUser(clientconn *server.Connection) *User {
 
 func (this *User) OnConnect() {
 	log.Println("Peer ", this.ipaddr, " connected...")
+
+	//	Send game type
+	var gametype uint8 = 2
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, &gametype)
+	var loginconnidx = this.GetUserTag()
+	binary.Write(buf, binary.LittleEndian, &loginconnidx)
+	this.SendUseData(loginopstart+13, buf.Bytes())
 }
 
 func (this *User) OnDisconnect() {
@@ -55,6 +64,15 @@ func (this *User) OnDisconnect() {
 func (this *User) OnVerified() {
 	//	Get the uid,so we create the directory and file
 	//	Create sub directory
+	defer func() {
+		err := recover()
+		if err != nil {
+			fmt.Println(err)
+			var input string
+			fmt.Scanln(&input)
+		}
+	}()
+
 	userpath := "./login/" + strconv.FormatUint(uint64(this.uid), 10)
 	if !PathExist(userpath) {
 		err := os.Mkdir(userpath, os.ModeDir)
@@ -66,14 +84,6 @@ func (this *User) OnVerified() {
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
-
-	//	Send game type
-	var gametype uint8 = 1
-	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.LittleEndian, &gametype)
-	var loginconnidx = this.GetUserTag()
-	binary.Write(buf, binary.LittleEndian, &loginconnidx)
-	this.SendUseData(loginopstart+13, buf.Bytes())
 
 	//	Open it
 	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
@@ -369,6 +379,43 @@ func (this *User) OnUserMsg(msg []byte) {
 	}
 }
 
+func (this *User) OnRequestSaveGameRole(msg []byte) {
+	var namelen uint8
+	binary.Read(bytes.NewBuffer(msg[8+8:8+8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+8+1 : 8+8+1+namelen])
+	var datalen uint32
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
+	var data []byte = msg[8+8+1+namelen+2+4 : 8+8+1+uint32(namelen)+2+4+datalen]
+
+	log.Println(name, " request to save data.")
+
+	//	Create save file
+	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	Open it
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	if r1 == 0 {
+		log.Println("Can't open hum save.Err:", r1)
+		return
+	}
+	var filehandle uintptr = r1
+	//	Close
+	defer g_procMap["CloseHumSave"].Call(filehandle)
+
+	cname := C.CString(name)
+	var level uint16
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
+	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
+	if r1 != 0 {
+		log.Println("Failed to update gamerole head data")
+	}
+
+	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
+	if r1 != 0 {
+		log.Println("Failed to write gamerole data")
+	}
+}
+
 func (this *User) OnRequestAddGameRole(msg []byte) {
 	var namelen uint8 = 0
 	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
@@ -377,6 +424,7 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	var sex uint8 = 0
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &job)
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen+1:8+1+namelen+1+1]), binary.LittleEndian, &sex)
+	log.Println("Create new hero name ", name, " job ", job, " sex ", sex)
 	//	Add a role
 	userpath := "./login/" + strconv.FormatUint(uint64(this.uid), 10)
 	if !PathExist(userpath) {
@@ -408,26 +456,11 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		return
 	}
 
-	//	Add user name
-	var userinfo UserAccountInfo
-	if !dbGetUserAccountInfoByUID(g_DBUser, this.uid, &userinfo) {
-		buf := new(bytes.Buffer)
-		var msg uint16 = 5
-		binary.Write(buf, binary.LittleEndian, &msg)
-		this.SendUseData(loginopstart+12, buf.Bytes())
-		return
-	}
-	if !dbAddUserName(g_DBUser, userinfo.account, name) {
-		buf := new(bytes.Buffer)
-		var msg uint16 = 6
-		binary.Write(buf, binary.LittleEndian, &msg)
-		this.SendUseData(loginopstart+12, buf.Bytes())
-		return
-	}
-
 	//	Add game role
 	r1, _, _ = g_procMap["AddGameRole"].Call(filehandle,
-		uintptr(unsafe.Pointer(C.CString(name))))
+		uintptr(unsafe.Pointer(C.CString(name))),
+		uintptr(job),
+		uintptr(sex))
 	if r1 == 0 {
 		//	Success
 		//	add role result ret 1byte;namelen 1byte;name namelen
@@ -439,7 +472,24 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		binary.Write(buf, binary.LittleEndian, []byte(name))
 		binary.Write(buf, binary.LittleEndian, &job)
 		binary.Write(buf, binary.LittleEndian, &sex)
-		this.SendUseData(loginopstart+4, buf.Bytes())
+		this.SendUseData(loginopstart+5, buf.Bytes())
+
+		//	Add user name
+		var userinfo UserAccountInfo
+		if !dbGetUserAccountInfoByUID(g_DBUser, this.uid, &userinfo) {
+			buf := new(bytes.Buffer)
+			var msg uint16 = 5
+			binary.Write(buf, binary.LittleEndian, &msg)
+			this.SendUseData(loginopstart+12, buf.Bytes())
+			return
+		}
+		if !dbAddUserName(g_DBUser, userinfo.account, name) {
+			buf := new(bytes.Buffer)
+			var msg uint16 = 6
+			binary.Write(buf, binary.LittleEndian, &msg)
+			this.SendUseData(loginopstart+12, buf.Bytes())
+			return
+		}
 	} else {
 		//	failed
 		buf := new(bytes.Buffer)
@@ -449,7 +499,7 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		binary.Write(buf, binary.LittleEndian, []byte(name))
 		binary.Write(buf, binary.LittleEndian, &job)
 		binary.Write(buf, binary.LittleEndian, &sex)
-		this.SendUseData(loginopstart+4, buf.Bytes())
+		this.SendUseData(loginopstart+5, buf.Bytes())
 	}
 }
 
@@ -472,6 +522,13 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	}
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
+	r1, _, _ := g_procMap["DelGameRole"].Call(filehandle,
+		uintptr(unsafe.Pointer(C.CString(name))))
+	if r1 != 0 {
+		log.Println("Can't remove gamerole ", name)
+		return
+	}
+
 	//	Remove name from db
 	var userinfo UserAccountInfo
 	if !dbGetUserAccountInfoByUID(g_DBUser, this.uid, &userinfo) {
@@ -485,13 +542,6 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 		return
 	}
 
-	r1, _, _ := g_procMap["DelGameRole"].Call(filehandle,
-		uintptr(unsafe.Pointer(C.CString(name))))
-	if r1 != 0 {
-		log.Println("Can't remove gamerole ", name)
-		return
-	}
-
 	//	success , send a packet
 	//	delete role result,namelen 1byte;name namelen
 	buf := new(bytes.Buffer)
@@ -499,7 +549,7 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	namedata := []byte(name)
 	binary.Write(buf, binary.LittleEndian, &namelen)
 	binary.Write(buf, binary.LittleEndian, namedata[0:])
-	this.SendUserMsg(loginopstart+7, buf.Bytes())
+	this.SendUseData(loginopstart+7, buf.Bytes())
 }
 
 func (this *User) OnRequestLoginGameSvr(msg []byte) {
@@ -510,17 +560,19 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+2]), binary.LittleEndian, &svrindex)
 	//	read role data
 	//	send the data to the gamesvr
-	log.Println(name)
+	log.Println(name, " request to enter game server")
 
 	if this.svrconnidx == 0 {
+		log.Println("invalid svr index")
 		return
 	}
 
 	//	Get the avaliable game server
-	igs := g_ServerList.GetUser(uint32(svrindex))
+	igs := g_ServerList.GetUser(g_AvaliableGS)
 	if nil == igs {
 		var qm uint16 = 7
 		this.SendUserMsg(loginopstart+12, &qm)
+		log.Println("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
 
@@ -537,6 +589,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		var qm uint16 = 1
 		binary.Write(buf, binary.LittleEndian, &qm)
 		this.SendUserMsg(loginopstart+12, buf.Bytes())
+		log.Println("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
 
@@ -561,32 +614,74 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
 	cname := C.CString(name)
+	var newhum bool = false
+	var datasize uint32 = 0
 	//	Get data size
 	r1, _, _ := g_procMap["ReadGameRoleSize"].Call(filehandle,
 		uintptr(unsafe.Pointer(cname)))
 	if r1 == 0 {
+		//var qm uint16 = 5
+		//this.SendUserMsg(loginopstart+12, &qm)
+		//return
+		newhum = true
+	} else {
+		datasize = uint32(r1)
+	}
+
+	//	read head
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
+	var tag uint32 = this.conn.GetConnTag()
+	binary.Write(buf, binary.LittleEndian, &tag)
+	binary.Write(buf, binary.LittleEndian, &this.uid)
+
+	r1, _, _ = g_procMap["GetGameRoleIndex"].Call(filehandle, uintptr(unsafe.Pointer(cname)))
+	if r1 < 0 || r1 > 2 {
 		var qm uint16 = 5
 		this.SendUserMsg(loginopstart+12, &qm)
+		log.Println("Can't get role index")
 		return
 	}
 
-	humdata := make([]byte, r1)
-	r1, _, _ = g_procMap["ReadGameRoleData"].Call(filehandle,
-		uintptr(unsafe.Pointer(cname)),
-		uintptr(unsafe.Pointer(&humdata[0])))
-	if r1 != 0 {
-		var qm uint16 = 3
-		this.SendUserMsg(loginopstart+12, &qm)
-		return
-	}
+	var heroidx int = int(r1)
+	var job, sex uint8
+	var level uint16
+	var namelen4 uint32
+	var zero uint8
+	r1, _, _ = g_procMap["GetGameRoleInfo_Value"].Call(filehandle, uintptr(heroidx), uintptr(unsafe.Pointer(&job)),
+		uintptr(unsafe.Pointer(&sex)), uintptr(unsafe.Pointer(&level)))
+	namelen4 = uint32(len(name))
+	binary.Write(buf, binary.LittleEndian, &namelen4)
+	binary.Write(buf, binary.LittleEndian, []byte(name))
+	binary.Write(buf, binary.LittleEndian, &zero)
+	binary.Write(buf, binary.LittleEndian, &job)
+	binary.Write(buf, binary.LittleEndian, &sex)
+	binary.Write(buf, binary.LittleEndian, &level)
 
-	//	send gamerole data to server
-	buf := new(bytes.Buffer)
-	var datalen uint32 = uint32(len(humdata))
-	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
-	binary.Write(buf, binary.LittleEndian, &datalen)
-	binary.Write(buf, binary.LittleEndian, humdata)
-	gs.SendUseData(loginopstart, buf.Bytes())
+	if newhum {
+		datasize = 0
+		binary.Write(buf, binary.LittleEndian, &datasize)
+		gs.SendUseData(loginopstart+11, buf.Bytes())
+		log.Println("Data transfered to gs.")
+	} else {
+		log.Println("Not new hum, read size ", datasize)
+
+		humdata := make([]byte, datasize)
+		r1, _, _ = g_procMap["ReadGameRoleData"].Call(filehandle,
+			uintptr(unsafe.Pointer(cname)),
+			uintptr(unsafe.Pointer(&humdata[0])))
+		if r1 != 0 {
+			var qm uint16 = 3
+			this.SendUserMsg(loginopstart+12, &qm)
+			return
+		}
+
+		//	send gamerole data to server
+		var datalen uint32 = uint32(len(humdata))
+		binary.Write(buf, binary.LittleEndian, &datalen)
+		binary.Write(buf, binary.LittleEndian, humdata)
+		gs.SendUseData(loginopstart+11, buf.Bytes())
+	}
 }
 
 func (this *User) GetUserTag() uint32 {
@@ -610,6 +705,15 @@ func logErr(err error, info string) {
 }
 
 func (this *User) VerifyUser(account, password string) int {
+	defer func() {
+		err := recover()
+		if err != nil {
+			fmt.Println(err)
+			var input string
+			fmt.Scanln(&input)
+		}
+	}()
+
 	var ret int = 0
 	if !dbUserAccountExist(g_DBUser, account) {
 		// non-exist account
@@ -618,6 +722,7 @@ func (this *User) VerifyUser(account, password string) int {
 
 	var info UserAccountInfo
 	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
+	log.Println("Accout ", info.account, " Password ", info.password)
 	if !dbret {
 		ret = 1
 	} else {
@@ -635,18 +740,24 @@ func (this *User) VerifyUser(account, password string) int {
 			var msg uint16 = 7
 			this.SendUserMsg(loginopstart+12, &msg)
 		} else {
-			igs := g_ServerList.GetUser(1)
+			igs := g_ServerList.GetUser(g_AvaliableGS)
 			if igs != nil {
 				gs, ok := igs.(*ServerUser)
 				if ok {
 					buf := new(bytes.Buffer)
-					iplen := len(gs.ipaddr)
+					iplen := int32(len(gs.serverlsaddr))
 					binary.Write(buf, binary.LittleEndian, &iplen)
-					binary.Write(buf, binary.LittleEndian, []byte(gs.ipaddr))
+					binary.Write(buf, binary.LittleEndian, []byte(gs.serverlsaddr))
+					var zero uint8 = 0
+					binary.Write(buf, binary.LittleEndian, &zero)
 					var svridx uint16 = 1
 					binary.Write(buf, binary.LittleEndian, &svridx)
 					this.SendUseData(loginopstart+15, buf.Bytes())
+
+					log.Println("Pass")
 				}
+			} else {
+				log.Println("Server tag[", g_AvaliableGS, "] not available")
 			}
 		}
 	} else {
