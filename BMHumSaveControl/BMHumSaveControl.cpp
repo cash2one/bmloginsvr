@@ -36,8 +36,8 @@ const char* g_szData[] =
 
 typedef struct _tagHumHead{
 	char szName[20];
-	char job;
 	char sex;
+	char job;
 	unsigned short level;
 }HumHead, *PHumHead;
 
@@ -58,10 +58,10 @@ int ReadHumHeadFromData(const char* _pszBuf, HumHead* _pHead){
 	memcpy(_pHead->szName, pData, nNameLength + 1);
 	pData += nNameLength + 1;
 	nDatalen += nNameLength + 1;
-	_pHead->job = *pData;
+	_pHead->sex = *pData;
 	pData += 1;
 	nDatalen += 1;
-	_pHead->sex = *pData;
+	_pHead->job = *pData;
 	pData += 1;
 	nDatalen += 1;
 	_pHead->level = *(unsigned short*)pData;
@@ -84,12 +84,12 @@ int WriteHumHeadToData(char* _pszBuf, const HumHead* _pHead){
 	memcpy(pData, _pHead->szName, nNamelen + 1);
 	pData += nNamelen + 1;
 	nDatalen += nNamelen + 1;
-	//	job
-	memcpy(pData, &_pHead->job, sizeof(char));
-	pData += 1;
-	nDatalen += 1;
 	//	sex
 	memcpy(pData, &_pHead->sex, sizeof(char));
+	pData += 1;
+	nDatalen += 1;
+	//	job
+	memcpy(pData, &_pHead->job, sizeof(char));
 	pData += 1;
 	nDatalen += 1;
 	//	level
@@ -614,10 +614,10 @@ int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData)
 		memcpy(pData, pSave->head[_index].szName, nameLen + 1);
 		pData += nameLen + 1;
 		nWriteSize += nameLen + 1;
-		memcpy(pData, &pSave->head[_index].job, 1);
+		memcpy(pData, &pSave->head[_index].sex, 1);
 		pData += 1;
 		nWriteSize += 1;
-		memcpy(pData, &pSave->head[_index].sex, 1);
+		memcpy(pData, &pSave->head[_index].job, 1);
 		pData += 1;
 		nWriteSize += 1;
 		memcpy(pData, &pSave->head[_index].level, 2);

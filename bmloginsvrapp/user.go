@@ -651,11 +651,12 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	r1, _, _ = g_procMap["GetGameRoleInfo_Value"].Call(filehandle, uintptr(heroidx), uintptr(unsafe.Pointer(&job)),
 		uintptr(unsafe.Pointer(&sex)), uintptr(unsafe.Pointer(&level)))
 	namelen4 = uint32(len(name))
+	log.Println(name, "job ", job, " sex ", sex, "login success")
 	binary.Write(buf, binary.LittleEndian, &namelen4)
 	binary.Write(buf, binary.LittleEndian, []byte(name))
 	binary.Write(buf, binary.LittleEndian, &zero)
-	binary.Write(buf, binary.LittleEndian, &job)
 	binary.Write(buf, binary.LittleEndian, &sex)
+	binary.Write(buf, binary.LittleEndian, &job)
 	binary.Write(buf, binary.LittleEndian, &level)
 
 	if newhum {
