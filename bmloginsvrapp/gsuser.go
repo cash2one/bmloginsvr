@@ -138,14 +138,51 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			if len(msg) != calclen {
 				log.Println("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
 			} else {
-				cuser.OnRequestSaveGameRole(msg)
+				if uid != 0 {
+					cuser.OnRequestSaveGameRole(msg)
+				}
 			}
 		}
 	}
 }
 
 func (this *ServerUser) OnOfflineSave(msg []byte) {
+	var namelen uint8
+	binary.Read(bytes.NewBuffer(msg[8+8:8+8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+8+1 : 8+8+1+namelen])
+	var datalen uint32
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
+	var data []byte = msg[8+8+1+namelen+2+4 : 8+8+1+uint32(namelen)+2+4+datalen]
+	var uid uint32
+	binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
 
+	log.Println(name, " request to save data on offline mode.")
+
+	//	Create save file
+	userfile := "./login/" + strconv.FormatUint(uint64(uid), 10) + "/hum.sav"
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	Open it
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	if r1 == 0 {
+		log.Println("Can't open hum save.Err:", r1)
+		return
+	}
+	var filehandle uintptr = r1
+	//	Close
+	defer g_procMap["CloseHumSave"].Call(filehandle)
+
+	cname := C.CString(name)
+	var level uint16
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
+	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
+	if r1 != 0 {
+		log.Println("Failed to update gamerole head data")
+	}
+
+	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
+	if r1 != 0 {
+		log.Println("Failed to write gamerole data")
+	}
 }
 
 func (this *ServerUser) OnResponseClientLogin(msg []byte) {

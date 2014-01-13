@@ -17,13 +17,14 @@ import (
 )
 
 var (
-	g_ServerS     *server.Server
-	g_ServerC     *server.Server
-	g_UserList    *UserInfoList
-	g_ServerList  *UserInfoList
-	g_CtrlCh      chan uint8
-	g_DBUser      *sql.DB
-	g_AvaliableGS uint32
+	g_ServerS        *server.Server
+	g_ServerC        *server.Server
+	g_UserList       *UserInfoList
+	g_ServerList     *UserInfoList
+	g_CtrlCh         chan uint8
+	g_DBUser         *sql.DB
+	g_AvaliableGS    uint32
+	g_strVersionInfo string = "1.0.1"
 )
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
 	}
 	server.InitSeed(0)
 
-	log.Println("Server started.")
+	log.Println("BackMIR Login Server started.")
 	//	Initialize directory
 	if !PathExist("./login") {
 		os.Mkdir("./login", os.ModeDir)
