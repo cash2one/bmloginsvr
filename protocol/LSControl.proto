@@ -1,0 +1,14 @@
+package LSControl;
+
+import "BasePacket.proto";
+
+message LSCRegistAccoutReq{
+	required BasePacket.PacketHead head  = 1;
+	required string account  = 2;
+	required string password  = 3;
+}
+
+message LSCRegistAccountAck{
+	required BasePacket.PacketHead head  = 1;
+	required bool result  = 2;
+}
