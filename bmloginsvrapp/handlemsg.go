@@ -9,6 +9,7 @@ import (
 	"log"
 	//	"os"
 	"server"
+	"strings"
 	//	"strconv"
 	//	"time"
 	//	"unsafe"
@@ -173,20 +174,37 @@ func HandleSMsg(msg *server.ConnEvent) {
 							verifyok = true
 							if verifyok {
 								svruser.serverid = serverid
-								svruser.verified = true
 								svruser.serverlsaddr = string(data[10+4+1 : 10+4+1+iplen])
 
 								var vok uint8 = 1
 								user.SendUserMsg(loginopstart+3, &vok)
-								g_AvaliableGS = msg.Conn.GetConnTag()
-								log.Println("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
+								//g_AvaliableGS = msg.Conn.GetConnTag()
+								if msg.Conn.GetConnTag() >= 0 && msg.Conn.GetConnTag() < 100 {
+									g_AvaliableGS = msg.Conn.GetConnTag()
+									log.Println("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
+									svruser.verified = true
+								} else if svruser.serverid >= 100 && svruser.serverid < 150 {
+									//	verify
+									addr := msg.Conn.GetInternalConn().RemoteAddr()
+									splitstr := strings.Split(addr.String(), ":")
+									if ControlValid(splitstr[0]) {
+										svruser.verified = true
+									} else {
+										svruser.conn.GetInternalConn().Close()
+									}
+								}
 							}
 						}
 					}
 				}
 			} else {
 				log.Println("Receive server[", svruser.serverid, "] msg[length:", length, " opcode:", opcode, "]")
-				user.OnUserMsg(msg.Msg)
+
+				if svruser.serverid >= 0 && svruser.serverid < 100 {
+					user.OnUserMsg(msg.Msg)
+				} else if svruser.serverid >= 100 && svruser.serverid < 150 {
+					svruser.OnCtrlMsg(msg.Msg)
+				}
 			}
 		} else {
 			log.Println("Can't convert user to type ServerUser")

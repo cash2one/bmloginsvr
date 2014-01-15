@@ -6,8 +6,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
+	"os"
 	"server"
 	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -39,6 +41,13 @@ func (this *ServerUser) OnConnect() {
 
 func (this *ServerUser) OnVerified() {
 
+}
+
+func (this *ServerUser) OnDisconnect() {
+	if g_AvaliableGS == uint32(this.serverid) {
+		g_AvaliableGS = 0
+		log.Println("Lose game server...")
+	}
 }
 
 func (this *ServerUser) OnUserMsg(msg []byte) {
@@ -240,4 +249,42 @@ func (this *ServerUser) OnRequestSave(msg []byte) {
 	}
 	g_procMap["UpdateGameRoleInfo"].Call(filehandle,
 		uintptr(level))
+}
+
+func ControlValid(addr string) bool {
+	if len(g_ControlAddr) == 0 {
+		return false
+	}
+
+	for _, v := range g_ControlAddr {
+		if v == addr {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ReadControlAddr(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	buf := make([]byte, 256)
+	defer file.Close()
+	readbytes, readerr := file.Read(buf)
+	if readerr != nil {
+		log.Println(err)
+		return false
+	}
+
+	content := string(buf[0:readbytes])
+	g_ControlAddr := strings.Split(content, "\r\n")
+
+	for _, v := range g_ControlAddr {
+		log.Println("Control ip: ", v)
+	}
+	return true
 }

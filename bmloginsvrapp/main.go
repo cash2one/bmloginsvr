@@ -25,6 +25,7 @@ var (
 	g_DBUser         *sql.DB
 	g_AvaliableGS    uint32
 	g_strVersionInfo string = "1.0.1"
+	g_ControlAddr    []string
 )
 
 func main() {
@@ -33,6 +34,9 @@ func main() {
 		var input string
 		fmt.Scanln(&input)
 	}()
+
+	g_ControlAddr = make([]string, 0, 10)
+	ReadControlAddr("./login/gmlist.txt")
 
 	//	Load config
 	ipaddrclient := flag.String("lsaddr", "", "Listen clients")

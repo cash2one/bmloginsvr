@@ -1,17 +1,20 @@
 package LSControlProto;
 
+enum Opcode{
+	PKG_NONE = 0;
+	PKG_RegistAccountReq = 1;
+	PKG_RegistAccountAck = 2;
+}
+
 message LSCHead{
 	required uint32 opcode = 1;
 }
 
-message LSCRegistAccoutReq{
-	required LSCHead head  = 1;
-	required string account  = 2;
-	required string password  = 3;
+message LSCRegistAccountReq{
+	required string account  = 1;
+	required string password  = 2;
 }
 
 message LSCRegistAccountAck{
-	required LSCHead head  = 1;
-	required bool result  = 2;
-	repeated int32 vars = 3;
+	required bool result  = 1;
 }
