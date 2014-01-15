@@ -1,6 +1,6 @@
 @pushd %~dp0
 
-@set OUTPUT=.\go
+@set OUTPUT=..\LSControlProto\
 @if not exist %OUTPUT%		(mkdir %OUTPUT%)
 
 @set _ITEM_= 
