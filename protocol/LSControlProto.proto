@@ -1,4 +1,4 @@
-package LSControl;
+package LSControlProto;
 
 message LSCHead{
 	required uint32 opcode = 1;
@@ -13,4 +13,5 @@ message LSCRegistAccoutReq{
 message LSCRegistAccountAck{
 	required LSCHead head  = 1;
 	required bool result  = 2;
+	repeated int32 vars = 3;
 }
