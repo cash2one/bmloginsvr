@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<Window size="427,308" caption="0,0,0,30">
+    <VerticalLayout width="427" height="308" bkimage="winbk.bmp">
+        <HorizontalLayout width="429" height="30">
+            <Button name="minbtn" float="true" pos="348,6,0,0" width="28" height="19" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" normalimage="btn_mini_normal.png" hotimage="btn_mini_highlight.png" pushedimage="btn_mini_down.png" />
+            <Button name="closebtn" float="true" pos="382,6,0,0" width="39" height="19" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" normalimage="btn_close_normal.png" hotimage="btn_close_highlight.png" pushedimage="btn_close_down.png" />
+            <Label text="BMLSControl" float="true" pos="183,2,0,0" width="69" height="25" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" />
+        </HorizontalLayout>
+        <Button name="sendbtn" text="发送指令" float="true" pos="177,265,0,0" width="75" height="24" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" align="center" normalimage="button_nor.bmp" hotimage="button_over.bmp" pushedimage="button_down.bmp" />
+        <Edit name="inputedit" bordersize="1" float="true" pos="113,235,0,0" width="274" height="25" bkcolor="#FFFFFFFF" bordercolor="#003695E8" textpadding="4,3,4,3" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" />
+        <Label text="输入命令:" float="true" pos="51,235,0,0" width="54" height="24" textcolor="#FF000000" disabledtextcolor="#FFA7A6AA" />
+        <RichEdit name="editoutput" float="true" pos="57,63,0,0" width="316" height="139" cordercolor="#003695E8" bordersize="1" bordervisible="true" multiline="true" autovscroll="true" readonly="true" />
+    </VerticalLayout>
+</Window>
