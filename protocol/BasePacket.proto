@@ -1,5 +1,0 @@
-package BasePacket;
-
-message PacketHead{
-	required uint32 opcode = 1;
-}
