@@ -141,7 +141,7 @@ func dbInsertUserAccountInfo(db *sql.DB, users []UserAccountInfo) bool {
 			log.Printf("Error on inserting Error[%s]", err.Error())
 			return false
 		}*/
-		sqlexpr := "insert into useraccount values(null, '" + v.account + "','" + v.password + "'," + strconv.FormatInt(0, 10) + ")"
+		sqlexpr := "insert into useraccount values(null, '" + v.account + "','" + v.password + "','','',''," + strconv.FormatInt(0, 10) + ")"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]", sqlexpr, err.Error())

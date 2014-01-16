@@ -284,10 +284,10 @@ func ReadControlAddr(path string) bool {
 	}
 
 	content := string(buf[0:readbytes])
-	g_ControlAddr := strings.Split(content, "\r\n")
+	g_ControlAddr = strings.Split(content, "\r\n")
 
 	for _, v := range g_ControlAddr {
-		log.Println("Control ip: ", v)
+		log.Println("Controller: ", v, " length", len(v))
 	}
 	return true
 }

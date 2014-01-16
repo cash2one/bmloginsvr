@@ -35,11 +35,44 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 	}()
 
 	opcode := LSControlProto.Opcode(head.GetOpcode())
+	var oft_body_start int = 5 + int(headlen)
+	log.Println("Ctrl msg[", opcode, "]")
+
+	if !this.ctrlverify {
+		//	verify
+		if opcode == LSControlProto.Opcode_PKG_CtrlVerifyReq {
+			ctrlVerifyReq := &LSControlProto.LSCCtrlVerifyReq{}
+			err = proto.Unmarshal(msg[oft_body_start:], ctrlVerifyReq)
+			if err != nil {
+				log.Println("proto unmarshal error.", err)
+				return
+			}
+
+			log.Println("Verify ctrl terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+
+			ret := &LSControlProto.LSCCtrlVerifyAck{}
+			ret.Result = proto.Bool(true)
+
+			if ControlValid(ctrlVerifyReq.GetVerifycode()) {
+				this.ctrlverify = true
+				log.Println("pass[", ctrlVerifyReq.GetVerifycode(), "]")
+			} else {
+				ret.Result = proto.Bool(false)
+				log.Println("invalid terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+				//this.conn.GetInternalConn().Close()
+			}
+
+			data, _ := proto.Marshal(ret)
+			this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_CtrlVerifyAck), data)
+		}
+		return
+	}
+
 	switch opcode {
 	case LSControlProto.Opcode_PKG_RegistAccountReq:
 		{
 			registAccountReq := &LSControlProto.LSCRegistAccountReq{}
-			err = proto.Unmarshal(msg[5+headlen:], registAccountReq)
+			err = proto.Unmarshal(msg[oft_body_start:], registAccountReq)
 			if err != nil {
 				return
 			}
@@ -85,6 +118,25 @@ func (this *ServerUser) OnRegistAccountReq(req *LSControlProto.LSCRegistAccountR
 
 	if reg.MatchString(account) && reg.MatchString(password) {
 		ret = true
+	}
+
+	if ret {
+		//	regist
+		if len(account) > 15 || len(password) > 15 {
+			ret = false
+		} else {
+			users := make([]UserAccountInfo, 1)
+			users[0].account = account
+			users[0].password = password
+
+			if !dbUserAccountExist(g_DBUser, account) {
+				if !dbInsertUserAccountInfo(g_DBUser, users) {
+					ret = false
+				}
+			} else {
+				ret = false
+			}
+		}
 	}
 
 	ack := &LSControlProto.LSCRegistAccountAck{}

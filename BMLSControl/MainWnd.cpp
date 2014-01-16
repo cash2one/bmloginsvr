@@ -159,6 +159,8 @@ void MainWnd::OnSendCommand(const char* _pszCommand)
 	char szParam0[50] = {0};
 	char szParam1[50] = {0};
 
+	char szBuf[1024];
+
 	int nScaned = sscanf(_pszCommand, "@%s %s %s", szCmd, szParam0, szParam1);
 	if(nScaned >= 1)
 	{
@@ -194,6 +196,14 @@ void MainWnd::OnSendCommand(const char* _pszCommand)
 			if(!IsConnected())
 			{
 				return;
+			}
+
+			LSControlProto::LSCRegistAccountReq req;
+			req.set_account(szParam0);
+			req.set_password(szParam1);
+			if(req.SerializeToArray(szBuf, sizeof(szBuf)))
+			{
+				SendProtoBuf(LSControlProto::PKG_RegistAccountReq, szBuf, req.ByteSize());
 			}
 		}
 		else if(0 == strcmp(szCmd, "del"))
@@ -331,7 +341,7 @@ void MainWnd::OnSocketMsg(WPARAM _wParam, LPARAM _lParam)
 			g_xBuffer.Reset();
 			g_xBuffer << (int)0;
 			g_xBuffer << (int)10001;
-			g_xBuffer << (int)101;
+			g_xBuffer << (short)101;
 			g_xBuffer << (int)0;
 			const char* pszAddr = "127.0.0.1:1111";
 			g_xBuffer << (char)strlen(pszAddr);
@@ -348,7 +358,7 @@ void MainWnd::OnSocketMsg(WPARAM _wParam, LPARAM _lParam)
 			char szBuf[1024];
 			if(req.SerializeToArray(szBuf, sizeof(szBuf)))
 			{
-				SendProtoBuf(LSControlProto::PKG_RegistAccountReq, szBuf, req.ByteSize());
+				SendProtoBuf(LSControlProto::PKG_CtrlVerifyReq, szBuf, req.ByteSize());
 			}
 		}break;
 	case FD_READ:
@@ -386,7 +396,7 @@ void __stdcall MainWnd::OnFullMsg(const void* _pData, unsigned int _uLen)
 	}
 
 	const char* pLeftData = pData + 4 + 1 + cProtoHeadLength;
-	int nLeftLength = _uLen - 4 - 4 - cProtoHeadLength;
+	int nLeftLength = _uLen - 4 - 1 - cProtoHeadLength;
 
 	CRichEditUI* pOutputWnd = g_pMainWnd->m_pReOut;
 
@@ -411,6 +421,13 @@ void __stdcall MainWnd::OnFullMsg(const void* _pData, unsigned int _uLen)
 	case LSControlProto::PKG_CtrlVerifyAck:
 		{
 			LSControlProto::LSCCtrlVerifyAck ack;
+			if(!ack.ParseFromArray(pLeftData, nLeftLength))
+			{
+				return;
+			}
+
+			KillTimer(g_pMainWnd->m_hWnd, TIMER_VERIFYTIMEOUT);
+
 			if(!ack.result())
 			{
 				pOutputWnd->AppendText("\r验证失败");
@@ -420,7 +437,6 @@ void __stdcall MainWnd::OnFullMsg(const void* _pData, unsigned int _uLen)
 			else
 			{
 				pOutputWnd->AppendText("\r验证成功");
-				KillTimer(m_hWnd, TIMER_VERIFYTIMEOUT);
 			}
 		}break;
 	}

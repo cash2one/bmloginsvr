@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 	"server"
+	"time"
 	//	"syscall"
 	//"unsafe"
 )
@@ -117,6 +118,10 @@ func main() {
 					if ctrl == 0 {
 						break
 					}
+				}
+			case <-time.After(time.Duration(2) * time.Minute):
+				{
+					ReadControlAddr("./login/gmlist.txt")
 				}
 			}
 		}
