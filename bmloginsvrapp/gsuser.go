@@ -19,11 +19,14 @@ type ServerUser struct {
 	//	for server
 	serverid     uint16
 	serverlsaddr string
+	//	for controller
+	ctrlverify bool
 }
 
 func CreateServerUser(clientconn *server.Connection) *ServerUser {
 	user := &ServerUser{
-		serverid: 0,
+		serverid:   0,
+		ctrlverify: false,
 	}
 	user.User = User{
 		ipaddr:   clientconn.GetInternalConn().RemoteAddr().String(),
