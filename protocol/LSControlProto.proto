@@ -2,12 +2,24 @@ package LSControlProto;
 
 enum Opcode{
 	PKG_NONE = 0;
-	PKG_RegistAccountReq = 1;
-	PKG_RegistAccountAck = 2;
+	PKG_CtrlVerifyReq = 1;
+	PKG_CtrlVerifyAck = 2;
+	PKG_RegistAccountReq = 3;
+	PKG_RegistAccountAck = 4;
+	PKG_RemoveAccountReq = 5;
+	PKG_RemoveAccountAck = 6;
 }
 
 message LSCHead{
 	required uint32 opcode = 1;
+}
+
+message LSCCtrlVerifyReq{
+	required string verifycode = 1;
+}
+
+message LSCCtrlVerifyAck{
+	required bool result = 1;
 }
 
 message LSCRegistAccountReq{
@@ -17,4 +29,12 @@ message LSCRegistAccountReq{
 
 message LSCRegistAccountAck{
 	required bool result  = 1;
+}
+
+message LSCRemoveAccountReq{
+	required string name = 1;
+}
+
+message LSCRemoveAccountAck{
+	required bool result = 1;
 }
