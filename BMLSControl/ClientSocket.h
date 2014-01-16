@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <Windows.h>
 //#include <WinSock2.h>
-#include "../Net/Packet.h"
+//#include "../Net/Packet.h"
 
 
 #pragma comment(lib, "WS2_32.lib")
@@ -43,7 +43,7 @@ public:
 	void		CloseSocket();
 	BOOL		CheckSocketError(LPARAM lParam);
 	BOOL		DisconnectToServer();
-	VOID		SendToServer(PacketBase* _pPacket);
+	//VOID		SendToServer(PacketBase* _pPacket);
 	UINT		SendToServer(const char* _pszData, unsigned int _uLen);
 // 	VOID		SendPacket(_TDEFAULTMESSAGE* lpDefMsg, char *pszData);
 // 

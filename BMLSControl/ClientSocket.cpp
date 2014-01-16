@@ -1,4 +1,4 @@
-#include "../Net/ClientSocket.h"
+#include "ClientSocket.h"
 
 //CWHQueue PacketQ;
 CClientSocket g_xClientSocket;
@@ -210,6 +210,7 @@ VOID CClientSocket::SendToServer(CHAR *pszPacket)
 	send(m_sockClient, szPacket, lstrlen(szPacket), 0);
 }
 */
+/*
 VOID CClientSocket::SendToServer(PacketBase *_pPacket)
 {
 	CHAR strError[256]; 
@@ -222,7 +223,7 @@ VOID CClientSocket::SendToServer(PacketBase *_pPacket)
 		OutputDebugString(strError);
 	}
 	_pPacket->dwSize = dwSize;
-}
+}*/
 
 UINT CClientSocket::SendToServer(const char* _pszData, unsigned int _uLen)
 {

@@ -56,7 +56,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -90,6 +90,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BMLSControl.cpp" />
+    <ClCompile Include="ByteBuffer.cpp" />
     <ClCompile Include="ClientSocket.cpp" />
     <ClCompile Include="DataParser.cpp" />
     <ClCompile Include="LSControlProto\LSControlProto.pb.cc" />
@@ -101,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BMLSControl.h" />
+    <ClInclude Include="ByteBuffer.h" />
     <ClInclude Include="ClientSocket.h" />
     <ClInclude Include="DataParser.h" />
     <ClInclude Include="LSControlProto\LSControlProto.pb.h" />
