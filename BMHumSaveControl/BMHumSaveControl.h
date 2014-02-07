@@ -36,5 +36,7 @@ BM_EXPORT int WriteGameRoleInfo(int _hFileHandle, const char* _pszRoleName, char
 BM_EXPORT int UpdateGameRoleInfo(int _hFileHandle, const char* _pszRoleName, unsigned short _level);
 //	Read gamerole head data 0:failed|other:size
 BM_EXPORT int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData);
+//	Repair hum save 0:success|1:file not exists|2:can't open the specified file
+BM_EXPORT int RepairHumSave(const char* _pszSavePath);
 //////////////////////////////////////////////////////////////////////////
 #endif

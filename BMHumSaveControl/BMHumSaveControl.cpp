@@ -629,6 +629,60 @@ int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData)
 }
 
 
+int RepairHumSave(const char* _pszSavePath)
+{
+	if(!PathFileExists(_pszSavePath))
+	{
+		return 1;
+	}
+
+	CZipArchive xFile;
+	if(!xFile.Open(_pszSavePath))
+	{
+		return 2;
+	}
+
+	//	...
+	char* pData = new char[20480];
+
+	for(int i = 0; i < 3; ++i)
+	{
+		const CZipFileHeader* pHeader = NULL;
+		ZIP_INDEX_TYPE zIndex = 0;
+
+		zIndex = xFile.FindFile(g_szData[i]);
+		if(zIndex == ZIP_FILE_INDEX_NOT_FOUND)
+		{
+			continue;
+		}
+
+		//	read...
+		pHeader = xFile.GetFileInfo(zIndex);
+		if(NULL == pHeader)
+		{
+			continue;
+		}
+
+		xFile.OpenFile(zIndex);
+		xFile.ReadFile(pData, pHeader->m_uUncomprSize);
+		xFile.CloseFile();
+
+		HumHead head;
+		ZeroMemory(&head, sizeof(head));
+
+		//	read data...
+		const char* pszName = NULL;
+		USHORT uLevel = 1;
+		BYTE bJob = 0;
+		BYTE bSex = 0;
+	}
+
+	delete[] pData;
+	pData = NULL;
+
+	return 0;
+}
+
 
 
 
