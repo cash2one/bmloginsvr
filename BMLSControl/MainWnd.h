@@ -7,7 +7,7 @@
 #ifdef _DEBUG
 #pragma comment(lib, "duilib.lib")
 #else
-#pragma comment(lib, "duilib_d.lib")
+#pragma comment(lib, "duilib.lib")
 #endif
 using namespace DuiLib;
 //////////////////////////////////////////////////////////////////////////

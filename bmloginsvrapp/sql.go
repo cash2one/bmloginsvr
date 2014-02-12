@@ -66,7 +66,7 @@ func dbGetUserAccountInfo(db *sql.DB, account string, info *UserAccountInfo) (bo
 
 	//	Select
 	fetched := false
-	sqlexpr := "select uid,password,online,name0,name1,name2 from useraccount where account = '" + account + "'"
+	sqlexpr := "select uid,password,name0,name1,name2,online from useraccount where account = '" + account + "'"
 	rows, err := db.Query(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
@@ -76,7 +76,7 @@ func dbGetUserAccountInfo(db *sql.DB, account string, info *UserAccountInfo) (bo
 		//	Read data
 		if rows.Next() {
 			fetched = true
-			rows.Scan(&info.uid, &info.password, &info.online, &info.name0, &info.name1, &info.name2)
+			rows.Scan(&info.uid, &info.password, &info.name0, &info.name1, &info.name2, &info.online)
 			info.account = account
 			//log.Println("Fetched uid:", info.uid, " password:", info.password, " online:", info.online)
 		}
@@ -92,7 +92,7 @@ func dbGetUserAccountInfoByUID(db *sql.DB, uid uint32, info *UserAccountInfo) bo
 
 	//	Select
 	fetched := false
-	sqlexpr := "select account,password,online,name0,name1,name2 from useraccount where uid = " + strconv.FormatUint(uint64(uid), 10)
+	sqlexpr := "select account,password,name0,name1,name2,online from useraccount where uid = " + strconv.FormatUint(uint64(uid), 10)
 	rows, err := db.Query(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
@@ -102,9 +102,9 @@ func dbGetUserAccountInfoByUID(db *sql.DB, uid uint32, info *UserAccountInfo) bo
 		//	Read data
 		if rows.Next() {
 			fetched = true
-			rows.Scan(&info.account, &info.password, &info.online, &info.name0, &info.name1, &info.name2)
+			rows.Scan(&info.account, &info.password, &info.name0, &info.name1, &info.name2, &info.online)
 			info.uid = uid
-			//log.Println("Fetched uid:", info.uid, " password:", info.password, " online:", info.online)
+			log.Println("Fetched uid:", info.uid, " password:", info.password, " online:", info.online, " name0:", info.name0, " name1:", info.name1, " name2:", info.name2)
 		}
 	}
 
