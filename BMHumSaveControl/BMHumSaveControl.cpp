@@ -580,7 +580,7 @@ int UpdateGameRoleInfo(int _hFileHandle, const char* _pszRoleName, unsigned shor
 		pSave->pFile->RemoveFile(zIndex);
 		CZipFileHeader header;
 		header.SetFileName(g_szHeader[nIndex]);
-		pSave->pFile->RemoveFile(zIndex);
+		//pSave->pFile->RemoveFile(zIndex);
 		pSave->pFile->OpenNewFile(header);
 		pSave->pFile->WriteNewFile(buf, nDatalen);
 		pSave->pFile->CloseNewFile();
