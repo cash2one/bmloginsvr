@@ -237,7 +237,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 	}
 
 	if len(info.name0) == 0 {
-		sqlexpr := "update useraccount set name0 = '" + name + "'"
+		sqlexpr := "update useraccount set name0 = '" + name + "' where account='" + account + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -245,7 +245,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 			return false
 		}
 	} else if len(info.name1) == 0 {
-		sqlexpr := "update useraccount set name1 = '" + name + "'"
+		sqlexpr := "update useraccount set name1 = '" + name + "' where account='" + account + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -253,7 +253,7 @@ func dbAddUserName(db *sql.DB, account string, name string) bool {
 			return false
 		}
 	} else if len(info.name2) == 0 {
-		sqlexpr := "update useraccount set name2 = '" + name + "'"
+		sqlexpr := "update useraccount set name2 = '" + name + "' where account='" + account + "'"
 		_, err := db.Exec(sqlexpr)
 		if err != nil {
 			log.Printf("Error on executing expression[%s] Error[%s]",
@@ -285,7 +285,7 @@ func dbRemoveUserName(db *sql.DB, account string, name string) bool {
 		return false
 	}
 
-	sqlexpr := "update useraccount set name" + strconv.FormatInt(int64(nameindex), 10) + " = ''"
+	sqlexpr := "update useraccount set name" + strconv.FormatInt(int64(nameindex), 10) + " = '' where account='" + account + "'"
 	_, err := db.Exec(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s] Error[%s]",
