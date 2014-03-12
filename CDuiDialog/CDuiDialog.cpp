@@ -53,6 +53,12 @@ LRESULT CDuiDialog::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 	//	input windows message into Duilib
 	LRESULT lRet = 0;
 
+	if(message == WM_COMMAND)
+	{
+		lRet = __super::WindowProc(message, wParam, lParam);
+		return lRet;
+	}
+
 	//	Version 2
 	if(m_pm.MessageHandler(message, wParam, lParam, lRet))
 	{
@@ -123,7 +129,7 @@ LRESULT CDuiDialog::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 int CDuiDialog::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	lpCreateStruct->style = (WS_VISIBLE | WS_OVERLAPPEDWINDOW);
+	lpCreateStruct->style = (WS_VISIBLE | WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
 	lpCreateStruct->dwExStyle = 0;
 
 	int nRet = __super::OnCreate(lpCreateStruct);
@@ -240,6 +246,11 @@ LRESULT CDuiDialog::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool
 			LRESULT lRet = Dui_OnNCHitTest(lParam);
 			return lRet;
 		}break;
+	case WM_GETMINMAXINFO:
+		{
+			LRESULT lRet = Dui_OnGetMaxMinInfo(wParam, lParam, bHandled);
+			return lRet;
+		}break;
 	/*case WM_SIZE:
 		{
 			return Dui_OnSize(wParam, lParam, bHandled);
@@ -310,7 +321,7 @@ LRESULT CDuiDialog::Dui_OnSize(WPARAM _wParam, LPARAM _lParam, bool& _bHandled)
 
 LRESULT CDuiDialog::Dui_OnGetMaxMinInfo(WPARAM _wParam, LPARAM _lParam, bool& _bHandled)
 {
-	/*MONITORINFO oMonitor;
+	MONITORINFO oMonitor;
 	ZeroMemory(&oMonitor, sizeof(oMonitor));
 	oMonitor.cbSize = sizeof(oMonitor);
 	GetMonitorInfo(MonitorFromWindow(GetSafeHwnd(), MONITOR_DEFAULTTOPRIMARY), &oMonitor);
@@ -320,7 +331,7 @@ LRESULT CDuiDialog::Dui_OnGetMaxMinInfo(WPARAM _wParam, LPARAM _lParam, bool& _b
 	lpMMI->ptMaxPosition.y = rcWork.top;
 	lpMMI->ptMaxSize.x = rcWork.right - rcWork.left;
 	lpMMI->ptMaxSize.y = rcWork.bottom - rcWork.top;
-	_bHandled = false;*/
+	_bHandled = false;
 	return 0;
 }
 
