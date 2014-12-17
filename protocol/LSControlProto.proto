@@ -42,12 +42,12 @@ message LSCRemoveAccountAck{
 }
 
 message RSRegistAccountReq{
-	require string account = 1;
-	require string password = 2;
-	require string mail = 3;
+	required string account = 1;
+	required string password = 2;
+	required string mail = 3;
 }
 
 message RSRegistAccountAck {
-	require bool result = 1;
-	require string mail = 2;
+	required bool result = 1;
+	required string mail = 2;
 }
