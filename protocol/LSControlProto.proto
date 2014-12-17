@@ -8,6 +8,8 @@ enum Opcode{
 	PKG_RegistAccountAck = 4;
 	PKG_RemoveAccountReq = 5;
 	PKG_RemoveAccountAck = 6;
+	PKG_RegistAccountWithInfoReq = 7;
+	PKG_RegistAccountWithInfoAck = 8;
 }
 
 message LSCHead{
@@ -37,4 +39,15 @@ message LSCRemoveAccountReq{
 
 message LSCRemoveAccountAck{
 	required bool result = 1;
+}
+
+message RSRegistAccountReq{
+	require string account = 1;
+	require string password = 2;
+	require string mail = 3;
+}
+
+message RSRegistAccountAck {
+	require bool result = 1;
+	require string mail = 2;
 }
