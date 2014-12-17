@@ -41,13 +41,13 @@ message LSCRemoveAccountAck{
 	required bool result = 1;
 }
 
-message RSRegistAccountReq{
+message LGSRegistAccountReq{
 	required string account = 1;
 	required string password = 2;
 	required string mail = 3;
 }
 
-message RSRegistAccountAck {
+message LGSRegistAccountAck {
 	required bool result = 1;
 	required string mail = 2;
 }
