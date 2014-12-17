@@ -15,6 +15,16 @@ type UserRegKeyInfo struct {
 	registered  bool
 }
 
+func PathExist(_path string) bool {
+	_, err := os.Stat(_path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		}
+	}
+	return true
+}
+
 func initDatabase(path string) *sql.DB {
 	newdb := false
 	if !PathExist(path) {
@@ -72,8 +82,8 @@ func dbGetUserRegKeyInfo(db *sql.DB, mailAddress string, info *UserRegKeyInfo) (
 		//	Read data
 		if rows.Next() {
 			fetched = true
-			rows.Scan(&info.uid, &info.regkey, &info.registered)
-			info.mail = mailAddress
+			rows.Scan(&info.uid, &info.regKey, &info.registered)
+			info.mailAddress = mailAddress
 			//log.Println("Fetched uid:", info.uid, " password:", info.password, " online:", info.online)
 		}
 	}

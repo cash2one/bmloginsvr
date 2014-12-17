@@ -1,6 +1,7 @@
 package main
 
 import (
+	"client"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,6 +17,10 @@ var g_mailAccount string
 var g_mailPassword string
 var g_smtpAddress string
 var g_lsAddress string
+
+var g_Client *client.Client
+
+var g_ChanEvent chan *goChanEvent
 
 /*
 	ReqType:
@@ -111,15 +116,36 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	//	解析参数
 	mailAddr := mailAddrArg[0]
 	userRegKey := getRegKeyFromMailAddress(mailAddr)
-	sendMailErr := SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, mailAddr, "您的BackMIR注册秘钥", fillRegKeyMsg(userRegKey), "text")
-	if sendMailErr == nil {
+	//sendMailErr := SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, mailAddr, "您的BackMIR注册秘钥", fillRegKeyMsg(userRegKey), "text")
+	evt := &goChanEvent{}
+	evt.command = CHANEVENT_SENDMAIL
+	evt.arguments = make([]string, 3)
+	evt.arguments[0] = mailAddr
+	evt.arguments[1] = "您的BackMIR注册秘钥"
+	evt.arguments[2] = fillRegKeyMsg(userRegKey)
+	evt.retChan = make(chan bool)
+	g_ChanEvent <- evt
+
+	sendMailRet := false
+
+	select {
+	case ret := <-evt.retChan:
+		{
+			if ret {
+				sendMailRet = true
+			}
+		}
+	}
+
+	//if sendMailErr == nil {
+	if sendMailRet {
 		//	成功
 		retJson.ErrCode = 0
 		retJson.ErrMsg = userRegKey
 		jsData, _ := json.Marshal(retJson)
 		w.Write(jsData)
 	} else {
-		log.Println("send mail error: ", sendMailErr)
+		log.Println("send mail error")
 		retJson.ErrCode = 1
 		retJson.ErrMsg = "can't send mail"
 		jsData, _ := json.Marshal(retJson)
@@ -169,6 +195,11 @@ func httpRequestEntry(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func init() {
+	g_Client = client.CreateClientWithDefaultHandler()
+	g_ChanEvent = make(chan *goChanEvent)
+}
+
 func main() {
 	fmt.Println("bmregsvrapp started.")
 	defer fmt.Println("bmregsvrapp terminated")
@@ -180,8 +211,19 @@ func main() {
 	flag.StringVar(&g_lsAddress, "lsaddress", "", "login server address")
 	flag.Parse()
 
+	g_lsAddress = "localhost:6050"
+	_, err := g_Client.Connect(g_lsAddress)
+	if err != nil {
+		log.Fatal("can't connect to ls ", err)
+		return
+	}
+
+	log.Println("server ", g_lsAddress, " connected")
+
+	go go_handleEvent()
+
 	http.HandleFunc("/", httpRequestEntry)
-	err := http.ListenAndServe(g_listenAddress, nil)
+	err = http.ListenAndServe(g_listenAddress, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe error: ", err)
 	}
