@@ -127,3 +127,30 @@ func processMainChanEvent(evt *goChanEvent) bool {
 	}
 	return true
 }
+
+func SendProtoBuf(opcode uint32, msg []byte) bool {
+	//	get protobuf head data
+	buf := new(bytes.Buffer)
+	head := &LSControlProto.LSCHead{}
+	head.Opcode = proto.Uint32(opcode)
+	headbuf, err := proto.Marshal(head)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	//	calc size
+	var headlength uint8
+	headlength = uint8(len(headbuf))
+	var msglength uint32
+	msglength = uint32(4 + 1 + len(headbuf) + len(msg))
+
+	//	send message
+	binary.Write(buf, binary.BigEndian, &msglength)
+	binary.Write(buf, binary.LittleEndian, &headlength)
+	buf.Write(headbuf)
+	buf.Write(msg)
+	g_Client.Conn.WriteMsg(buf.Bytes())
+
+	return true
+}

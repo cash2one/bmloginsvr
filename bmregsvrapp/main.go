@@ -19,7 +19,6 @@ var g_smtpAddress string
 var g_lsAddress string
 
 var g_Client *client.Client
-
 var g_ChanEvent chan *goChanEvent
 
 /*

@@ -10,6 +10,7 @@ import (
 type Client struct {
 	DestIPAddr string
 	EvtHandler IClientHandler
+	Conn       *Connection
 }
 
 func CreateClient() *Client {
@@ -48,6 +49,7 @@ func (this *Client) Connect(address string) (conn *Connection, err error) {
 	}
 
 	conn = CreateConnection(cc, 50)
+	this.Conn = conn
 	log.Println("connected to ", cc.RemoteAddr().String())
 
 	go this.EvtHandler.RunConnectionProcessLoop(conn)
