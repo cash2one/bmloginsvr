@@ -144,6 +144,8 @@ func HandleSMsg(msg *server.ConnEvent) {
 	length = headreader.ReadMsgLength()
 	opcode = headreader.ReadMsgOpCode()
 
+	//log.Println("Receive server[", msg.Conn.GetConnTag(), "] msg[length:", length, " opcode:", opcode, "]")
+
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -173,6 +175,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 							verifyok := false
 							verifyok = true
 							if verifyok {
+								log.Println("server ", serverid, "verify ok")
 								svruser.serverid = serverid
 								svruser.serverlsaddr = string(data[10+4+1 : 10+4+1+iplen])
 
@@ -187,8 +190,16 @@ func HandleSMsg(msg *server.ConnEvent) {
 									//	verify
 									svruser.verified = true
 								}
+							} else {
+								log.Println("server ", serverid, "verify failed")
+								var vok uint8 = 0
+								user.SendUserMsg(loginopstart+3, &vok)
 							}
+						} else {
+							log.Println("verify length not equal", 8+2+4+1+uint32(iplen), " ", length)
 						}
+					} else {
+						log.Println("verify pkg length not equal ", 8+2+4+1)
 					}
 				}
 			} else {
@@ -196,7 +207,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 					log.Println("Receive server[", svruser.serverid, "] msg[length:", length, " opcode:", opcode, "]")
 					user.OnUserMsg(msg.Msg)
 				} else if svruser.serverid >= 100 && svruser.serverid < 150 {
-					log.Println("Receive ctrl terminal[", svruser.serverid, "] msg[length:", length, "]")
+					//log.Println("Receive ctrl terminal[", svruser.serverid, "] msg[length:", length, "]")
 					svruser.OnCtrlMsg(msg.Msg)
 				}
 			}

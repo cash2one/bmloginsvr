@@ -10,6 +10,7 @@ enum Opcode{
 	PKG_RemoveAccountAck = 6;
 	PKG_RegistAccountWithInfoReq = 7;
 	PKG_RegistAccountWithInfoAck = 8;
+	PKG_HeartBeat = 9;
 }
 
 message LSCHead{
@@ -41,13 +42,18 @@ message LSCRemoveAccountAck{
 	required bool result = 1;
 }
 
-message LGSRegistAccountReq{
+message RSRegistAccountReq{
 	required string account = 1;
 	required string password = 2;
 	required string mail = 3;
 }
 
-message LGSRegistAccountAck {
+message RSRegistAccountAck {
 	required bool result = 1;
 	required string mail = 2;
+	required string account = 3;
+}
+
+message RSHeartBeat {
+	required uint32 seq = 1;
 }

@@ -36,7 +36,9 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 
 	opcode := LSControlProto.Opcode(head.GetOpcode())
 	var oft_body_start int = 5 + int(headlen)
-	log.Println("Ctrl msg[", opcode, "]")
+	if opcode != LSControlProto.Opcode_PKG_HeartBeat {
+		log.Println("Ctrl msg[", opcode, "]")
+	}
 
 	if !this.ctrlverify {
 		//	verify
@@ -78,6 +80,15 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 			}
 			this.OnRegistAccountReq(registAccountReq)
 		}
+	case LSControlProto.Opcode_PKG_RegistAccountWithInfoReq:
+		{
+			registAccountWithInfoReq := &LSControlProto.RSRegistAccountReq{}
+			err = proto.Unmarshal(msg[oft_body_start:], registAccountWithInfoReq)
+			if err != nil {
+				return
+			}
+			this.OnRsRegistAccountReq(registAccountWithInfoReq)
+		}
 	}
 }
 
@@ -106,6 +117,52 @@ func (this *ServerUser) SendProtoBuf(opcode uint32, msg []byte) bool {
 	this.conn.WriteMsg(buf.Bytes())
 
 	return true
+}
+
+func (this *ServerUser) OnRsRegistAccountReq(req *LSControlProto.RSRegistAccountReq) {
+	account := req.GetAccount()
+	password := req.GetPassword()
+
+	//	check
+	reg, _ := regexp.Compile("^[A-Za-z0-9]+$")
+	var ret = false
+
+	if reg.MatchString(account) && reg.MatchString(password) {
+		ret = true
+	}
+
+	if ret {
+		//	regist
+		if len(account) > 15 || len(password) > 15 {
+			ret = false
+		} else {
+			users := make([]UserAccountInfo, 1)
+			users[0].account = account
+			users[0].password = password
+
+			if !dbUserAccountExist(g_DBUser, account) {
+				if !dbInsertUserAccountInfo(g_DBUser, users) {
+					ret = false
+				}
+			} else {
+				ret = false
+			}
+		}
+	}
+
+	ack := &LSControlProto.RSRegistAccountAck{}
+	ack.Result = proto.Bool(ret)
+	ack.Account = proto.String(req.GetAccount())
+	ack.Mail = proto.String(req.GetMail())
+	data, err := proto.Marshal(ack)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_RegistAccountWithInfoAck),
+		data)
 }
 
 func (this *ServerUser) OnRegistAccountReq(req *LSControlProto.LSCRegistAccountReq) {

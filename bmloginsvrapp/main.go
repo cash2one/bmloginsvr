@@ -65,7 +65,7 @@ func main() {
 	//	Initialize dll module
 	if !initDllModule("./login/BMHumSaveControl.dll") {
 		log.Println("Can't load the save control module.")
-		return
+		//return
 	}
 	//	Initialize the database
 	g_DBUser = initDatabase("./login/users.db")

@@ -7,27 +7,35 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"log"
+	"time"
 )
 
 const (
 	CHANEVENT_SENDMAIL = iota
+	CHANEVENT_DBOP_SELECTBYMAIL
+	CHANEVENT_DBOP_INSERT
 )
 
 type goChanEvent struct {
 	command   int
 	arguments []string
+	argument  interface{}
 	retChan   chan bool
 }
 
 var (
-	clientRegisted bool
+	g_clientRegisted bool = false
+	g_clientVerified bool = false
 )
 
 func go_handleEvent() {
 	log.Println("go_handleEvent activated.")
 	defer log.Println("handleEvent dead..")
 
-	clientRegisted = false
+	g_clientVerified = false
+	g_clientRegisted = false
+
+	registerToLS()
 
 	for {
 		select {
@@ -43,8 +51,42 @@ func go_handleEvent() {
 					return
 				}
 			}
+		case <-time.After(time.Second * 10):
+			{
+				sendHeartBeat()
+			}
 		}
 	}
+}
+
+func sendHeartBeat() {
+	if g_clientRegisted &&
+		g_clientVerified {
+		pkg := &LSControlProto.RSHeartBeat{}
+		pkg.Seq = proto.Uint32(1)
+		data, _ := proto.Marshal(pkg)
+		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_HeartBeat), data)
+	}
+}
+
+func registerToLS() {
+	//serverid 4bytes;verifycode 4bytes;addrlen 1byte;addr addrlen
+	var serverID uint16 = 101
+	var verifyCode uint32 = 1
+	addr := "localhost"
+	var addrlen uint8 = uint8(len(addr))
+	buf := new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, &serverID)
+	binary.Write(buf, binary.LittleEndian, &verifyCode)
+	binary.Write(buf, binary.LittleEndian, &addrlen)
+	binary.Write(buf, binary.LittleEndian, []byte(addr))
+	client.WriteMsgLittleEndian(g_Client.Conn, 10001, buf.Bytes())
+
+	//	verify
+	pkg := &LSControlProto.LSCCtrlVerifyReq{}
+	pkg.Verifycode = proto.String("admin_rs")
+	data, _ := proto.Marshal(pkg)
+	SendProtoBuf(uint32(LSControlProto.Opcode_PKG_CtrlVerifyReq), data)
 }
 
 func processSocketEvent(evt *client.ConnEvent) bool {
@@ -52,6 +94,8 @@ func processSocketEvent(evt *client.ConnEvent) bool {
 	case client.CONNEVT_DISCONNECT:
 		{
 			log.Println("server disconnected.")
+			g_clientRegisted = false
+			g_clientVerified = false
 			return false
 		}
 	case client.CONNEVT_READREADY:
@@ -64,6 +108,31 @@ func processSocketEvent(evt *client.ConnEvent) bool {
 }
 
 func handleLSMsg(evt *client.ConnEvent) {
+	if !g_clientRegisted {
+		//	第一个消息是注册成功or失败消息
+		buf := bytes.NewBuffer(evt.Msg)
+		var pkglen uint32 = 0
+		binary.Read(buf, binary.LittleEndian, &pkglen)
+		var op uint32 = 0
+		binary.Read(buf, binary.LittleEndian, &op)
+
+		log.Println("raw op ", op)
+
+		if op == 10003 {
+			var ret uint8 = 0
+			binary.Read(buf, binary.LittleEndian, &ret)
+
+			if ret != 0 {
+				g_clientRegisted = true
+				log.Println("rs register success!")
+			} else {
+				log.Println("rs register failed.")
+			}
+		}
+
+		return
+	}
+
 	msg := evt.Msg
 	buf := bytes.NewBuffer(msg[0:5])
 	buf.Next(4)
@@ -94,9 +163,18 @@ func handleLSMsg(evt *client.ConnEvent) {
 	log.Println("Ctrl msg[", opcode, "]")
 
 	switch opcode {
+	case LSControlProto.Opcode_PKG_CtrlVerifyAck:
+		{
+			ctrlVerifyAck := &LSControlProto.LSCCtrlVerifyAck{}
+			err = proto.Unmarshal(msg[oft_body_start:], ctrlVerifyAck)
+			if err != nil {
+				return
+			}
+			onMsgCtrlVerifyAck(ctrlVerifyAck)
+		}
 	case LSControlProto.Opcode_PKG_RegistAccountWithInfoAck:
 		{
-			registAccountAck := &LSControlProto.LGSRegistAccountAck{}
+			registAccountAck := &LSControlProto.RSRegistAccountAck{}
 			err = proto.Unmarshal(msg[oft_body_start:], registAccountAck)
 			if err != nil {
 				return
@@ -106,11 +184,30 @@ func handleLSMsg(evt *client.ConnEvent) {
 	}
 }
 
-func onMsgRegistAccountAck(ack *LSControlProto.LGSRegistAccountAck) {
+func onMsgCtrlVerifyAck(ack *LSControlProto.LSCCtrlVerifyAck) {
+	if ack.GetResult() {
+		g_clientVerified = true
+		log.Println("rs verify success!")
+	} else {
+		log.Println("rs verify failed.")
+	}
+}
+
+func onMsgRegistAccountAck(ack *LSControlProto.RSRegistAccountAck) {
+	mailTitle := "您的BackMIR账户注册结果"
 	if ack.GetResult() {
 		//	success
+		retStr := "您好，您的BackMIR账户已经注册成功\r\n"
+		retStr += "您的登录账户为:" + ack.GetAccount() + "\r\n\r\n"
+		retStr += "BackMIR服务器地址为:" + g_lsAddress + "，祝您游戏愉快"
+		SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, retStr, "text")
+
+		if !dbUpdateAccountByMail(g_DBUser, ack.GetMail(), ack.GetAccount()) {
+			log.Println("can't update account by mail!!")
+		}
 	} else {
 		//	failed
+		SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, "您的账户注册失败，可能由于该账户已经被注册，或者账户与密码包含非数字和字母，请更换账户再次尝试", "text")
 	}
 }
 
@@ -118,10 +215,51 @@ func processMainChanEvent(evt *goChanEvent) bool {
 	if evt.command == CHANEVENT_SENDMAIL {
 		if len(evt.arguments) == 3 {
 			err := SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, evt.arguments[0], evt.arguments[1], evt.arguments[2], "text")
-			if err != nil {
-				evt.retChan <- false
-			} else {
-				evt.retChan <- true
+			if evt.retChan != nil {
+				if err != nil {
+					evt.retChan <- false
+				} else {
+					evt.retChan <- true
+				}
+			}
+		}
+	} else if evt.command == CHANEVENT_DBOP_SELECTBYMAIL {
+		ret := false
+
+		var userInfo *UserRegKeyInfo = nil
+
+		if len(evt.arguments) == 1 &&
+			len(evt.arguments[0]) != 0 &&
+			nil != evt.argument {
+			castOk := false
+			userInfo, castOk = evt.argument.(*UserRegKeyInfo)
+			if castOk &&
+				nil != userInfo {
+				ok, _ := dbGetUserRegKeyInfoByMail(g_DBUser, evt.arguments[0], userInfo)
+				if ok {
+					ret = true
+				}
+			}
+		}
+
+		if evt.retChan != nil {
+			evt.retChan <- ret
+		}
+	} else if evt.command == CHANEVENT_DBOP_INSERT {
+		ret := false
+
+		if nil != evt.argument {
+			userInfo, castOk := evt.argument.(*UserRegKeyInfo)
+			if userInfo != nil &&
+				castOk {
+				ok := dbInsertUserRegKey(g_DBUser, userInfo)
+				if ok {
+					ret = true
+				}
+			}
+
+			if evt.retChan != nil {
+				evt.retChan <- ret
 			}
 		}
 	}
