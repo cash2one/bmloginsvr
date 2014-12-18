@@ -58,7 +58,7 @@ func getRegKey() string {
 }
 
 func fillRegKeyMsg(regKey string) string {
-	content := "您的BackMIR服务器注册秘钥为:" + regKey + "\r\n请妥善保管，并在注册界面填入此秘钥来注册账号\r\n\r\n\r\n\r\nBackMIR服务器的地址为" + g_lsAddress + "， 感谢您的支持"
+	content := "您的BackMIR服务器注册秘钥为:" + regKey + "\r\n请妥善保管，并在注册界面填入此秘钥来注册账号\r\n\r\n\r\n\r\nBackMIR服务器的地址为" + g_userLsAddress + "， 感谢您的支持"
 	return content
 }
 
@@ -334,7 +334,7 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if len(userInfo.account) != 0 {
 			//	注册过 返回错误
 			retJson.ErrCode = 1
-			retJson.ErrMsg = "mail address already registed"
+			retJson.ErrMsg = "mail address already registered"
 			jsData, err := json.Marshal(retJson)
 			if err == nil {
 				w.Write(jsData)
