@@ -9,6 +9,5 @@
 @DEL	/Q	.\$.lua.c
 @DEL	/Q	.\$.luac.c
 
-@PAUSE
 
 @POPD
