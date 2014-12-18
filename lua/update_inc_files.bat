@@ -4,7 +4,9 @@
 
 @FOR	%%F IN (%ITEMS%)	DO	@(
 	@DEL	/Q	..\..\inc\lua\%%F.h
-	@COPY	/Y	..\..\..\..\cpp\lua\lua\src\%%F.h	..\..\inc\lua\
+	@COPY	/Y	.\luasrc\lua\src\%%F.h	..\..\inc\lua\
 )
+
+@pause
 
 @POPD
