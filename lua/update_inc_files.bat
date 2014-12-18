@@ -8,6 +8,6 @@
 )
 
 @COPY /Y .\luago.h ..\..\inc\lua
-@COPY /y .\luago_define_reg_funcs ..\..\inc\lua
+@COPY /y .\luago_define_reg_funcs.inc ..\..\inc\lua
 
 @POPD
