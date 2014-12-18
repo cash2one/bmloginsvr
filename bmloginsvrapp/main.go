@@ -119,7 +119,7 @@ func main() {
 						break
 					}
 				}
-			case <-time.After(time.Duration(2) * time.Minute):
+			case <-time.After(time.Duration(5) * time.Minute):
 				{
 					ReadControlAddr("./login/gmlist.txt")
 				}

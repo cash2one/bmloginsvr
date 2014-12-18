@@ -1,5 +1,6 @@
 package main
 
+//#include <stdlib.h>
 import "C"
 
 import (
@@ -172,9 +173,13 @@ func (this *ServerUser) OnOfflineSave(msg []byte) {
 
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(uid), 10) + "/hum.sav"
-	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+	//no free !r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	//	Open it
-	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//no free !r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
 		log.Println("Can't open hum save.Err:", r1)
 		return
@@ -184,6 +189,9 @@ func (this *ServerUser) OnOfflineSave(msg []byte) {
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
 	cname := C.CString(name)
+	//	no free!
+	defer C.free(unsafe.Pointer(cname))
+
 	var level uint16
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
 	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
@@ -215,7 +223,10 @@ func (this *ServerUser) OnResponseClientLogin(msg []byte) {
 func (this *ServerUser) OnRequestSave(msg []byte) {
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	//	Open it
-	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+	// no free!r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
 		log.Println("Can't open hum save.Err:", r1)
 		return
@@ -241,6 +252,8 @@ func (this *ServerUser) OnRequestSave(msg []byte) {
 	humdata := msg[8+4+1+namelen:]
 
 	cname := C.CString(name)
+	//	no free
+	C.free(unsafe.Pointer(cname))
 	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle,
 		uintptr(unsafe.Pointer(cname)),
 		uintptr(unsafe.Pointer(&humdata[0])),

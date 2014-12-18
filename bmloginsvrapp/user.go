@@ -1,5 +1,6 @@
 package main
 
+//#include <stdlib.h>
 import "C"
 
 import (
@@ -83,10 +84,14 @@ func (this *User) OnVerified() {
 	}
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
-	g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+	// no free!g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 
 	//	Open it
-	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	// no free!r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
 		log.Println("Can't open hum save.Err:", r1)
 		return
@@ -391,9 +396,15 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
-	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+
+	//	no free!r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
+
 	//	Open it
-	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	// no free!r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
 		log.Println("Can't open hum save.Err:", r1)
 		return
@@ -403,6 +414,9 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
 	cname := C.CString(name)
+	//	no free!
+	defer C.free(unsafe.Pointer(cname))
+
 	var level uint16
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
 	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
@@ -436,9 +450,15 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	}
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
-	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+
+	//	no free!r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
+
 	//	Open it
-	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	no free!r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
 		log.Println("Can't open hum save.Err:", r1)
 		return
@@ -457,8 +477,12 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	}
 
 	//	Add game role
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
 	r1, _, _ = g_procMap["AddGameRole"].Call(filehandle,
-		uintptr(unsafe.Pointer(C.CString(name))),
+		//	no free!uintptr(unsafe.Pointer(C.CString(name))),
+		uintptr(unsafe.Pointer(cname)),
 		uintptr(job),
 		uintptr(sex))
 	if r1 == 0 {
@@ -511,19 +535,27 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	log.Println(name)
 
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+
 	if !PathExist(userfile) {
 		log.Printf("non-exist user[%d] request to delete gamerole")
 		return
 	}
-	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	no free!filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if filehandle == 0 {
 		log.Println("Can't open hum save.")
 		return
 	}
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
+	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
 	r1, _, _ := g_procMap["DelGameRole"].Call(filehandle,
-		uintptr(unsafe.Pointer(C.CString(name))))
+		//	no free!uintptr(unsafe.Pointer(C.CString(name))))
+		uintptr(unsafe.Pointer(cname)))
 	if r1 != 0 {
 		log.Println("Can't remove gamerole ", name)
 		return
@@ -594,6 +626,9 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	}
 
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+
 	if !PathExist(userfile) {
 		log.Printf("non-exist user[%d] request to login gamerole")
 		buf := new(bytes.Buffer)
@@ -603,7 +638,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		return
 	}
 
-	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	//	no free!filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if filehandle == 0 {
 		log.Println("Can't open hum save.")
 		var qm uint16 = 2
@@ -614,6 +650,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	defer g_procMap["CloseHumSave"].Call(filehandle)
 
 	cname := C.CString(name)
+	defer C.free(unsafe.Pointer(cname))
+
 	var newhum bool = false
 	var datasize uint32 = 0
 	//	Get data size
