@@ -85,3 +85,11 @@ size_t BMHttpManager::curl_request_done_callback(void *buffer, size_t size, size
 	(*pCallback)(pData, size);
 	return nmemb;
 }
+
+
+
+
+
+
+
+

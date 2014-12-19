@@ -21,7 +21,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -177,6 +177,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\EasyUtils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -192,6 +196,10 @@
 			>
 			<File
 				RelativePath=".\BMHttpManager.h"
+				>
+			</File>
+			<File
+				RelativePath=".\EasyUtils.h"
 				>
 			</File>
 			<File
