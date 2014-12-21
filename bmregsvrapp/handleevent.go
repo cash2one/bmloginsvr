@@ -194,7 +194,7 @@ func onMsgCtrlVerifyAck(ack *LSControlProto.LSCCtrlVerifyAck) {
 }
 
 func onMsgRegistAccountAck(ack *LSControlProto.RSRegistAccountAck) {
-	mailTitle := "您的BackMIR账户注册结果"
+	mailTitle := "您好 " + ack.GetAccount() + ":您的BackMIR账户注册结果"
 	if ack.GetResult() {
 		//	success
 		retStr := "您好，您的BackMIR账户已经注册成功\r\n"

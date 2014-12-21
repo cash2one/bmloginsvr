@@ -50,6 +50,11 @@ func SendMail(user, password, host, to, subject, body, mailtype string) error {
 	msg := []byte("To: " + to + "\r\nFrom: " + user + "<" + user + ">\r\nSubject: " + subject + "\r\n" + content_type + "\r\n\r\n" + body)
 	send_to := strings.Split(to, ";")
 	err := smtp.SendMail(host, auth, user, send_to, msg)
+
+	if err != nil {
+		//log.Println("send mail error:")
+		log.Println(err)
+	}
 	return err
 }
 
@@ -165,7 +170,7 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	evt.command = CHANEVENT_SENDMAIL
 	evt.arguments = make([]string, 3)
 	evt.arguments[0] = mailAddr
-	evt.arguments[1] = "您的BackMIR注册秘钥"
+	evt.arguments[1] = "您好，您的BackMIR注册秘钥申请结果"
 	evt.arguments[2] = fillRegKeyMsg(userRegKey)
 
 	if len(userInfo.account) != 0 {
