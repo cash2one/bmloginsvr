@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Window mininfo="478,341" size="478,341" caption="0,0,0,35" defaultfontcolor="0xFF000000" disabledfontcolor="0xFFCCCCCC" >
+	<Font name="微软雅黑" size="12" bold="false" default="true" />
+	<Font name="微软雅黑" size="14" bold="true" />
+
+	<!--这一层是用来设置背景的-->
+	<!--VerticalLayout name="bg"  bordersize="1" bordercolor="0xFF0A6B9A" bkcolor="#FF1E90FF" bkimage="bkground.png" -->	
+	<VerticalLayout name="bg"  bordersize="1" bordercolor="0" bkcolor="#FF1E90FF" bkimage="bkground.png" >	
+		<!--标题栏-->
+		<HorizontalLayout  name="header" height="35" padding="1,1,1,1">
+			<Label name="label_caption" text="                                 sryan's BackMIR Launcher" font="1" bkimage="headerBk.png" textpadding="10,0,0,0" textcolor="0xFFFFFFFF" tooltip="关闭" />
+			<Button name="button_quit" bkimage="headerBk.png" width="41" height="35" normalimage=" file='btn_msgdlgClose.png' source='0,0,41,35' " hotimage=" file='btn_msgdlgClose.png' source='0,35,41,70' " pushedimage=" file='btn_msgdlgClose.png' source='0,70,41,105' " />
+		</HorizontalLayout>
+		<!--VerticalLayout  bkcolor="#FFE9F0F4" padding="3,0,3,2"-->
+		<VerticalLayout  bkcolor="0" padding="3,0,3,2">
+			<Label height="10" />
+			<HorizontalLayout name="layout_main">
+				<!--VerticalLayout width="96" bkcolor="0xff3296ff" bkcolor2="0xffffffff" -->
+				<VerticalLayout width="96" >
+					<Option name="option_single" text="单人模式" group="group_gamemode" selected="true" width="96" height="35" normalimage=" file='tabokalpha.png' source='0,0,96,35' " hotimage=" file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105' " selectedimage="file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105'" />	
+					<Option name="option_onlineserver" text="联机服务器" group="group_gamemode" selected="false" width="96" height="35" normalimage=" file='tabokalpha.png' source='0,0,96,35' " hotimage=" file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105' " selectedimage="file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105'" />	
+					<Option name="option_onlineclient" text="联机客户端" group="group_gamemode" selected="false" width="96" height="35" normalimage=" file='tabokalpha.png' source='0,0,96,35' " hotimage=" file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105' " selectedimage="file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105'" />	
+					<Option name="option_donate" text="捐助作者" group="group_gamemode" selected="false" width="96" height="35" normalimage=" file='tabokalpha.png' source='0,0,96,35' " hotimage=" file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105' " selectedimage="file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105'" />	
+					<Option name="option_register" text="战网注册" group="group_gamemode" selected="false" width="96" height="35" normalimage=" file='tabokalpha.png' source='0,0,96,35' " hotimage=" file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105' " selectedimage="file='tabokalpha.png' source='0,35,96,70' " pushedimage=" file='tabokalpha.png' source='0,70,96,105'" />	
+				</VerticalLayout>
+				<Label width="5" />
+				<HorizontalLayout>
+					<TabLayout name="modelayout" >
+						<VerticalLayout>
+							<HorizontalLayout height="20">
+								<Label />
+								<Label text="单人游戏启动页面" textcolor="0xffffffff"/>
+								<Label />
+							</HorizontalLayout>
+							<HorizontalLayout>
+								<Label text="登陆端口:" float="true" pos="30,50,100,85" textcolor="0xff0000ff" />
+								<Edit name="edit_port_single" text="8233" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,50,227,85" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Button name="button_login_single" pos="247,50,449,124" float="true"  width="102" height="74" normalimage=" file='button_login.png' source='0,0,102,74' " hotimage=" file='button_login.png' source='0,74,102,148' " pushedimage=" file='button_login.png' source='0,148,102,222' " disabledimage=" file='button_login.png' source='0,222,102,296' " />
+							</HorizontalLayout>
+						</VerticalLayout>
+						<VerticalLayout>
+							<HorizontalLayout height="20">
+								<Label />
+								<Label text="联机服务器启动页面"  textcolor="0xffffffff"/>
+								<Label />
+							</HorizontalLayout>
+							<HorizontalLayout>
+								<Label text="监听地址:" float="true" pos="30,50,100,85" textcolor="0xff0000ff" />
+								<Edit name="edit_ip_onlineserver" text="127.0.0.1" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,50,227,85" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Label text="监听端口:" float="true" pos="30,95,100,130" textcolor="0xff0000ff" />
+								<Edit name="edit_port_onlineserver" text="8300" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,95,227,130" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Button name="button_login_onlineserver" pos="247,50,449,124" float="true"  width="102" height="74" normalimage=" file='button_login.png' source='0,0,102,74' " hotimage=" file='button_login.png' source='0,74,102,148' " pushedimage=" file='button_login.png' source='0,148,102,222' " disabledimage=" file='button_login.png' source='0,222,102,296' " />
+							</HorizontalLayout>
+						</VerticalLayout>
+						<VerticalLayout>
+							<HorizontalLayout height="20">
+								<Label />
+								<Label text="联机客户端启动页面"  textcolor="0xffffffff"/>
+								<Label />
+							</HorizontalLayout>
+							<HorizontalLayout>
+								<Label text="服务器地址:" float="true" pos="30,50,100,85" textcolor="0xff0000ff" />
+								<Edit name="edit_ip_onlineclient" text="127.0.0.1" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,50,227,85" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Label text="服务器端口:" float="true" pos="30,95,100,130" textcolor="0xff0000ff" />
+								<Edit name="edit_port_onlineclient" text="8300" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,95,227,130" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Label text="登陆账户:" float="true" pos="30,140,100,175" textcolor="0xff0000ff" />
+								<Edit name="edit_account_onlineclient" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,140,227,175" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Label text="登陆密码:" float="true" pos="30,185,100,220" textcolor="0xff0000ff" />
+								<Edit name="edit_password_onlineclient" password="true" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,185,227,220" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+								<Button name="button_login_onlineclient" pos="247,50,449,124" float="true"  width="102" height="74" normalimage=" file='button_login.png' source='0,0,102,74' " hotimage=" file='button_login.png' source='0,74,102,148' " pushedimage=" file='button_login.png' source='0,148,102,222' " disabledimage=" file='button_login.png' source='0,222,102,296' " />
+							</HorizontalLayout>
+						</VerticalLayout>
+						<VerticalLayout>
+							<WebBrowser name="browser" autonavi="true" />  
+						</VerticalLayout>
+						<VerticalLayout>
+							<Label text="第一步：填入邮箱获取注册密钥，登陆邮箱获取密钥" float="true" pos="0,0,350,15" />
+							<Label text="邮箱：" float="true" pos="0, 35, 40, 50" />
+							<Edit name="edit_reg_mailverify" text="" bkcolor="0x00000000" textpadding="10,2,10,2" pos="50,25,177,60" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+							<Button name="button_mailverify" text="获取密钥" pos="190,25,286,60" float="true" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
+							<Label text="第二步：填入邮箱与对应密钥，填入要注册的用户名密码" float="true" pos="0,80,350,95" />
+							<Label text="密钥：" float="true" pos="0, 115, 40, 130"/>
+							<Edit name="edit_reg_regkey" text="" bkcolor="0x00000000" textpadding="10,2,10,2" pos="50,105,177,140" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+							<Label text="账户：" float="true" pos="0, 155, 40, 170"/>
+							<Edit name="edit_reg_account" text="" bkcolor="0x00000000" textpadding="10,2,10,2" pos="50,145,177,180" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+							<Button name="button_reg" text="注册账户" pos="190,145,286,180" float="true" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
+							<Label text="密码：" float="true" pos="0, 195, 40, 210"/>
+							<Edit name="edit_reg_password" text="" bkcolor="0x00000000" textpadding="10,2,10,2" pos="50,185,177,220" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
+						</VerticalLayout>
+					</TabLayout>
+				</HorizontalLayout>
+
+			</HorizontalLayout>
+		</VerticalLayout>	
+		<HorizontalLayout  name="bottom" height="34" padding="1,1,1,1">
+			<Label width="20" />
+			<Button name="button_diagnosis" text="游戏诊断" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
+			<Label width="10" />
+			<Button name="button_patcher" text="补丁更新" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
+			<Label />
+			<Label text="Ver 1.0.0" width="70"/>
+		</HorizontalLayout>
+	</VerticalLayout>
+</Window>
