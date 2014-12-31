@@ -196,8 +196,10 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	//if sendMailErr == nil {
 	if sendMailRet {
 		//	成功
-		retJson.ErrCode = 0
-		retJson.ErrMsg = userRegKey
+		//retJson.ErrCode = 0
+		//retJson.ErrMsg = userRegKey
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "（。。成功了）秘钥为：" + userRegKey
 		jsData, _ := json.Marshal(retJson)
 		w.Write(jsData)
 	} else {
@@ -341,7 +343,7 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if len(userInfo.account) != 0 {
 			//	注册过 返回错误
 			retJson.ErrCode = 1
-			retJson.ErrMsg = "mail address already registered"
+			retJson.ErrMsg = "Congratulations! Your account had been registered ! mail address already registered."
 			jsData, err := json.Marshal(retJson)
 			if err == nil {
 				w.Write(jsData)
@@ -366,7 +368,7 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		//	没有对应的邮件信息 错误
 		retJson.ErrCode = 1
-		retJson.ErrMsg = "mail address not registed"
+		retJson.ErrMsg = "mail address not registered"
 		jsData, err := json.Marshal(retJson)
 		if err == nil {
 			w.Write(jsData)
