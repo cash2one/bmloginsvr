@@ -191,6 +191,8 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	sendMailRet = true
+
 	//if sendMailErr == nil {
 	if sendMailRet {
 		//	成功
@@ -376,7 +378,8 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 
 	//	发送成功接收json
 	retJson.ErrCode = 0
-	retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
+	//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
+	retJson.ErrMsg = "您的请求已接收，请过几秒后再次注册确认是否注册成功。失败的话可能由于账户密码格式不正确（英文字母），或者该邮箱或者账户已被注册过。"
 	jsData, _ := json.Marshal(retJson)
 	w.Write(jsData)
 

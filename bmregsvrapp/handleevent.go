@@ -194,7 +194,7 @@ func onMsgCtrlVerifyAck(ack *LSControlProto.LSCCtrlVerifyAck) {
 }
 
 func onMsgRegistAccountAck(ack *LSControlProto.RSRegistAccountAck) {
-	mailTitle := "您好 " + ack.GetAccount() + ":您的BackMIR账户注册结果"
+	//	mailTitle := "您好 " + ack.GetAccount() + ":您的BackMIR账户注册结果"
 	if ack.GetResult() {
 		//	success
 		retStr := "您好，您的BackMIR账户已经注册成功\r\n"
@@ -202,14 +202,14 @@ func onMsgRegistAccountAck(ack *LSControlProto.RSRegistAccountAck) {
 		retStr += "BackMIR服务器地址为:" + g_userLsAddress + "，祝您游戏愉快\r\n\r\n"
 		retStr += "假设本游戏给您带来的乐趣，您可以选择捐助作者来支持作者的开发和维护，捐赠信息:支付宝sryan@qq.com\r\n"
 		retStr += "官方QQ群: 238813170"
-		SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, retStr, "text")
+		//SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, retStr, "text")
 
 		if !dbUpdateAccountByMail(g_DBUser, ack.GetMail(), ack.GetAccount()) {
 			log.Println("can't update account by mail!!")
 		}
 	} else {
 		//	failed
-		SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, "您的账户注册失败，可能的原因：\r\n1.该账户名已被注册\r\n2.账户密码只能包含数字和字母\r\n3.用户名和密码需在20个字符长度内\r\n\r\n请更换账户再次尝试", "text")
+		//SendMail(g_mailAccount, g_mailPassword, g_smtpAddress, ack.GetMail(), mailTitle, "您的账户注册失败，可能的原因：\r\n1.该账户名已被注册\r\n2.账户密码只能包含数字和字母\r\n3.用户名和密码需在20个字符长度内\r\n\r\n请更换账户再次尝试", "text")
 	}
 }
 
