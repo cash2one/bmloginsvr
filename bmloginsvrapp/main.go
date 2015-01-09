@@ -24,6 +24,7 @@ var (
 	g_ServerList     *UserInfoList
 	g_CtrlCh         chan uint8
 	g_DBUser         *sql.DB
+	g_Redis          *RedisOperator
 	g_AvaliableGS    uint32
 	g_strVersionInfo string = "1.0.1"
 	g_ControlAddr    []string
@@ -42,6 +43,7 @@ func main() {
 	//	Load config
 	ipaddrclient := flag.String("lsaddr", "", "Listen clients")
 	ipaddrserver := flag.String("lsgsaddr", "", "Listen gameserver")
+	redisAddress := flag.String("redisaddr", "", "Redis address")
 	flag.Parse()
 	if len(*ipaddrclient) == 0 || len(*ipaddrserver) == 0 {
 		log.Println("invalid input parameters.")
@@ -74,6 +76,12 @@ func main() {
 		return
 	}
 	defer g_DBUser.Close()
+
+	//	Initialize redis
+	g_Redis = NewRedisOperator()
+	if len(*redisAddress) != 0 {
+		g_Redis.Run(*redisAddress, "bmevent")
+	}
 
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
