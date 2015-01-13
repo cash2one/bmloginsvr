@@ -14,9 +14,9 @@ const (
 )
 
 type RedisEvent struct {
-	commandType int   `json:"commandType"`
-	arguments   []int `json:"arguments"`
-	binaryData  []byte
+	CommandType int   `json:"commandType"`
+	Arguments   []int `json:"arguments"`
+	BinaryData  []byte
 }
 
 type RedisOperator struct {
@@ -82,12 +82,12 @@ func (this *RedisOperator) go_popRedis() {
 						continue
 					}
 
-					log.Println("redis event [", evt.commandType, "] received")
+					log.Println("redis event [", evt.CommandType, "] received")
 
 					//	get ok, write to output channel
 					//this.outputChan <- evt
 					//	can internal proceed?
-					switch evt.commandType {
+					switch evt.CommandType {
 					case RedisEvent_SavePlayerData:
 						{
 							//	get the playerdata hash map
@@ -104,7 +104,7 @@ func (this *RedisOperator) go_popRedis() {
 }
 
 func (this *RedisOperator) doSavePlayerData(evt *RedisEvent) {
-	ret, err := this.r.Do("exists playerdata")
+	ret, err := this.r.Do("EXISTS", "playerdata")
 	if nil != err {
 		log.Println("redis error:", err)
 		return
@@ -115,12 +115,38 @@ func (this *RedisOperator) doSavePlayerData(evt *RedisEvent) {
 		return
 	} else {
 		//	get the hash data
-		ret, err = this.r.Do("hkeys playerdata")
+		ret, err = this.r.Do("HKEYS", "playerdata")
 		if err != nil {
 			log.Println("redis error:", err)
 			return
 		}
 
-		log.Println(ret)
+		if nil == ret {
+			return
+		}
+
+		keySlice := ret.([]interface{})
+		for _, v := range keySlice {
+			key := string(v.([]uint8))
+
+			//	get the playerdata key, now get the data
+			var value interface{}
+			value, err = this.r.Do("HGET", "playerdata", key)
+			if nil != err {
+				log.Println("redis error:", err)
+				continue
+			} else {
+				data := value.([]uint8)
+				log.Println(data[0])
+				log.Println("saving player [", key, "] hum data...")
+				//OfflineSaveUserData(data)
+			}
+
+			//	delete the key
+			_, err = this.r.Do("HDEL", "playerdata", key)
+			if err != nil {
+				log.Println("redis error:", err)
+			}
+		}
 	}
 }
