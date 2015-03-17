@@ -137,9 +137,11 @@ func (this *RedisOperator) doSavePlayerData(evt *RedisEvent) {
 				continue
 			} else {
 				data := value.([]uint8)
-				log.Println(data[0])
 				log.Println("saving player [", key, "] hum data...")
-				//OfflineSaveUserData(data)
+				chanEvt := &RedisEvent{}
+				chanEvt.CommandType = RedisEvent_SavePlayerData
+				chanEvt.BinaryData = data
+				this.outputChan <- chanEvt
 			}
 
 			//	delete the key

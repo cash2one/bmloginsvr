@@ -127,6 +127,10 @@ func main() {
 						break
 					}
 				}
+			case evt := <-g_Redis.outputChan:
+				{
+					ProcessRedisEvent(evt)
+				}
 			case <-time.After(time.Duration(5) * time.Minute):
 				{
 					ReadControlAddr("./login/gmlist.txt")
@@ -178,6 +182,15 @@ func ProcessServerSEvent(evt *server.ConnEvent) {
 	default:
 		{
 			log.Println("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
+		}
+	}
+}
+
+func ProcessRedisEvent(evt *RedisEvent) {
+	switch evt.CommandType {
+	case RedisEvent_SavePlayerData:
+		{
+			OfflineSaveUserData(evt.BinaryData)
 		}
 	}
 }
