@@ -196,10 +196,8 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	//if sendMailErr == nil {
 	if sendMailRet {
 		//	成功
-		//retJson.ErrCode = 0
-		//retJson.ErrMsg = userRegKey
-		retJson.ErrCode = 1
-		retJson.ErrMsg = "（。。成功了）秘钥为：" + userRegKey
+		retJson.ErrCode = 0
+		retJson.ErrMsg = userRegKey
 		jsData, _ := json.Marshal(retJson)
 		w.Write(jsData)
 	} else {
