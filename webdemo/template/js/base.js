@@ -1,4 +1,5 @@
 $("#logout").click(function(event){
+		alert("xx");
     event.preventDefault();
     del_cookie("admin_id");
     window.location.href = "/login/index";
@@ -20,4 +21,10 @@ $("form[data-type=formAction]").submit(function(event){
             location.href = $(target).attr("form-rediret");
         }
     },"json")
+})
+
+$("form[data-type=getRegKeyAction]").submit(function(event){
+		event.preventDefault();
+		var target = event.target;
+		var action = $(target).attr("action");
 })

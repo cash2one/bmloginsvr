@@ -56,7 +56,7 @@ func (this *ajaxController) LoginAction(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// 存入cookie,使用cookie存储
-	cookie := http.Cookie{Name: "admin_name", Value: admin_password_db, Path: "/"}
+	cookie := http.Cookie{Name: "admin_name", Value: admin_name, Path: "/"}
 	http.SetCookie(w, &cookie)
 
 	OutputJson(w, 1, "操作成功", nil)
