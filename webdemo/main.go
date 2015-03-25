@@ -7,6 +7,9 @@ import (
 )
 
 var g_DBUser *sql.DB
+var g_RegServerAddr string = "http://localhost:8081"
+var g_MailVerify string = "/mailverify"
+var g_RegAccount string = "/regaccount"
 
 func main() {
 	log.Println("main")
@@ -25,6 +28,7 @@ func main() {
 	http.HandleFunc("/admin/", adminHandler)
 	http.HandleFunc("/login/", loginHandler)
 	http.HandleFunc("/ajax/", ajaxHandler)
+	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/", NotFoundHandler)
 	http.ListenAndServe(":8888", nil)
 }
