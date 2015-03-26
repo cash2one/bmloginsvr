@@ -113,16 +113,28 @@ a:link,a:visited {
 }
 
 body {
-	background-color: #ffffff;
-	position: relative
+  box-sizing: border-box;
+  font-size: 16px;
+  font-family: 'Myriad Pro', Calibri, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .title_step{
-	background-color: #1E90FF
+	color:#ffffff;
+  font-family: 'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif;
+  letter-spacing: -1px;
+	background-color: #242424;
 }
 
 .input_form{
 	margin:0 auto;
 	width:500px;
 	height:250px;
+}
+
+.body_about{
+	margin:0 auto;
+	width:350px;
+	color:#B5B5B5;
 }
