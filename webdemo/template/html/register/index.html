@@ -3,16 +3,19 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>注册BackMIR账户</title>
-        <link rel="stylesheet" type="text/css" href="/css/main.css" />
+        <link rel="stylesheet" type="text/css" href="/css/register.css" />
         <script type="text/javascript" src="/js/jquery.js" ></script>
     </head>
     <body>
-        <h1>1.申请秘钥</h1>
+    		<div class="input_form">
+    			
+        <h1 class="title_step">1.申请秘钥</h1>
         <h6><font color="red">请填入您绑定的邮箱，后续的密码修改、找回均依赖于此</font></h6>
-        <form data-type="getRegKeyAction" action="/ajax/regkey">
+        <form data-type="getRegKeyAction" action="/ajax/regkey" style="align:center">
             <table>
             		<tr>
-                		<td>邮箱</td><td><input type="text" name="reg_mail"></input></td>
+                		<td>邮箱</td>
+                		<td><input type="text" name="reg_mail"/></td>
                 </tr>
                 <tr>
                     <td><input type="submit" value="申请秘钥" style="width:100px;height:25px"></input></td>
@@ -20,8 +23,13 @@
             </table>
         </form>
         
-        <h1>2.注册账户</h1>
+      	</div>
+        
+        <div class="input_form">
+        
+        <h1 class="title_step">2.注册账户</h1>
         <h6><font color="red">密钥和邮箱为上一个步骤完成后自动填入</font></h6>
+        <h6 id="reg_result"></h6>
         <form data-type="regAccountAction" action="/ajax/register">
             <table>
             		<tr>
@@ -44,6 +52,8 @@
                 </tr>
             </table>
         </form>
+        
+      	</div>
     </body>
-    <script charset="utf-8" type="text/javascript" src="/js/base.js" ></script>
+    <script charset="utf-8" type="text/javascript" src="/js/register.js" ></script>
 </html>

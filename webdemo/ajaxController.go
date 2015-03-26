@@ -170,7 +170,7 @@ func (this *ajaxController) RegisterAction(w http.ResponseWriter, r *http.Reques
 	if 0 == regMailRet.ErrCode {
 		OutputJson(w, 1, regMailRet.ErrMsg, nil)
 	} else {
-		OutputJson(w, 0, "请求已成功提交，1分钟后无法登陆请更换账户名再次尝试。", nil)
+		OutputJson(w, 0, regMailRet.ErrMsg, nil)
 	}
 }
 
