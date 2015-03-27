@@ -177,10 +177,10 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 		evt.arguments[2] += "\r\n\r\n您的邮箱已注册过账户，账户名为:" + userInfo.account
 	}
 
-	evt.retChan = make(chan bool)
-	g_ChanEvent <- evt
-
 	sendMailRet := false
+
+	evt.retChan = make(chan bool)
+	/*g_ChanEvent <- evt
 
 	select {
 	case ret := <-evt.retChan:
@@ -189,7 +189,7 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 				sendMailRet = true
 			}
 		}
-	}
+	}*/
 
 	sendMailRet = true
 
