@@ -13,6 +13,7 @@
 #include <QDebug>
 
 #include "newskudlg.h"
+#include "newproductdlg.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -34,14 +35,22 @@ MainWindow::~MainWindow()
 void MainWindow::createWidgets()
 {
     QToolBar* pToolBar = addToolBar(QStringLiteral("添加商品"));
-    QAction* pAction = pToolBar->addAction(QStringLiteral("添加商品"));
+    QAction* pAction = pToolBar->addAction(QIcon(":/image/button_add.png"), QStringLiteral("添加商品"));
     connect(pAction, SIGNAL(triggered()), this, SLOT(onActionNewProduct()));
 }
 
 //  slots
 void MainWindow::onActionNewProduct()
 {
-    NewSKUDlg dlg;
-    dlg.setWindowTitle(QStringLiteral("添加商品"));
-    dlg.exec();
+    NewSKUDlg skudlg;
+    skudlg.setWindowTitle(QStringLiteral("添加商品"));
+    int nRet = skudlg.exec();
+
+    if(nRet == QDialog::Accepted)
+    {
+        qDebug() << QStringLiteral("产生创建对话框");
+        NewProductDlg prodlg;
+        prodlg.setSKUCode(skudlg.getSkuNumber());
+        prodlg.exec();
+    }
 }

@@ -15,11 +15,17 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     newskudlg.cpp \
-    gfunctions.cpp
+    gfunctions.cpp \
+    newproductdlg.cpp
 
 HEADERS  += mainwindow.h \
     newskudlg.h \
-    gfunctions.h
+    gfunctions.h \
+    newproductdlg.h
 
 FORMS    += mainwindow.ui \
-    newskudlg.ui
+    newskudlg.ui \
+    newproductdlg.ui
+
+RESOURCES += \
+    resource.qrc
