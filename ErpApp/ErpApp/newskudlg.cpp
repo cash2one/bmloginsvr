@@ -59,8 +59,6 @@ void NewSKUDlg::onNextStep()
 
 void NewSKUDlg::onSelectChanged(int _index)
 {
-    qDebug() << __FUNCTION__;
-
     if(ui->comboBox->count() == 0 ||
             ui->comboBox_2->count() == 0 ||
             ui->comboBox_3->count() == 0)
@@ -71,6 +69,15 @@ void NewSKUDlg::onSelectChanged(int _index)
     const char* pszSelect1 = ui->comboBox->currentText().toStdString().c_str();
     const char* pszSelect2 = ui->comboBox_2->currentText().toStdString().c_str();
     const char* pszSelect3 = ui->comboBox_3->currentText().toStdString().c_str();
+
+    if(strlen(pszSelect1) == 0 ||
+            strlen(pszSelect2) == 0 ||
+            strlen(pszSelect3) == 0)
+    {
+        return;
+    }
+
+    qDebug() << __FUNCTION__ << pszSelect1 << pszSelect2 << pszSelect3;
 
     m_xSKUNumber = getSKUNumber(pszSelect1, pszSelect2, pszSelect3);
     ui->lineEdit->setText(m_xSKUNumber);
