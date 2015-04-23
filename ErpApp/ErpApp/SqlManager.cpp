@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QSqlError>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 using std::string;
 
@@ -103,12 +105,75 @@ bool SqlManager::newProductItem(ProductItem &_refItem)
         return false;
     }
 
-    qDebug() << "new product item inserttime:" << _refItem.nInsertTime;
+    //  create attrib table
+    xSqlExpr = QString("create table attrib_%1 (id integer primary key, attribkey varchar(20), attribvalue varchar(256))").arg(_refItem.xSKUCode);
+    if(!xQuery.exec(xSqlExpr))
+    {
+        qDebug() << "sql expression error:" << xSqlExpr << xQuery.lastError();
+        return false;
+    }
+
+    //  insert into attrib table
+    for(int i = 0; i < _refItem.xAttribDetails.size(); ++i)
+    {
+        QString& refStrItem = _refItem.xAttribDetails[i];
+
+        if(refStrItem.isEmpty())
+        {
+            continue;
+        }
+
+        xSqlExpr = QString("insert into attrib_%1 (attribkey, attribvalue) values ('attribdetails', '%2')").arg(_refItem.xSKUCode, refStrItem);
+        if(!xQuery.exec(xSqlExpr))
+        {
+            qDebug() << "sql expression error:" << xSqlExpr << xQuery.lastError();
+            return false;
+        }
+    }
+    for(int i = 0; i < _refItem.xBuyDetails.size(); ++i)
+    {
+        QString& refStrItem = _refItem.xBuyDetails[i];
+
+        if(refStrItem.isEmpty())
+        {
+            continue;
+        }
+
+        xSqlExpr = QString("insert into attrib_%1 (attribkey, attribvalue) values ('buydetails', '%2')").arg(_refItem.xSKUCode, refStrItem);
+        if(!xQuery.exec(xSqlExpr))
+        {
+            qDebug() << "sql expression error:" << xSqlExpr << xQuery.lastError();
+            return false;
+        }
+    }
+
     return true;
 }
 
 bool SqlManager::delProductItem(QString &_refSKUCode)
 {
+    if(1 != getItemCount(_refSKUCode))
+    {
+        return false;
+    }
+
+    QString xSqlExpr = QString("delete from product where skucode='%1'").arg(_refSKUCode);
+    QSqlQuery xQuery;
+
+    if(!xQuery.exec(xSqlExpr))
+    {
+        qDebug() << "sql expression error:" << xSqlExpr << xQuery.lastError();
+        return false;
+    }
+
+    //  remove attrib table
+    xSqlExpr = QString("drop table attrib_%1").arg(_refSKUCode);
+    if(!xQuery.exec(xSqlExpr))
+    {
+        qDebug() << "sql expression error:" << xSqlExpr << xQuery.lastError();
+        return false;
+    }
+
     return true;
 }
 
@@ -150,8 +215,13 @@ bool SqlManager::getProductItems(ProductItemList& _refItems, int _nPage, int _nP
         ProductItem item;
         item.xAttribDetails.clear();
         item.xBuyDetails.clear();
-        readQueryValues(xQuery, item);
-        _refItems.push_back(item);
+
+        QString xSKUCOde = xQuery.value(1).toString();
+        //readQueryValues(xQuery, item);
+        if(getProductItem(item, xSKUCOde))
+        {
+            _refItems.push_back(item);
+        }
     }
 
     return true;
@@ -168,10 +238,10 @@ bool SqlManager::getProductItem(ProductItem& _refItem, QString &_refSKUCode)
         return false;
     }
 
-    if(xQuery.size() == 0)
+    /*if(xQuery.size() == 0)
     {
         return false;
-    }
+    }*/
 
     if(!xQuery.next())
     {
@@ -181,6 +251,21 @@ bool SqlManager::getProductItem(ProductItem& _refItem, QString &_refSKUCode)
     if(!readQueryValues(xQuery, _refItem))
     {
         return false;
+    }
+
+    xExpr = QString("select * from attrib_%1").arg(_refSKUCode);
+    if(!xQuery.exec(xExpr))
+    {
+        qDebug() << "sql expression error:" << xExpr << xQuery.lastError();
+        return false;
+    }
+
+    while(xQuery.next())
+    {
+        if(!readQueryValuesAttrib(xQuery, _refItem))
+        {
+            return false;
+        }
     }
 
     return true;
@@ -200,6 +285,27 @@ bool SqlManager::readQueryValues(QSqlQuery &_refQuery, ProductItem &_refItem)
     _refItem.fBuyMoney = _refQuery.value(9).toFloat();
     _refItem.xNote = _refQuery.value(10).toString();
     _refItem.nInsertTime = _refQuery.value(11).toInt();
+
+    return true;
+}
+
+bool SqlManager::readQueryValuesAttrib(QSqlQuery &_refQuery, ProductItem &_refItem)
+{
+    QString xKey;
+    QString xValue;
+
+    xKey = _refQuery.value(1).toString();
+    xValue = _refQuery.value(2).toString();
+
+    if(xKey == "attribdetails")
+    {
+        _refItem.xAttribDetails.push_back(xValue);
+    }
+    else if(xKey == "buydetails")
+    {
+        //  parse json
+        _refItem.xBuyDetails.push_back(xValue);
+    }
 
     return true;
 }

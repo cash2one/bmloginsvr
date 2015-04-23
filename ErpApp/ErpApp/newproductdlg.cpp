@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <QDoubleValidator>
 #include "SqlManager.h"
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
 
 using std::string;
 
@@ -76,7 +79,7 @@ void NewProductDlg::setSKUCode(const QString &_refSKUCode)
     }
 
     //  从数据库读取数据
-    if(m_bNewItemMode)
+    if(!m_bNewItemMode)
     {
         ProductItem item;
         item.xSKUCode = m_xSKUCode;
@@ -96,6 +99,54 @@ void NewProductDlg::updatePage(ProductItem &_refItem)
     ui->lineEdit_realWeight->setText(QString("%1").arg(_refItem.fRealWeight));
     ui->lineEdit_SKUCode->setText(_refItem.xSKUCode);
     ui->textEdit_Note->setText(_refItem.xNote);
+
+    //  属性
+    m_pTableModelAttrib->clear();
+    for(int i = 0; i < _refItem.xAttribDetails.size(); ++i)
+    {
+        QString& refStrItem = _refItem.xAttribDetails[i];
+        if(refStrItem.isEmpty())
+        {
+            continue;
+        }
+
+        int nCurrentRowCount = m_pTableModelAttrib->rowCount();
+        m_pTableModelAttrib->setItem(nCurrentRowCount, 0, new QStandardItem(refStrItem));
+    }
+
+    //  采购网站和价格
+    m_pTableModelBuy->clear();
+    for(int i = 0; i < _refItem.xBuyDetails.size(); ++i)
+    {
+        QString& refStrItem = _refItem.xBuyDetails[i];
+        if(refStrItem.isEmpty())
+        {
+            continue;
+        }
+
+        //  解析json字符串
+        QJsonParseError eError;
+        QJsonDocument xJsDoc = QJsonDocument::fromJson(refStrItem.toUtf8(), &eError);
+
+        if(eError.error == QJsonParseError::NoError)
+        {
+            if(xJsDoc.isObject())
+            {
+                QJsonObject xJsObj = xJsDoc.object();
+
+                if(xJsObj.contains("url") &&
+                        xJsObj.contains("price"))
+                {
+                    QString xUrl = xJsObj.take("url").toString();
+                    QString xPrice = xJsObj.take("price").toString();
+
+                    int nCurrentRowCount = m_pTableModelBuy->rowCount();
+                    m_pTableModelBuy->setItem(nCurrentRowCount, 0, new QStandardItem(xUrl));
+                    m_pTableModelBuy->setItem(nCurrentRowCount, 1, new QStandardItem(xPrice));
+                }
+            }
+        }
+    }
 }
 
 void NewProductDlg::updateMode()
@@ -215,6 +266,7 @@ void NewProductDlg::on_pushButton_imagePath_clicked()
 void NewProductDlg::on_pushButton_newProduct_clicked()
 {
     ProductItem item;
+    //  base info
     item.xSKUCode = m_xSKUCode;
     item.xFstCategory = m_xFstCategory;
     item.xSecCategory = m_xSecCategory;
@@ -224,6 +276,52 @@ void NewProductDlg::on_pushButton_newProduct_clicked()
     item.fRealWeight = ui->lineEdit_realWeight->text().toFloat();
     item.nInsertTime = QDateTime::currentDateTime().toTime_t();
     item.nSeq = m_nCategorySeq;
+
+    //  attrib
+    for(int i = 0; i < m_pTableModelAttrib->rowCount(); ++i)
+    {
+        QStandardItem* pItem = m_pTableModelAttrib->item(i);
+        if(NULL != pItem)
+        {
+            QString xValue = pItem->text();
+            if(!xValue.isEmpty())
+            {
+                item.xAttribDetails.push_back(xValue);
+            }
+        }
+    }
+
+    //  buy url
+    for(int i = 0; i < m_pTableModelBuy->rowCount(); ++i)
+    {
+        QString xUrl;
+        QString xPrice;
+        QStandardItem* pItem = m_pTableModelBuy->item(i);
+        if(NULL != pItem)
+        {
+            xUrl = pItem->text();
+        }
+        pItem = m_pTableModelBuy->item(i, 1);
+        if(NULL != pItem)
+        {
+            xPrice = pItem->text();
+        }
+
+        if(!xUrl.isEmpty() ||
+                !xPrice.isEmpty())
+        {
+            QJsonObject xJsObj;
+            xJsObj.insert("url", xUrl);
+            xJsObj.insert("price", xPrice);
+
+            QJsonDocument doc;
+            doc.setObject(xJsObj);
+            QByteArray xByteArray = doc.toJson(QJsonDocument::Compact);
+            QString xJsData(xByteArray);
+
+            item.xBuyDetails.push_back(xJsData);
+        }
+    }
 
     if(item.xProductName.isEmpty())
     {

@@ -53,6 +53,7 @@ public:
     }
 
     static bool readQueryValues(QSqlQuery& _refQuery, ProductItem& _refItem);
+    static bool readQueryValuesAttrib(QSqlQuery& _refQuery, ProductItem& _refItem);
 
 public:
     bool connect(const char* _pszSqlPath);
