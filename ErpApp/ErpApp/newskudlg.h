@@ -2,6 +2,7 @@
 #define NEWSKUDLG_H
 
 #include <QDialog>
+#include <QStringList>
 
 namespace Ui {
 class NewSKUDlg;
@@ -28,6 +29,14 @@ public:
     {
         return m_xSKUNumber;
     }
+    QStringList& getCategory()
+    {
+        return m_xCategory;
+    }
+    int getCategorySeq()
+    {
+        return m_nCategorySeq;
+    }
 
 private:
     void createWidgets();
@@ -37,6 +46,8 @@ private:
 
     bool m_bExecuteNextStep;
     QString m_xSKUNumber;
+    QStringList m_xCategory;
+    int m_nCategorySeq;
 };
 
 #endif // NEWSKUDLG_H

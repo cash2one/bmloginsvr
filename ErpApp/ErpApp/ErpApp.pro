@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -16,16 +17,21 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     newskudlg.cpp \
     gfunctions.cpp \
-    newproductdlg.cpp
+    newproductdlg.cpp \
+    mainwidget.cpp \
+    SqlManager.cpp
 
 HEADERS  += mainwindow.h \
     newskudlg.h \
     gfunctions.h \
-    newproductdlg.h
+    newproductdlg.h \
+    SqlManager.h \
+    mainwidget.h
 
 FORMS    += mainwindow.ui \
     newskudlg.ui \
-    newproductdlg.ui
+    newproductdlg.ui \
+    mainwidget.ui
 
 RESOURCES += \
     resource.qrc

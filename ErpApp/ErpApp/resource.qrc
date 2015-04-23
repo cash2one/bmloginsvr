@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>image/button_add.png</file>
+        <file>image/splash.png</file>
     </qresource>
 </RCC>

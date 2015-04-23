@@ -5,6 +5,7 @@
 #include "gfunctions.h"
 #include <QMessageBox>
 #include <qdebug.h>
+#include "SqlManager.h"
 
 NewSKUDlg::NewSKUDlg(QWidget *parent) :
     QDialog(parent),
@@ -13,6 +14,7 @@ NewSKUDlg::NewSKUDlg(QWidget *parent) :
     ui->setupUi(this);
 
     m_bExecuteNextStep = false;
+    m_nCategorySeq = 0;
 
     createWidgets();
 }
@@ -53,6 +55,13 @@ void NewSKUDlg::onNextStep()
     {
         m_bExecuteNextStep = true;
         m_xSKUNumber = ui->lineEdit->text();
+        m_xCategory.clear();
+        QString xCategory = ui->comboBox->currentText();
+        m_xCategory << xCategory;
+        xCategory = ui->comboBox_2->currentText();
+        m_xCategory << xCategory;
+        xCategory = ui->comboBox_3->currentText();
+        m_xCategory << xCategory;
         accept();
     }
 }
@@ -66,19 +75,41 @@ void NewSKUDlg::onSelectChanged(int _index)
         return;
     }
 
-    const char* pszSelect1 = ui->comboBox->currentText().toStdString().c_str();
-    const char* pszSelect2 = ui->comboBox_2->currentText().toStdString().c_str();
-    const char* pszSelect3 = ui->comboBox_3->currentText().toStdString().c_str();
+    QString xFstCategory = ui->comboBox->currentText();
+    QString xSecCategory = ui->comboBox_2->currentText();
+    QString xTrdCategory = ui->comboBox_3->currentText();
 
-    if(strlen(pszSelect1) == 0 ||
-            strlen(pszSelect2) == 0 ||
-            strlen(pszSelect3) == 0)
+    /*const char* pszSelect1 = xFstCategory.toStdString().c_str();
+    const char* pszSelect2 = xSecCategory.toStdString().c_str();
+    const char* pszSelect3 = xTrdCategory.toStdString().c_str();*/
+
+    if(xFstCategory.isEmpty() ||
+            xSecCategory.isEmpty() ||
+            xTrdCategory.isEmpty())
     {
         return;
     }
 
-    qDebug() << __FUNCTION__ << pszSelect1 << pszSelect2 << pszSelect3;
+    //m_xSKUNumber = getSKUNumber(pszSelect1, pszSelect2, pszSelect3);
+    //ui->lineEdit->setText(m_xSKUNumber);
+    int nSKUSeq = SqlManager::getInstance()->getMaxItemSeq(
+                xFstCategory,
+                xSecCategory,
+                xTrdCategory);
+    if(nSKUSeq < 0)
+    {
+        //  error
+        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("获取货物序号失败"));
+        return;
+    }
 
-    m_xSKUNumber = getSKUNumber(pszSelect1, pszSelect2, pszSelect3);
+    ++nSKUSeq;
+    char szNumber[10] = {0};
+    sprintf(szNumber, "%03d", nSKUSeq);
+    m_xSKUNumber = xFstCategory + xSecCategory + xTrdCategory + szNumber;
+    m_nCategorySeq = nSKUSeq;
+
     ui->lineEdit->setText(m_xSKUNumber);
+
+    qDebug() << __FUNCTION__ << xFstCategory << xSecCategory << xTrdCategory << nSKUSeq;
 }

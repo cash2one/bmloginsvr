@@ -6,6 +6,7 @@
 class QPushButton;
 class QLabel;
 class QAction;
+class MainWidget;
 
 namespace Ui {
 class MainWindow;
@@ -24,6 +25,8 @@ private:
 
 public slots:
     void onActionNewProduct();
+    void onActionPrevPage();
+    void onActionNextPage();
 
 private:
     Ui::MainWindow *ui;
@@ -31,6 +34,8 @@ private:
     QPushButton* m_pBtnPrevPage;
     QPushButton* m_pBtnNextPage;
     QLabel* m_pLblPageInfo;
+
+    MainWidget* m_pMainWidget;
 };
 
 #endif // MAINWINDOW_H

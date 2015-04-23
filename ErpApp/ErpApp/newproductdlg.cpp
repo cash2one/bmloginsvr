@@ -3,11 +3,28 @@
 #include <qtableview.h>
 #include <qstandarditemmodel.h>
 #include <QMessageBox>
+#include <QFileDialog>
+#include <qdebug.h>
+#include "gfunctions.h"
+#include <QFile>
+#include <string>
+#include "direct.h"
+#include <QFileInfo>
+#include <QPixmap>
+#include <stdio.h>
+#include <QDoubleValidator>
+#include "SqlManager.h"
+
+using std::string;
 
 NewProductDlg::NewProductDlg(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::NewProductDlg)
 {
+    m_bNewItemMode = true;
+    m_nCategorySeq = 0;
+    m_bContentModified = false;
+
     ui->setupUi(this);
     initWidgets();
 }
@@ -38,6 +55,11 @@ void NewProductDlg::initWidgets()
     pTableView->setModel(m_pTableModelAttrib);
     pTableView->setColumnWidth(0, 250);
 
+    QDoubleValidator* pValidator = new QDoubleValidator(0.0, 99999999.0, 2, this);
+    ui->lineEdit_realWeight->setValidator(pValidator);
+    pValidator = new QDoubleValidator(0.0, 99999999.0, 2, this);
+    ui->lineEdit_estimateWeight->setValidator(pValidator);
+
     ui->tabWidget->setCurrentIndex(0);
 }
 
@@ -45,6 +67,47 @@ void NewProductDlg::setSKUCode(const QString &_refSKUCode)
 {
     m_xSKUCode = _refSKUCode;
     ui->lineEdit_SKUCode->setText(m_xSKUCode);
+
+    //  检查是否已存在，存在的话修改窗体，否则新增的窗体
+    int nCount = SqlManager::getInstance()->getItemCount(_refSKUCode);
+    if(1 == nCount)
+    {
+        m_bNewItemMode = false;
+    }
+
+    //  从数据库读取数据
+    if(m_bNewItemMode)
+    {
+        ProductItem item;
+        item.xSKUCode = m_xSKUCode;
+        if(SqlManager::getInstance()->getProductItem(item, m_xSKUCode))
+        {
+            updatePage(item);
+        }
+    }
+
+    updateMode();
+}
+
+void NewProductDlg::updatePage(ProductItem &_refItem)
+{
+    ui->lineEdit_productName->setText(_refItem.xProductName);
+    ui->lineEdit_estimateWeight->setText(QString("%1").arg(_refItem.fEstimateWeight));
+    ui->lineEdit_realWeight->setText(QString("%1").arg(_refItem.fRealWeight));
+    ui->lineEdit_SKUCode->setText(_refItem.xSKUCode);
+    ui->textEdit_Note->setText(_refItem.xNote);
+}
+
+void NewProductDlg::updateMode()
+{
+    if(m_bNewItemMode)
+    {
+        setWindowTitle(QStringLiteral("添加新产品"));
+    }
+    else
+    {
+        setWindowTitle(QStringLiteral("修改产品信息"));
+    }
 }
 
 void NewProductDlg::on_pushButton_newBuyItem_clicked()
@@ -98,5 +161,93 @@ void NewProductDlg::on_textEdit_Note_textChanged()
         ui->textEdit_Note->setText(xLeft);
 
         QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("最大字符限制512"));
+    }
+}
+
+void NewProductDlg::on_pushButton_imagePath_clicked()
+{
+    QString fileName = QFileDialog::getOpenFileName(this, QStringLiteral("选择缩略图文件"),
+                                                    "",
+                                                    "imagefiles(*.jpg *.jpeg *.png *.bmp);;jpgfile(*.jpg);;jpegfile(*.jpeg);;pngfile(*.png);;bmpfile(*.bmp)");
+    QFileInfo fi(fileName);
+    QString xFileSuffix = fi.suffix();
+
+    if(!fileName.isEmpty())
+    {
+        qDebug() << "select a new image file";
+        ui->lineEdit_imagePath->setText(fileName);
+
+        //  将图片复制入db文件夹
+        QString xDestDir = getAppPath() + "/db/" + m_xSKUCode;
+        if(!fileExists(xDestDir))
+        {
+            string xDir = xDestDir.toStdString();
+            if(0 != mkdir(xDir.c_str()))
+            {
+                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("创建文件缩略图文件夹失败"));
+                return;
+            }
+        }
+
+        QString xDestFileDir = xDestDir + "/snap." + xFileSuffix;
+
+        //  先删除文件
+        if(fileExists(xDestFileDir))
+        {
+            string xCStrDestFileDir = xDestFileDir.toStdString();
+            if(0 != remove(xCStrDestFileDir.c_str()))
+            {
+                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("移除原始缩略图失败"));
+                return;
+            }
+        }
+
+        if(!QFile::copy(fileName, xDestFileDir))
+        {
+            QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("复制文件缩略图失败"));
+            return;
+        }
+
+        ui->label_thumb->setPixmap(QPixmap(xDestFileDir));
+    }
+}
+
+void NewProductDlg::on_pushButton_newProduct_clicked()
+{
+    ProductItem item;
+    item.xSKUCode = m_xSKUCode;
+    item.xFstCategory = m_xFstCategory;
+    item.xSecCategory = m_xSecCategory;
+    item.xTrdCategory = m_xTrdCategory;
+    item.xProductName = ui->lineEdit_productName->text();
+    item.fEstimateWeight = ui->lineEdit_estimateWeight->text().toFloat();
+    item.fRealWeight = ui->lineEdit_realWeight->text().toFloat();
+    item.nInsertTime = QDateTime::currentDateTime().toTime_t();
+    item.nSeq = m_nCategorySeq;
+
+    if(item.xProductName.isEmpty())
+    {
+        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("货物名称不能为空"));
+        return;
+    }
+
+    if(m_bNewItemMode)
+    {
+        //  新建商品
+        if(SqlManager::getInstance()->newProductItem(item))
+        {
+            m_bNewItemMode = false;
+            m_bContentModified = true;
+            QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("新增项目成功"));
+            updateMode();
+        }
+        else
+        {
+            QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("无法创建项目"));
+        }
+    }
+    else
+    {
+
     }
 }

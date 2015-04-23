@@ -202,7 +202,10 @@
       </rect>
      </property>
      <property name="text">
-      <string/>
+      <string>无缩略图</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
     <widget class="QLineEdit" name="lineEdit_imagePath">
