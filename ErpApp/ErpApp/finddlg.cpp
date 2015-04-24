@@ -1,46 +1,39 @@
-﻿#pragma execution_character_set("utf-8")
-
-#include "newskudlg.h"
-#include "ui_newskudlg.h"
-#include "gfunctions.h"
-#include <QMessageBox>
-#include <qdebug.h>
-#include "SqlManager.h"
+#include "finddlg.h"
+#include "ui_finddlg.h"
 #include "CategoryManager.h"
+#include <qdebug.h>
+#include <QIntValidator>
+#include <QMessageBox>
 
-NewSKUDlg::NewSKUDlg(QWidget *parent) :
+FindDlg::FindDlg(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::NewSKUDlg)
+    ui(new Ui::FindDlg)
 {
     ui->setupUi(this);
-
-    m_bExecuteNextStep = false;
-    m_nCategorySeq = 0;
 
     createWidgets();
 }
 
-NewSKUDlg::~NewSKUDlg()
+FindDlg::~FindDlg()
 {
     delete ui;
 }
 
 
-void NewSKUDlg::createWidgets()
+void FindDlg::createWidgets()
 {
-    setWindowTitle(QStringLiteral("第一步：生成SKU码"));
+    ui->tabWidget->setCurrentIndex(0);
 
-    connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(onNextStep()));
     connect(ui->comboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onSelectChanged(int)));
     connect(ui->comboBox_2, SIGNAL(currentIndexChanged(int)), this, SLOT(onSelectChanged(int)));
     connect(ui->comboBox_3, SIGNAL(currentIndexChanged(int)), this, SLOT(onSelectChanged(int)));
 
-    //onSelectChanged(0);
+    ui->lineEdit_2->setValidator(new QIntValidator(0, 999));
+
     loadComboContent(NULL);
-    //calcSKUCode();
 }
 
-void NewSKUDlg::loadComboContent(QComboBox *_pWidget)
+void FindDlg::loadComboContent(QComboBox *_pWidget)
 {
     //  初始化
     QStringList xParents;
@@ -138,24 +131,7 @@ void NewSKUDlg::loadComboContent(QComboBox *_pWidget)
     }
 }
 
-
-//  slots
-void NewSKUDlg::onNextStep()
-{
-    qDebug() << __FUNCTION__;
-
-    if(m_xSKUNumber.isEmpty())
-    {
-        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("请选择正确的类别"));
-    }
-    else
-    {
-        m_bExecuteNextStep = true;
-        accept();
-    }
-}
-
-void NewSKUDlg::onSelectChanged(int _index)
+void FindDlg::onSelectChanged(int _index)
 {
     QObject* pObj = sender();
 
@@ -167,7 +143,7 @@ void NewSKUDlg::onSelectChanged(int _index)
     }
 }
 
-void NewSKUDlg::calcSKUCode()
+void FindDlg::calcSKUCode()
 {
     m_xSKUNumber.clear();
 
@@ -175,7 +151,7 @@ void NewSKUDlg::calcSKUCode()
             ui->comboBox_2->count() == 0 ||
             ui->comboBox_3->count() == 0)
     {
-        ui->lineEdit->clear();
+        ui->lineEdit_3->clear();
         return;
     }
 
@@ -187,40 +163,60 @@ void NewSKUDlg::calcSKUCode()
             xSecCategory.isEmpty() ||
             xTrdCategory.isEmpty())
     {
-        ui->lineEdit->clear();
+        ui->lineEdit_3->clear();
         return;
     }
 
-    int nSKUSeq = SqlManager::getInstance()->getMaxItemSeq(
-                xFstCategory,
-                xSecCategory,
-                xTrdCategory);
-    if(nSKUSeq < 0)
+    bool bTransOk = false;
+    int nSKUSeq = ui->lineEdit_2->text().toInt(&bTransOk);
+    if(!bTransOk)
     {
-        //  error
-        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("获取货物序号失败"));
-        ui->lineEdit->clear();
-        return;
+        nSKUSeq = 0;
     }
-
-    ++nSKUSeq;
     char szNumber[10] = {0};
     sprintf(szNumber, "%03d", nSKUSeq);
     m_xSKUNumber = xFstCategory + xSecCategory + xTrdCategory + szNumber;
-    m_nCategorySeq = nSKUSeq;
 
-    m_xCategory.clear();
-    m_xCategory << xFstCategory
-                   << xSecCategory
-                      << xTrdCategory;
-
-    ui->lineEdit->setText(m_xSKUNumber);
+    ui->lineEdit_3->setText(m_xSKUNumber);
 
     qDebug() << __FUNCTION__ << xFstCategory << xSecCategory << xTrdCategory << nSKUSeq;
 }
 
-void NewSKUDlg::clearSKUCode()
+void FindDlg::clearSKUCode()
 {
     m_xSKUNumber.clear();
-    ui->lineEdit->clear();
+    ui->lineEdit_3->clear();
+}
+
+void FindDlg::on_lineEdit_2_textChanged(const QString &arg1)
+{
+    calcSKUCode();
+}
+
+void FindDlg::on_pushButton_clicked()
+{
+    if(ui->tabWidget->currentIndex() == 0)
+    {
+        //  find by sku
+        QString xText = ui->lineEdit->text();
+        if(xText.isEmpty())
+        {
+            QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("查找的SKU不能为空"));
+            return;
+        }
+
+        m_xQuerySKU = xText;
+    }
+    else if(ui->tabWidget->currentIndex() == 1)
+    {
+        if(m_xSKUNumber.isEmpty())
+        {
+            QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("查找的SKU不能为空"));
+            return;
+        }
+
+        m_xQuerySKU = m_xSKUNumber;
+    }
+
+    accept();
 }

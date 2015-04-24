@@ -5,6 +5,7 @@
 #include "SqlManager.h"
 #include <QDebug>
 #include <QDateTime>
+#include <QMessageBox>
 
 MainWidget::MainWidget(QWidget *parent) :
     QWidget(parent),
@@ -13,8 +14,9 @@ MainWidget::MainWidget(QWidget *parent) :
     ui->setupUi(this);
 
     m_nTableColCount = 5;
-    m_nTableRowCount = 15;
+    m_nTableRowCount = 3;
     m_nPage = 0;
+    m_bOrderInsertTimeDesc = false;
 
     createWidgets();
 }
@@ -44,19 +46,32 @@ void MainWidget::createWidgets()
                   << QStringLiteral("新增时间");
     m_pTable->setHorizontalHeaderLabels(xHeader);
 
-    showPage(m_nPage, m_nTableRowCount);
+    connect(m_pTable->horizontalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(onHeaderClicked(int)));
+
+    showPage(m_nPage);
 }
 
 
-void MainWidget::showPage(int _nPage, int _nPerPage)
+bool MainWidget::showPage(int _nPage)
 {
     ProductItemList xItems;
 
-    if(SqlManager::getInstance()->getProductItems(xItems, _nPage, m_nTableRowCount))
+    QString xFilterWords = QString(" %1 %2 ").arg(m_xOderItem, m_xFilterItem);
+    QString xPageFilter = QString("limit %1 offset %2").arg(m_nTableRowCount).arg(_nPage * m_nTableRowCount);
+    xFilterWords += xPageFilter;
+
+    bool bRet = false;
+
+    if(SqlManager::getInstance()->getProductItems(xItems, xFilterWords))
     {
         qDebug() << "productList " << xItems.size();
 
-        m_nPage = _nPage;
+        if(xItems.size() > 0)
+        {
+            m_nPage = _nPage;
+            bRet = true;
+        }
+
         ProductItem xEmptyItem;
 
         for(int i = 0; i < m_nTableRowCount; ++i)
@@ -74,20 +89,30 @@ void MainWidget::showPage(int _nPage, int _nPerPage)
     else
     {
         qDebug() << "getProductItems failed";
+        return false;
     }
+
+    return bRet;
+}
+
+QString MainWidget::getSqlAddExpr()
+{
+
+
+    return "";
 }
 
 void MainWidget::updatePage()
 {
-    showPage(m_nPage, m_nTableRowCount);
+    showPage(m_nPage);
 }
 
 void MainWidget::setRowContent(int _nRow, ProductItem& _refItem, bool _bEmpty)
 {
     QTableWidgetItem* pItem = NULL;
 
-    //  create rows
-    for(int i = 0; i < m_nTableRowCount; ++i)
+    //  create cols
+    for(int i = 0; i < m_nTableColCount; ++i)
     {
         pItem = m_pTable->item(_nRow, i);
         if(NULL == pItem)
@@ -152,5 +177,107 @@ void MainWidget::setRowContent(int _nRow, ProductItem& _refItem, bool _bEmpty)
     else
     {
         pItem->setText("");
+    }
+}
+
+QString MainWidget::getCurrentSelectSKUCode()
+{
+    int nSelectRow = m_pTable->currentRow();
+    QTableWidgetItem* pItem = m_pTable->item(nSelectRow, 0);
+
+    if(NULL == pItem)
+    {
+        return QString("");
+    }
+    else
+    {
+        return pItem->text();
+    }
+}
+
+void MainWidget::setSelectFilters(const QString &_refFilter)
+{
+    m_xFilterItem = _refFilter;
+
+    m_nPage = 0;
+    updatePage();
+}
+
+void MainWidget::setSelectOrder(const QString &_refOrder)
+{
+    m_xOderItem = _refOrder;
+
+    m_nPage = 0;
+    updatePage();
+}
+
+void MainWidget::PrevPage()
+{
+    int nPage = m_nPage;
+    --nPage;
+
+    if(nPage < 0)
+    {
+        nPage = 0;
+    }
+
+    if(nPage != m_nPage)
+    {
+        if(!showPage(nPage))
+        {
+            QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已到达第一页"));
+            return;
+        }
+    }
+    else
+    {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已到达第一页"));
+        return;
+    }
+}
+
+void MainWidget::NextPage()
+{
+    int nPage = m_nPage;
+    ++nPage;
+
+    /*if(!showPage(nPage))
+    {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已到达最后一页"));
+        return;
+    }*/
+    //  判断是否到达最后一页
+    int nCount = SqlManager::getInstance()->getRowCount(m_xFilterItem);
+    if(-1 == nCount)
+    {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("获取行数失败"));
+        return;
+    }
+
+    qDebug() << "next page item count:" << nCount;
+
+    int nFirstShowIndex = nPage * m_nTableRowCount;
+    if(nFirstShowIndex >= nCount)
+    {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("已到达最后一页"));
+        return;
+    }
+
+    showPage(nPage);
+}
+
+void MainWidget::onHeaderClicked(int _nHeader)
+{
+    if(_nHeader == 4)
+    {
+        QString xOrder = " order by inserttime ";
+        if(m_bOrderInsertTimeDesc)
+        {
+            xOrder += "desc ";
+        }
+
+        setSelectOrder(xOrder);
+
+        m_bOrderInsertTimeDesc = !m_bOrderInsertTimeDesc;
     }
 }

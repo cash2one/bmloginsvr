@@ -27,6 +27,14 @@ public slots:
     void onActionNewProduct();
     void onActionPrevPage();
     void onActionNextPage();
+    void onActionModifyProduct();
+    void onActionFind();
+    void onActionShowAll();
+    void onActionDelete();
+    void onActionEditCategory();
+
+private slots:
+    void on_actionAbout_triggered();
 
 private:
     Ui::MainWindow *ui;

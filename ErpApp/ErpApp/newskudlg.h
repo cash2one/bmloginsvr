@@ -8,6 +8,8 @@ namespace Ui {
 class NewSKUDlg;
 }
 
+class QComboBox;
+
 class NewSKUDlg : public QDialog
 {
     Q_OBJECT
@@ -37,6 +39,9 @@ public:
     {
         return m_nCategorySeq;
     }
+    void loadComboContent(QComboBox* _pWidget);
+    void calcSKUCode();
+    void clearSKUCode();
 
 private:
     void createWidgets();

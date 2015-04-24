@@ -40,6 +40,8 @@ public:
 
     void updatePage(ProductItem& _refItem);
     void updateMode();
+    void resetTableModelAttrib();
+    void resetTableModelBuy();
 
 private slots:
     void on_pushButton_newBuyItem_clicked();

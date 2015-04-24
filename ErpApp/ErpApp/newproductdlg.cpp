@@ -92,6 +92,30 @@ void NewProductDlg::setSKUCode(const QString &_refSKUCode)
     updateMode();
 }
 
+void NewProductDlg::resetTableModelAttrib()
+{
+    m_pTableModelAttrib->clear();
+    QStandardItem* pTableItem = new QStandardItem(QStringLiteral("产品属性"));
+    m_pTableModelAttrib->setHorizontalHeaderItem(0, pTableItem);
+    m_pTableModelAttrib->setColumnCount(1);
+
+    QTableView* pTableView = ui->tableView_attrib;
+    pTableView->setColumnWidth(0, 250);
+}
+
+void NewProductDlg::resetTableModelBuy()
+{
+    m_pTableModelBuy->clear();
+    QStandardItem* pTableItem = new QStandardItem(QStringLiteral("采购网址"));
+    m_pTableModelBuy->setHorizontalHeaderItem(0, pTableItem);
+    pTableItem = new QStandardItem(QStringLiteral("采购价格"));
+    m_pTableModelBuy->setHorizontalHeaderItem(1, pTableItem);
+    m_pTableModelBuy->setColumnCount(2);
+
+    QTableView* pTableView = ui->tableView_buy;
+    pTableView->setColumnWidth(0, 210);
+}
+
 void NewProductDlg::updatePage(ProductItem &_refItem)
 {
     ui->lineEdit_productName->setText(_refItem.xProductName);
@@ -101,7 +125,7 @@ void NewProductDlg::updatePage(ProductItem &_refItem)
     ui->textEdit_Note->setText(_refItem.xNote);
 
     //  属性
-    m_pTableModelAttrib->clear();
+    resetTableModelAttrib();
     for(int i = 0; i < _refItem.xAttribDetails.size(); ++i)
     {
         QString& refStrItem = _refItem.xAttribDetails[i];
@@ -115,7 +139,7 @@ void NewProductDlg::updatePage(ProductItem &_refItem)
     }
 
     //  采购网站和价格
-    m_pTableModelBuy->clear();
+    resetTableModelBuy();
     for(int i = 0; i < _refItem.xBuyDetails.size(); ++i)
     {
         QString& refStrItem = _refItem.xBuyDetails[i];
@@ -346,6 +370,15 @@ void NewProductDlg::on_pushButton_newProduct_clicked()
     }
     else
     {
-
+        //  更新商品
+        if(SqlManager::getInstance()->updateProductItem(item))
+        {
+            m_bContentModified = true;
+            QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("修改项目成功"));
+        }
+        else
+        {
+            QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("无法修改项目"));
+        }
     }
 }

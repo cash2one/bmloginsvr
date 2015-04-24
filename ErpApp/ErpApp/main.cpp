@@ -10,6 +10,7 @@
 #include <string>
 #include "gfunctions.h"
 #include "SqlManager.h"
+#include "CategoryManager.h"
 
 using std::string;
 
@@ -48,6 +49,21 @@ bool initializeSql()
     return true;
 }
 
+bool initializeCategory()
+{
+    QString xAppPath = getAppPath();
+
+    //  create db directory
+    QString xDBDirectory = xAppPath + "/db/category.xml";
+
+    if(!CategoryManager::getInstance()->load(xDBDirectory))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -59,7 +75,7 @@ int main(int argc, char *argv[])
 
     Qt::Alignment eAlign = Qt::AlignRight | Qt::AlignTop;
     xSplashWnd.showMessage(QStringLiteral("正在初始化程序..."), eAlign);
-    internalSleep(1000);
+    internalSleep(300);
     bInitialized = initializeEnv();
     if(!bInitialized)
     {
@@ -67,8 +83,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    //  sql
     xSplashWnd.showMessage(QStringLiteral("正在初始化数据库..."), eAlign);
-    internalSleep(1000);
+    internalSleep(300);
 
     bInitialized = initializeSql();
     if(!bInitialized)
@@ -77,8 +94,20 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    //  category
+    xSplashWnd.showMessage(QStringLiteral("正在初始化目录..."), eAlign);
+    internalSleep(500);
+
+    bInitialized = initializeCategory();
+    if(!bInitialized)
+    {
+        QMessageBox::warning(NULL, QStringLiteral("错误"), QStringLiteral("初始化目录失败"));
+        return -1;
+    }
+
+    //  run
     xSplashWnd.showMessage(QStringLiteral("正在启动程序..."), eAlign);
-    internalSleep(1000);
+    internalSleep(200);
 
     //  main window
     xSplashWnd.hide();

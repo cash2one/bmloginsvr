@@ -63,9 +63,13 @@ public:
     bool newProductItem(ProductItem& _refItem);
     bool delProductItem(QString& _refSKUCode);
     int getItemCount(const QString& _refSKUCode);
+    int getRowCount(const QString& _refFilter);
 
+    bool getProductItems(ProductItemList& _refItems, const QString& _refFilters);
     bool getProductItems(ProductItemList& _refItems, int _nPage, int _nPerPage);
     bool getProductItem(ProductItem& _refItem, QString& _refSKUCode);
+
+    bool updateProductItem(ProductItem& _refItem);
 
     int getMaxItemSeq(const QString& _refFstCategory,
                       const QString& _refSecCategory,
