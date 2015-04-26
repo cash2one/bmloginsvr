@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     SqlManager.cpp \
     finddlg.cpp \
     CategoryManager.cpp \
-    categorydlg.cpp
+    categorydlg.cpp \
+    categorynewnodedlg.cpp
 
 HEADERS  += mainwindow.h \
     newskudlg.h \
@@ -32,14 +33,16 @@ HEADERS  += mainwindow.h \
     mainwidget.h \
     finddlg.h \
     CategoryManager.h \
-    categorydlg.h
+    categorydlg.h \
+    categorynewnodedlg.h
 
 FORMS    += mainwindow.ui \
     newskudlg.ui \
     newproductdlg.ui \
     mainwidget.ui \
     finddlg.ui \
-    categorydlg.ui
+    categorydlg.ui \
+    categorynewnodedlg.ui
 
 RESOURCES += \
     resource.qrc

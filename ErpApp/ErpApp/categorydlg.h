@@ -25,6 +25,19 @@ public:
     void createFromLocalData();
     void createNode(QTreeWidgetItem* _pParentNode, QDomElement& _refDoc);
 
+    bool canAddNode(QTreeWidgetItem* _pParentNode, const QString& _refCode);
+
+    bool addNode(QTreeWidgetItem* _pParentNode, const QString& _refName, const QString& _refCode);
+    bool modifyNode(QTreeWidgetItem* _pNode, const QString& _refName, const QString& _refCode);
+
+public slots:
+    void onTreeNodeClicked(QTreeWidgetItem* _pNode, int _nCol);
+
+private slots:
+    void on_pushButton_clicked();
+
+    void on_pushButton_3_clicked();
+
 private:
     Ui::CategoryDlg *ui;
     TreeWidgetUserDataMap m_xUserdataMap;

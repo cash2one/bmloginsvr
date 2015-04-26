@@ -19,7 +19,7 @@
      <x>20</x>
      <y>20</y>
      <width>421</width>
-     <height>461</height>
+     <height>431</height>
     </rect>
    </property>
    <column>
@@ -57,7 +57,7 @@
   <widget class="QPushButton" name="pushButton_3">
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>300</x>
      <y>490</y>
      <width>75</width>
      <height>23</height>
@@ -65,6 +65,22 @@
    </property>
    <property name="text">
     <string>编辑节点</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_nodeInfo">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>470</y>
+     <width>181</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
  </widget>

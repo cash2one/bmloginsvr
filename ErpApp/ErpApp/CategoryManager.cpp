@@ -1,6 +1,7 @@
 #include "CategoryManager.h"
 #include <QFile>
 #include <QTextStream>
+#include "gfunctions.h"
 
 CategoryManager::CategoryManager()
 {
@@ -177,6 +178,7 @@ bool CategoryManager::getCategoryByParent(const QStringList &_refParents, QStrin
     QDomElement xDestElement = getElementByParent(_refParents);
     if(xDestElement.isNull())
     {
+        LOGDEBUG << "null dom element";
         return false;
     }
 
@@ -203,8 +205,8 @@ bool CategoryManager::getCategoryByParent(const QStringList &_refParents, QStrin
 void CategoryManager::newTestFile()
 {
     QStringList xParents;
-    addNode(xParents, QStringLiteral("男装"), "NZ");
-    addNode(xParents, QStringLiteral("女装"), "NZ");
+    addNode(xParents, QStringLiteral("男装"), "MZ");
+    addNode(xParents, QStringLiteral("女装"), "WZ");
     addNode(xParents, QStringLiteral("童装"), "TZ");
 
     xParents << QStringLiteral("男装");
