@@ -37,6 +37,11 @@ public:
 
     QString getSqlAddExpr();
 
+    QTableWidget* getTableWidget()
+    {
+        return m_pTable;
+    }
+
 private:
     void createWidgets();
 

@@ -308,6 +308,77 @@ bool CategoryDlg::addNode(QTreeWidgetItem *_pParentNode, const QString &_refName
     return true;
 }
 
+bool CategoryDlg::removeNode(QTreeWidgetItem *_pNode)
+{
+    QStringList xParentCategory;
+    QTreeWidgetItem* pParentNode = _pNode;
+
+    int nParentLevel = 0;
+    while(pParentNode)
+    {
+        //  use code
+        /*TreeWidgetUserDataMap::iterator fndIter = m_xUserdataMap.find(pParentNode);
+        if(fndIter != m_xUserdataMap.end())
+        {
+            xParentCategory.push_front(fndIter.value());
+        }*/
+        //  use name
+        if(pParentNode != m_pRootTreeWidget)
+        {
+            xParentCategory.push_front(pParentNode->text(0));
+        }
+
+        pParentNode = pParentNode->parent();
+        ++nParentLevel;
+    }
+
+    if(nParentLevel == 0)
+    {
+        LOGDEBUG << " cannot remove root node : " << nParentLevel;
+        return false;
+    }
+
+    LOGDEBUG << xParentCategory;
+
+    //  递归删除节点
+    bool bRemoveResult = removeNodeRecursive(_pNode);
+    if(bRemoveResult)
+    {
+        //  删除xml数据
+        if(!CategoryManager::getInstance()->removeNode(xParentCategory))
+        {
+            return false;
+        }
+    }
+
+    CategoryManager::getInstance()->save();
+    return true;
+}
+
+bool CategoryDlg::removeNodeRecursive(QTreeWidgetItem *_pNode)
+{
+    //  先删除子节点
+    for(int i = 0; i < _pNode->childCount(); ++i)
+    {
+        QTreeWidgetItem* pChildNode = _pNode->child(i);
+
+        if(!removeNodeRecursive(pChildNode))
+        {
+            return false;
+        }
+    }
+
+    //  删除该节点
+    QTreeWidgetItem* pParent = _pNode->parent();
+    if(NULL == pParent)
+    {
+        LOGDEBUG << "null parent";
+        return false;
+    }
+    _pNode->removeChild(_pNode);
+    delete _pNode;
+    return true;
+}
 
 //  slots
 void CategoryDlg::onTreeNodeClicked(QTreeWidgetItem *_pNode, int _nCol)
@@ -410,4 +481,22 @@ void CategoryDlg::on_pushButton_3_clicked()
             }
         }
     }
+}
+
+void CategoryDlg::on_pushButton_2_clicked()
+{
+    QTreeWidgetItem* pNode = ui->treeWidget->currentItem();
+    if(NULL == pNode)
+    {
+        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("请选择要修改的节点进行修改"));
+        return;
+    }
+
+    if(m_pRootTreeWidget == pNode)
+    {
+        QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("无法删除根节点"));
+        return;
+    }
+
+    removeNode(pNode);
 }

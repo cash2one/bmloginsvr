@@ -12,6 +12,8 @@
 #include <QAction>
 #include <QDebug>
 #include <QMessageBox>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 
 #include "newskudlg.h"
 #include "newproductdlg.h"
@@ -28,6 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     createWidgets();
+    createMenu();
 }
 
 MainWindow::~MainWindow()
@@ -65,9 +68,24 @@ void MainWindow::createWidgets()
 
     m_pMainWidget = new MainWidget(this);
     setCentralWidget(m_pMainWidget);
+    QTableWidget* pTable = m_pMainWidget->getTableWidget();
+    pTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(pTable, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(onTableMenu(QPoint)));
 
     setMinimumWidth(800);
     setMinimumHeight(600);
+}
+
+void MainWindow::createMenu()
+{
+    m_xTableMenu.addAction(QStringLiteral("添加商品"), this, SLOT(onActionNewProduct()));
+    m_xTableMenu.addAction(QStringLiteral("删除商品"), this, SLOT(onActionDelete()));
+    m_xTableMenu.addAction(QStringLiteral("编辑商品"), this, SLOT(onActionModifyProduct()));
+    m_xTableMenu.addAction(QStringLiteral("查找商品"), this, SLOT(onActionFind()));
+    m_xTableMenu.addAction(QStringLiteral("显示全部"), this, SLOT(onActionShowAll()));
+    m_xTableMenu.addSeparator();
+    m_xTableMenu.addAction(QStringLiteral("上一页"), this, SLOT(onActionPrevPage()));
+    m_xTableMenu.addAction(QStringLiteral("下一页"), this, SLOT(onActionNextPage()));
 }
 
 //  slots
@@ -195,8 +213,11 @@ void MainWindow::on_actionAbout_triggered()
 
 void MainWindow::onActionEditCategory()
 {
-    QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("还未开发"));
-
     CategoryDlg dlg;
     dlg.exec();
+}
+
+void MainWindow::onTableMenu(const QPoint& _refMouse)
+{
+    m_xTableMenu.exec(QCursor::pos());
 }

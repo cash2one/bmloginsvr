@@ -14,7 +14,7 @@ MainWidget::MainWidget(QWidget *parent) :
     ui->setupUi(this);
 
     m_nTableColCount = 5;
-    m_nTableRowCount = 3;
+    m_nTableRowCount = 15;
     m_nPage = 0;
     m_bOrderInsertTimeDesc = false;
 

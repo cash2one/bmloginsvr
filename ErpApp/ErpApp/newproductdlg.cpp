@@ -171,6 +171,13 @@ void NewProductDlg::updatePage(ProductItem &_refItem)
             }
         }
     }
+
+    //  缩略图
+    QString xSnapFileName = getAppPath() + "/db/" + m_xSKUCode + "/snap.png";
+    if(fileExists(xSnapFileName))
+    {
+        ui->label_thumb->setPixmap(QPixmap(xSnapFileName));
+    }
 }
 
 void NewProductDlg::updateMode()
@@ -252,38 +259,10 @@ void NewProductDlg::on_pushButton_imagePath_clicked()
         qDebug() << "select a new image file";
         ui->lineEdit_imagePath->setText(fileName);
 
-        //  将图片复制入db文件夹
-        QString xDestDir = getAppPath() + "/db/" + m_xSKUCode;
-        if(!fileExists(xDestDir))
+        if(fileExists(fileName))
         {
-            string xDir = xDestDir.toStdString();
-            if(0 != mkdir(xDir.c_str()))
-            {
-                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("创建文件缩略图文件夹失败"));
-                return;
-            }
+            ui->label_thumb->setPixmap(QPixmap(fileName));
         }
-
-        QString xDestFileDir = xDestDir + "/snap." + xFileSuffix;
-
-        //  先删除文件
-        if(fileExists(xDestFileDir))
-        {
-            string xCStrDestFileDir = xDestFileDir.toStdString();
-            if(0 != remove(xCStrDestFileDir.c_str()))
-            {
-                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("移除原始缩略图失败"));
-                return;
-            }
-        }
-
-        if(!QFile::copy(fileName, xDestFileDir))
-        {
-            QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("复制文件缩略图失败"));
-            return;
-        }
-
-        ui->label_thumb->setPixmap(QPixmap(xDestFileDir));
     }
 }
 
@@ -299,6 +278,7 @@ void NewProductDlg::on_pushButton_newProduct_clicked()
     item.fEstimateWeight = ui->lineEdit_estimateWeight->text().toFloat();
     item.fRealWeight = ui->lineEdit_realWeight->text().toFloat();
     item.nInsertTime = QDateTime::currentDateTime().toTime_t();
+    item.xNote = ui->textEdit_Note->toPlainText();
     item.nSeq = m_nCategorySeq;
 
     //  attrib
@@ -379,6 +359,44 @@ void NewProductDlg::on_pushButton_newProduct_clicked()
         else
         {
             QMessageBox::warning(this, QStringLiteral("警告"), QStringLiteral("无法修改项目"));
+        }
+    }
+
+    //  将图片复制入db文件夹
+    QString xSnapFileName = ui->lineEdit_imagePath->text();
+    if(!xSnapFileName.isEmpty() &&
+            fileExists(xSnapFileName))
+    {
+        QString xDestDir = getAppPath() + "/db/" + m_xSKUCode;
+        if(!fileExists(xDestDir))
+        {
+            string xDir = xDestDir.toStdString();
+            if(0 != mkdir(xDir.c_str()))
+            {
+                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("创建文件缩略图文件夹失败"));
+                return;
+            }
+        }
+
+        QFileInfo fi(xSnapFileName);
+        QString xFileSuffix = fi.suffix();
+        QString xDestFileDir = xDestDir + "/snap." + xFileSuffix;
+
+        //  先删除文件
+        if(fileExists(xDestFileDir))
+        {
+            string xCStrDestFileDir = xDestFileDir.toStdString();
+            if(0 != remove(xCStrDestFileDir.c_str()))
+            {
+                QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("移除原始缩略图失败"));
+                return;
+            }
+        }
+
+        if(!QFile::copy(xSnapFileName, xDestFileDir))
+        {
+            QMessageBox::warning(this, QStringLiteral("错误"), QStringLiteral("复制文件缩略图失败"));
+            return;
         }
     }
 }

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMenu>
 
 class QPushButton;
 class QLabel;
@@ -22,6 +23,7 @@ public:
 
 private:
     void createWidgets();
+    void createMenu();
 
 public slots:
     void onActionNewProduct();
@@ -32,6 +34,8 @@ public slots:
     void onActionShowAll();
     void onActionDelete();
     void onActionEditCategory();
+
+    void onTableMenu(const QPoint& _refMouse);
 
 private slots:
     void on_actionAbout_triggered();
@@ -44,6 +48,7 @@ private:
     QLabel* m_pLblPageInfo;
 
     MainWidget* m_pMainWidget;
+    QMenu m_xTableMenu;
 };
 
 #endif // MAINWINDOW_H

@@ -29,6 +29,8 @@ public:
 
     bool addNode(QTreeWidgetItem* _pParentNode, const QString& _refName, const QString& _refCode);
     bool modifyNode(QTreeWidgetItem* _pNode, const QString& _refName, const QString& _refCode);
+    bool removeNode(QTreeWidgetItem* _pNode);
+    bool removeNodeRecursive(QTreeWidgetItem *_pNode);
 
 public slots:
     void onTreeNodeClicked(QTreeWidgetItem* _pNode, int _nCol);
@@ -37,6 +39,8 @@ private slots:
     void on_pushButton_clicked();
 
     void on_pushButton_3_clicked();
+
+    void on_pushButton_2_clicked();
 
 private:
     Ui::CategoryDlg *ui;
