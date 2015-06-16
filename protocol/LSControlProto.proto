@@ -13,6 +13,8 @@ enum Opcode{
 	PKG_HeartBeat = 9;
 	PKG_ModifyPasswordReq = 10;
 	PKG_ModifyPasswordRsp = 11;
+	PKG_InsertDonateRecordReq = 12;
+	PKG_InsertDonateRecordRsp = 13;
 }
 
 message LSCHead{
@@ -68,4 +70,15 @@ message RSModifyPasswordReq {
 message RSModifyPasswordRsp {
 	required bool result = 1;
 	required string account = 2;
+}
+
+message RSInsertDonateInfoReq {
+	required string name = 1;
+	required int32 donate = 2;
+	required string donateorderid = 3;
+}
+
+message RSInsertDonateInfoRsp {
+	required string name = 1;
+	required int32 result = 2;
 }

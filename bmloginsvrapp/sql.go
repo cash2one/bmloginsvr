@@ -65,6 +65,27 @@ func initDatabase(path string) *sql.DB {
 		}
 	}
 
+	//	check user donate history table
+	userDonateHistoryTableExists, err := dbTableExist(db, "userdonatehistory")
+	if err != nil {
+		log.Printf("failed to check userDonateHistory table.err:", err)
+	} else {
+		if !userDonateHistoryTableExists {
+			sqlexpr := `
+			create table userdonatehistory(id integer primary key, uid integer, donate integer, donatetime integer, donateorderid varchar(50))
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Printf("Create new table failed.Error[%d] DB[%s]", err, db)
+				db.Close()
+				return nil
+			} else {
+				log.Printf("create a new table[userdonatehistory]")
+			}
+		}
+	}
+
 	return db
 }
 
@@ -88,7 +109,7 @@ func dbTableExist(db *sql.DB, tableName string) (bool, error) {
 
 	rows.Scan(&tableCount)
 
-	log.Println("table size:", tableCount)
+	log.Println("table size:", tableCount, " table name:", tableName)
 
 	if tableCount == 1 {
 		return true, nil
@@ -105,7 +126,7 @@ type UserDonateInfo struct {
 }
 
 func dbIsUserDonateExists(db *sql.DB, uid uint32) bool {
-	rows, err := db.Query("select uid from userdonate where uid = '" + strconv.FormatUint(uint64(uid), 10) + "'")
+	rows, err := db.Query("select count(*) as cnt from userdonate where uid = '" + strconv.FormatUint(uint64(uid), 10) + "'")
 	if err != nil {
 		log.Printf("Error on selecting uid,error[%s]", err.Error())
 		return true
@@ -161,7 +182,24 @@ func dbGetUserDonateInfo(db *sql.DB, uid uint32, info *UserDonateInfo) bool {
 	return fetched
 }
 
-func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
+func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int, donateOrderId string) bool {
+	//	先查找订单号是否已被记录
+	if dbIsUserDonateHistoryExists(db, donateOrderId) {
+		log.Println("donate order id already been used")
+		return false
+	}
+
+	//	添加记录
+	history := &UserDonateHistory{}
+	history.uid = uid
+	history.donatetime = int(time.Now().Unix())
+	history.donate = donateMoney
+	history.donateorderid = donateOrderId
+	if !dbInsertUserDonateHistory(db, history) {
+		log.Println("failed to insert donate history ", history)
+		return false
+	}
+
 	if !dbIsUserDonateExists(db, uid) {
 		//	new record
 		info := &UserDonateInfo{}
@@ -233,6 +271,49 @@ func dbRemoveUserDonateInfo(db *sql.DB, uid uint32) bool {
 			return false
 		}
 		return true
+	}
+
+	return true
+}
+
+//	user donate history
+type UserDonateHistory struct {
+	uid           uint32
+	donate        int
+	donatetime    int
+	donateorderid string
+}
+
+func dbIsUserDonateHistoryExists(db *sql.DB, donateOrderId string) bool {
+	expr := "select count(*) as cnt from userdonatehistory where donateorderid='" + donateOrderId + "'"
+	rows, err := db.Query(expr)
+
+	if nil != err {
+		log.Println("dbIsUserDonateHistoryExists err:", err)
+		return true
+	}
+
+	defer rows.Close()
+
+	count := 1
+
+	if rows.Next() {
+		rows.Scan(&count)
+	}
+
+	if 0 == count {
+		return false
+	}
+
+	return true
+}
+
+func dbInsertUserDonateHistory(db *sql.DB, history *UserDonateHistory) bool {
+	expr := "insert into userdonatehistory values(null, " + strconv.FormatUint(uint64(history.uid), 10) + "," + strconv.Itoa(history.donate) + "," + strconv.Itoa(history.donatetime) + "," + "'" + history.donateorderid + "'" + ")"
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Println("db exec failed.expr:", expr, " err:", err)
+		return false
 	}
 
 	return true
@@ -498,4 +579,24 @@ func dbRemoveUserName(db *sql.DB, account string, name string) bool {
 		return false
 	}
 	return true
+}
+
+func dbGetUserUidByName(db *sql.DB, name string) uint32 {
+	expr := "select uid from useraccount where name0='" + name + "' or name1='" + name + "' or name2='" + name + "'"
+	rows, err := db.Query(expr)
+
+	if err != nil {
+		log.Println(err)
+		return 0
+	}
+
+	defer rows.Close()
+
+	uid := uint32(0)
+
+	if rows.Next() {
+		rows.Scan(&uid)
+	}
+
+	return uid
 }

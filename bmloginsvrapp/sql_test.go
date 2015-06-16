@@ -61,6 +61,11 @@ func TestSqlUserAccount(t *testing.T) {
 		t.Fatal("Can't update user password")
 	}
 
+	//	set name
+	if !dbAddUserName(db, "tk4444", "name1") {
+		t.Fatal("Can't add user name")
+	}
+
 	//	select
 	_, err = dbGetUserAccountInfo(db, "tk4444", &userinfo)
 	if err != nil {
@@ -84,6 +89,12 @@ func TestSqlUserAccount(t *testing.T) {
 	} else {
 		log.Println("uid", userinfo.uid, "accout:", userinfo.account, " password:", userinfo.password, " online:", userinfo.online)
 	}
+
+	//	get uid by name
+	uid := dbGetUserUidByName(db, "name1")
+	if uid != 3 {
+		t.Fatal("can't find uid by name")
+	}
 }
 
 func TestSqlUserDonate(t *testing.T) {
@@ -102,9 +113,15 @@ func TestSqlUserDonate(t *testing.T) {
 	donateMoney := 100
 	testUid := uint32(111)
 
-	//	update
-	if !dbUpdateUserDonateInfo(db, testUid, donateMoney) {
-		t.Error("dbUpdateUserDonateInfo failed")
+	//	inc
+	if !dbIncUserDonateInfo(db, testUid, donateMoney, "111248444") {
+		t.Error("dbIncUserDonateInfo failed")
+		return
+	}
+
+	//	inc twice
+	if dbIncUserDonateInfo(db, testUid, donateMoney, "111248444") {
+		t.Error("dbIncUserDonateInfo failed")
 		return
 	}
 
@@ -116,30 +133,25 @@ func TestSqlUserDonate(t *testing.T) {
 	}
 
 	if info.donate != donateMoney {
-		t.Error("dbUpdateUserDonateInfo failed")
-		return
-	}
-
-	//	inc
-	if !dbIncUserDonateInfo(db, testUid, 1000) {
 		t.Error("dbIncUserDonateInfo failed")
 		return
 	}
 
-	//	get
-	if !dbGetUserDonateInfo(db, testUid, info) {
-		t.Error("dbUpdateUserDonateInfo failed")
-		return
-	}
-
-	if info.donate != 1000+donateMoney {
-		t.Error("dbIncUserDonateInfo failed")
+	//	exist
+	if !dbIsUserDonateExists(db, testUid) {
+		t.Error("dbIsUserDonateExists failed")
 		return
 	}
 
 	//	remove
 	if !dbRemoveUserDonateInfo(db, testUid) {
 		t.Error("dbRemoveUserDonateInfo failed")
+		return
+	}
+
+	//	exist
+	if dbIsUserDonateExists(db, testUid) {
+		t.Error("dbIsUserDonateExists failed")
 		return
 	}
 }

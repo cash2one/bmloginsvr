@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/smtp"
+	"strconv"
 	"strings"
 	"uuid"
 )
@@ -65,6 +66,106 @@ func getRegKey() string {
 func fillRegKeyMsg(regKey string) string {
 	content := "您的BackMIR服务器注册秘钥为:" + regKey + "\r\n请妥善保管，并在注册界面填入此秘钥来注册账号\r\n\r\n\r\n\r\nBackMIR服务器的地址为" + g_userLsAddress + "， 感谢您的支持"
 	return content
+}
+
+func insertDonateRecordHandler(w http.ResponseWriter, r *http.Request) {
+	retJson := &httpResult{
+		ReqType: 2,
+		ErrCode: -1,
+		ErrMsg:  "",
+	}
+
+	//	获得参数
+	nameArgs, ok := r.Form["name"]
+	if !ok {
+		retJson.ErrMsg = "name arg is nil"
+	}
+	if ok {
+		if len(nameArgs) == 0 {
+			retJson.ErrMsg = "name arg is nil"
+			ok = false
+		}
+	}
+	if ok {
+		if len(nameArgs[0]) == 0 {
+			retJson.ErrMsg = "name arg list is nil"
+			ok = false
+		}
+	}
+
+	donateArgs, pwdOk := r.Form["donate"]
+	if !pwdOk {
+		retJson.ErrMsg = "donateArgs arg is nil"
+	}
+	if pwdOk {
+		if len(donateArgs) == 0 {
+			retJson.ErrMsg = "donateArgs arg is nil"
+			pwdOk = false
+		}
+	}
+	if pwdOk {
+		if len(donateArgs[0]) == 0 {
+			retJson.ErrMsg = "password arg list is nil"
+			pwdOk = false
+		}
+	}
+
+	orderArgs, actOk := r.Form["orderid"]
+	if !actOk {
+		retJson.ErrMsg = "orderArgs arg is nil"
+	}
+	if actOk {
+		if len(orderArgs) == 0 {
+			retJson.ErrMsg = "orderArgs arg is nil"
+			actOk = false
+		}
+	}
+	if actOk {
+		if len(orderArgs[0]) == 0 {
+			retJson.ErrMsg = "account arg list is nil"
+			actOk = false
+		}
+	}
+
+	if !ok ||
+		!pwdOk ||
+		!actOk {
+		retJson.ErrCode = 1
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+
+	//	解析参数
+	name := nameArgs[0]
+	donateStr := donateArgs[0]
+	donate, donateConvErr := strconv.Atoi(donateStr)
+	if nil != donateConvErr {
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "can't convert donate from type string"
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+	orderid := orderArgs[0]
+
+	//	发送注册数据包到LS
+	pkg := &LSControlProto.RSInsertDonateInfoReq{}
+	pkg.Name = proto.String(name)
+	pkg.Donate = proto.Int32(int32(donate))
+	pkg.Donateorderid = proto.String(orderid)
+	data, pkgErr := proto.Marshal(pkg)
+	if pkgErr == nil {
+		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordReq), data)
+	}
 }
 
 func modifyPasswordHandler(w http.ResponseWriter, r *http.Request) {
@@ -617,6 +718,10 @@ func httpRequestEntry(w http.ResponseWriter, r *http.Request) {
 	case "/modifypassword":
 		{
 			modifyPasswordHandler(w, r)
+		}
+	case "/insertdonaterecord":
+		{
+			insertDonateRecordHandler(w, r)
 		}
 	default:
 		{

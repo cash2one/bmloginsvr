@@ -98,6 +98,15 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 			}
 			this.OnRsMofifyPassword(modifyPasswordReq)
 		}
+	case LSControlProto.Opcode_PKG_InsertDonateRecordReq:
+		{
+			insertDonateRecordReq := &LSControlProto.RSInsertDonateInfoReq{}
+			err = proto.Unmarshal(msg[oft_body_start:], insertDonateRecordReq)
+			if err != nil {
+				return
+			}
+			this.OnRsInsertDonateInfoReq(insertDonateRecordReq)
+		}
 	}
 }
 
@@ -258,4 +267,34 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 
 	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordRsp), data)
 	return
+}
+
+func (this *ServerUser) OnRsInsertDonateInfoReq(req *LSControlProto.RSInsertDonateInfoReq) {
+	name := req.GetName()
+	orderid := req.GetDonateorderid()
+	donateMoney := req.GetDonate()
+
+	rsp := &LSControlProto.RSInsertDonateInfoRsp{}
+	rsp.Name = proto.String(name)
+
+	//	get uid
+	uid := dbGetUserUidByName(g_DBUser, name)
+	if 0 == uid {
+		rsp.Result = proto.Int32(-1)
+		data, _ := proto.Marshal(rsp)
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordRsp), data)
+		return
+	}
+
+	//	insert a record
+	if !dbIncUserDonateInfo(g_DBUser, uid, int(donateMoney), orderid) {
+		rsp.Result = proto.Int32(-2)
+		data, _ := proto.Marshal(rsp)
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordRsp), data)
+		return
+	}
+
+	rsp.Result = proto.Int32(0)
+	data, _ := proto.Marshal(rsp)
+	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordRsp), data)
 }
