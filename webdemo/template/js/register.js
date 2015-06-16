@@ -84,3 +84,33 @@ $("form[data-type=regAccountAction]").submit(function(event){
 				}
 			}, "json");
 })
+
+$("form[data-type=modifyPasswordAction]").submit(function(event){
+			event.preventDefault();
+			var target = event.target;
+			var action = $(target).attr("action");
+			var mail = $("input[name='modify_mail']").val();
+			var account = $("input[name='modify_account']").val();
+			var password = $("input[name='modify_password']").val();
+			var password2 = $("input[name='modify_password2']").val();
+
+			if (password != password2){
+				alert(" 两次输入密码不相符，请重新输入");
+				return;
+			}
+			
+			if (!checkInputValid(account) ||
+			!checkInputValid(password) ||
+			!checkInputValid(password2)) {
+				alert("输入必须为字母、数字及符号 (5-20)字符，请检查后重新输入");
+				return
+			}
+			
+			$.post(action, $(target).serialize(), function(ret){
+				if(ret.Ret == "0"){
+						$("#modify_result").text(ret.Reason)
+				} else {
+						$("#modify_result").text(ret.Reason+"(请重新登录游戏，假如修改失败，请检查账户与邮箱是否对应)")
+				}
+			}, "json");
+})

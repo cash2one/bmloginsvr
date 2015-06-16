@@ -7,17 +7,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
-
-type UserAccountInfo struct {
-	account  string
-	password string
-	online   bool
-	uid      uint32
-	name0    string
-	name1    string
-	name2    string
-}
 
 func initDatabase(path string) *sql.DB {
 	newdb := false
@@ -53,7 +44,209 @@ func initDatabase(path string) *sql.DB {
 		//	reset all online state
 	}
 
+	//	check user donate table
+	userDonateTableExist, err := dbTableExist(db, "userdonate")
+	if err != nil {
+		log.Printf("failed to check userDonate table.err:", err)
+	} else {
+		if !userDonateTableExist {
+			sqlexpr := `
+		create table userdonate(uid integer primary key, donate integer, lastdonatetime integer, expiretime integer)
+		`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Printf("Create new table failed.Error[%d] DB[%s]", err, db)
+				db.Close()
+				return nil
+			} else {
+				log.Printf("create a new table[userdonate]")
+			}
+		}
+	}
+
 	return db
+}
+
+//	user donate table
+func dbTableExist(db *sql.DB, tableName string) (bool, error) {
+	if nil == db {
+		return false, errors.New("nil database")
+	}
+
+	rows, err := db.Query("select count(*) as cnt from sqlite_master where type='table' and name='" + tableName + "'")
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+	tableCount := 0
+
+	if !rows.Next() {
+		return false, errors.New("can't query table count")
+	}
+
+	rows.Scan(&tableCount)
+
+	log.Println("table size:", tableCount)
+
+	if tableCount == 1 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+type UserDonateInfo struct {
+	uid            uint32
+	donate         int
+	lastdonatetime int
+	expiretime     int
+}
+
+func dbIsUserDonateExists(db *sql.DB, uid uint32) bool {
+	rows, err := db.Query("select uid from userdonate where uid = '" + strconv.FormatUint(uint64(uid), 10) + "'")
+	if err != nil {
+		log.Printf("Error on selecting uid,error[%s]", err.Error())
+		return true
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		count := 0
+		rows.Scan(&count)
+
+		if count == 0 {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func dbInsertUserDonateInfo(db *sql.DB, info *UserDonateInfo) bool {
+	expr := "insert into userdonate values(" + strconv.FormatUint(uint64(info.uid), 10) + "," + strconv.FormatUint(uint64(info.donate), 10) + "," + strconv.FormatUint(uint64(info.lastdonatetime), 10) + "," + strconv.FormatUint(uint64(info.expiretime), 10) + ")"
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Println("db exec failed.expr:", expr, " err:", err)
+		return false
+	}
+
+	return true
+}
+
+func dbGetUserDonateInfo(db *sql.DB, uid uint32, info *UserDonateInfo) bool {
+	if nil == db {
+		return false
+	}
+
+	//	Select
+	fetched := false
+	sqlexpr := "select donate,lastdonatetime,expiretime from userdonate where uid = " + strconv.FormatUint(uint64(uid), 10)
+	rows, err := db.Query(sqlexpr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
+		return false
+	} else {
+		defer rows.Close()
+		//	Read data
+		if rows.Next() {
+			fetched = true
+			rows.Scan(&info.donate, &info.lastdonatetime, &info.expiretime)
+			info.uid = uid
+			//log.Println("Fetched uid:", info.uid, " donate:", info.donate, " lastdonatetime:", info.lastdonatetime, " expiretime:", info.expiretime)
+		}
+	}
+
+	return fetched
+}
+
+func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
+	if !dbIsUserDonateExists(db, uid) {
+		//	new record
+		info := &UserDonateInfo{}
+		info.uid = uid
+		info.donate = donateMoney
+		info.lastdonatetime = int(time.Now().Unix())
+		info.expiretime = 0
+
+		return dbInsertUserDonateInfo(db, info)
+	} else {
+		//	update record
+		info := &UserDonateInfo{}
+		if !dbGetUserDonateInfo(db, uid, info) {
+			return false
+		}
+		info.donate += donateMoney
+		info.lastdonatetime = int(time.Now().Unix())
+		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
+
+		_, err := db.Exec(expr)
+		if err != nil {
+			log.Printf("Error on executing expression[%s] Error[%s]",
+				expr, err.Error())
+			return false
+		}
+
+		return true
+	}
+}
+
+func dbUpdateUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
+	if !dbIsUserDonateExists(db, uid) {
+		//	new record
+		info := &UserDonateInfo{}
+		info.uid = uid
+		info.donate = donateMoney
+		info.lastdonatetime = int(time.Now().Unix())
+		info.expiretime = 0
+
+		return dbInsertUserDonateInfo(db, info)
+	} else {
+		//	update record
+		info := &UserDonateInfo{}
+		if !dbGetUserDonateInfo(db, uid, info) {
+			return false
+		}
+		info.donate = donateMoney
+		info.lastdonatetime = int(time.Now().Unix())
+		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
+
+		_, err := db.Exec(expr)
+		if err != nil {
+			log.Printf("Error on executing expression[%s] Error[%s]",
+				expr, err.Error())
+			return false
+		}
+
+		return true
+	}
+}
+
+func dbRemoveUserDonateInfo(db *sql.DB, uid uint32) bool {
+	if dbIsUserDonateExists(db, uid) {
+		expr := "delete from userdonate where uid=" + strconv.FormatUint(uint64(uid), 10)
+		_, err := db.Exec(expr)
+		if err != nil {
+			log.Printf("Error on executing expression[%s] Error[%s]",
+				expr, err.Error())
+			return false
+		}
+		return true
+	}
+
+	return true
+}
+
+//	user account table
+type UserAccountInfo struct {
+	account  string
+	password string
+	online   bool
+	uid      uint32
+	name0    string
+	name1    string
+	name2    string
 }
 
 func dbGetUserAccountInfo(db *sql.DB, account string, info *UserAccountInfo) (bool, error) {
@@ -185,6 +378,18 @@ func dbUpdateUserAccountState(db *sql.DB, account string, online bool) bool {
 	}
 
 	sqlexpr := "update useraccount set online = " + strconv.FormatInt(int64(boolvalue), 10) + " where account = '" + account + "'"
+	_, err := db.Exec(sqlexpr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s] Error[%s]",
+			sqlexpr, err.Error())
+		return false
+	}
+
+	return true
+}
+
+func dbUpdateUserAccountPassword(db *sql.DB, account string, password string) bool {
+	sqlexpr := "update useraccount set password = '" + password + "' where account = '" + account + "'"
 	_, err := db.Exec(sqlexpr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s] Error[%s]",

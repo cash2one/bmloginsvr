@@ -10,6 +10,7 @@ var g_DBUser *sql.DB
 var g_RegServerAddr string = "http://localhost:8081"
 var g_MailVerify string = "/mailverify"
 var g_RegAccount string = "/regaccount"
+var g_ModifyPassword string = "/modifypassword"
 
 func main() {
 	log.Println("main")

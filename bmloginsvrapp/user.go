@@ -666,6 +666,12 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		datasize = uint32(r1)
 	}
 
+	//	获取当前uid捐助的金钱
+	donateInfo := &UserDonateInfo{}
+	if dbGetUserDonateInfo(g_DBUser, this.uid, donateInfo) {
+		//	nothing
+	}
+
 	//	read head
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
@@ -700,6 +706,10 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	if newhum {
 		datasize = 0
 		binary.Write(buf, binary.LittleEndian, &datasize)
+
+		//	donate money
+		binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
+
 		gs.SendUseData(loginopstart+11, buf.Bytes())
 		log.Println("Data transfered to gs.")
 	} else {
@@ -719,6 +729,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		var datalen uint32 = uint32(len(humdata))
 		binary.Write(buf, binary.LittleEndian, &datalen)
 		binary.Write(buf, binary.LittleEndian, humdata)
+		//	donate money
+		binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
 		gs.SendUseData(loginopstart+11, buf.Bytes())
 	}
 }

@@ -67,6 +67,177 @@ func fillRegKeyMsg(regKey string) string {
 	return content
 }
 
+func modifyPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	retJson := &httpResult{
+		ReqType: 2,
+		ErrCode: -1,
+		ErrMsg:  "",
+	}
+
+	//	获得参数
+	mailAddrArg, ok := r.Form["mail"]
+	if !ok {
+		retJson.ErrMsg = "mail arg is nil"
+	}
+	if ok {
+		if len(mailAddrArg) == 0 {
+			retJson.ErrMsg = "mail arg is nil"
+			ok = false
+		}
+	}
+	if ok {
+		if len(mailAddrArg[0]) == 0 {
+			retJson.ErrMsg = "mail arg list is nil"
+			ok = false
+		} else if !strings.Contains(mailAddrArg[0], "@") {
+			retJson.ErrMsg = "invalid mail address"
+			ok = false
+		}
+	}
+
+	pwdArg, pwdOk := r.Form["password"]
+	if !pwdOk {
+		retJson.ErrMsg = "password arg is nil"
+	}
+	if pwdOk {
+		if len(pwdArg) == 0 {
+			retJson.ErrMsg = "password arg is nil"
+			pwdOk = false
+		}
+	}
+	if pwdOk {
+		if len(pwdArg[0]) == 0 {
+			retJson.ErrMsg = "password arg list is nil"
+			pwdOk = false
+		} else if len(pwdArg[0]) >= 20 {
+			retJson.ErrMsg = "nowpsw arg is too long"
+			pwdOk = false
+		}
+	}
+
+	accountArg, actOk := r.Form["account"]
+	if !actOk {
+		retJson.ErrMsg = "account arg is nil"
+	}
+	if actOk {
+		if len(accountArg) == 0 {
+			retJson.ErrMsg = "account arg is nil"
+			actOk = false
+		}
+	}
+	if actOk {
+		if len(accountArg[0]) == 0 {
+			retJson.ErrMsg = "account arg list is nil"
+			actOk = false
+		} else if len(accountArg[0]) >= 20 {
+			retJson.ErrMsg = "account arg is too long"
+			actOk = false
+		}
+	}
+
+	if !ok ||
+		!pwdOk ||
+		!actOk {
+		retJson.ErrCode = 1
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+
+	//	解析参数
+	mailAddr := strings.ToLower(mailAddrArg[0])
+	password := pwdArg[0]
+	account := accountArg[0]
+
+	//	是否已经注册过
+	userInfo := &UserRegKeyInfo{}
+
+	evt := &goChanEvent{}
+	evt.command = CHANEVENT_DBOP_SELECTBYMAIL
+	evt.arguments = make([]string, 1)
+	evt.arguments[0] = mailAddr
+	evt.argument = userInfo
+	evt.retChan = make(chan bool)
+	g_ChanEvent <- evt
+
+	exist := false
+
+	select {
+	case exist = <-evt.retChan:
+		{
+			// nothing
+		}
+	}
+
+	if exist {
+		if len(userInfo.account) != 0 {
+			//	注册过，检查邮箱是否相符
+			/*retJson.ErrCode = 1
+			retJson.ErrMsg = "使用该邮箱注册的账户已经注册成功"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return*/
+			if userInfo.account != account {
+				retJson.ErrCode = 1
+				retJson.ErrMsg = "该账户绑定的邮箱不符"
+				jsData, err := json.Marshal(retJson)
+				if err == nil {
+					w.Write(jsData)
+				} else {
+					log.Println("failed to marshal httpRet", retJson)
+				}
+				return
+			}
+		} else {
+			//	没有注册过 返回错误
+			retJson.ErrCode = 1
+			retJson.ErrMsg = "该邮箱尚未注册"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+	} else {
+		//	没有对应的邮件信息 错误
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "account not registered"
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+
+	//	发送成功接收json
+	retJson.ErrCode = 0
+	//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
+	retJson.ErrMsg = "您的请求已接收，请过几秒后重新进入游戏。"
+	jsData, _ := json.Marshal(retJson)
+	w.Write(jsData)
+
+	//	发送注册数据包到LS
+	pkg := &LSControlProto.RSModifyPasswordReq{}
+	pkg.Account = proto.String(account)
+	pkg.Password = proto.String(password)
+	data, pkgErr := proto.Marshal(pkg)
+	if pkgErr == nil {
+		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordReq), data)
+	}
+}
+
 func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	retJson := &httpResult{
 		ReqType: 1,
@@ -442,6 +613,10 @@ func httpRequestEntry(w http.ResponseWriter, r *http.Request) {
 	case "/regaccount":
 		{
 			regAccountHandler(w, r)
+		}
+	case "/modifypassword":
+		{
+			modifyPasswordHandler(w, r)
 		}
 	default:
 		{

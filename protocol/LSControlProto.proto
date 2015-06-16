@@ -11,6 +11,8 @@ enum Opcode{
 	PKG_RegistAccountWithInfoReq = 7;
 	PKG_RegistAccountWithInfoAck = 8;
 	PKG_HeartBeat = 9;
+	PKG_ModifyPasswordReq = 10;
+	PKG_ModifyPasswordRsp = 11;
 }
 
 message LSCHead{
@@ -56,4 +58,14 @@ message RSRegistAccountAck {
 
 message RSHeartBeat {
 	required uint32 seq = 1;
+}
+
+message RSModifyPasswordReq {
+	required string account = 1;
+	required string password = 2;
+}
+
+message RSModifyPasswordRsp {
+	required bool result = 1;
+	required string account = 2;
 }

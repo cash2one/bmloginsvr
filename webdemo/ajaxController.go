@@ -174,6 +174,61 @@ func (this *ajaxController) RegisterAction(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+func (this *ajaxController) ModifyAction(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json;charset=UTF-8")
+	err := r.ParseForm()
+	if err != nil {
+		OutputJson(w, 0, "参数错误", nil)
+		return
+	}
+
+	regMail := r.FormValue("modify_mail")
+	if "" == regMail {
+		OutputJson(w, 0, "邮箱错误", nil)
+		return
+	}
+
+	regAccount := r.FormValue("modify_account")
+	if "" == regAccount {
+		OutputJson(w, 0, "账户非法", nil)
+		return
+	}
+
+	regPassword := r.FormValue("modify_password")
+	if "" == regMail {
+		OutputJson(w, 0, "密码非法", nil)
+		return
+	}
+
+	reqAddr := g_RegServerAddr + g_ModifyPassword + "?mail=" + regMail + "&account=" + regAccount + "&password=" + regPassword
+	var rsp *http.Response
+	rsp, err = http.Get(reqAddr)
+	if err != nil {
+		OutputJson(w, 0, "http请求失败", nil)
+		log.Println("http address:", reqAddr)
+		return
+	}
+	defer rsp.Body.Close()
+	body, err := ioutil.ReadAll(rsp.Body)
+	if err != nil {
+		OutputJson(w, 0, "读取缓冲区失败", nil)
+		return
+	}
+
+	regMailRet := &MailVerifyResult{}
+	err = json.Unmarshal(body, regMailRet)
+	if err != nil {
+		OutputJson(w, 0, "反序列化json失败", nil)
+		return
+	}
+
+	if 0 == regMailRet.ErrCode {
+		OutputJson(w, 1, regMailRet.ErrMsg, nil)
+	} else {
+		OutputJson(w, 0, regMailRet.ErrMsg, nil)
+	}
+}
+
 func (this *ajaxController) IndexAction(w http.ResponseWriter, r *http.Request) {
 	NotFoundHandler(w, r)
 }

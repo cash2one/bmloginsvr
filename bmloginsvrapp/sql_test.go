@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestSql(t *testing.T) {
+func TestSqlUserAccount(t *testing.T) {
 	testdbdir := "./dbtest"
 	if !PathExist(testdbdir) {
 		os.Mkdir(testdbdir, os.ModeDir)
@@ -56,6 +56,11 @@ func TestSql(t *testing.T) {
 		t.Fatal("Can't update user state")
 	}
 
+	//	update password
+	if !dbUpdateUserAccountPassword(db, "tk4444", "hello") {
+		t.Fatal("Can't update user password")
+	}
+
 	//	select
 	_, err = dbGetUserAccountInfo(db, "tk4444", &userinfo)
 	if err != nil {
@@ -78,5 +83,63 @@ func TestSql(t *testing.T) {
 		log.Println("can't select the row of ", "tk2222")
 	} else {
 		log.Println("uid", userinfo.uid, "accout:", userinfo.account, " password:", userinfo.password, " online:", userinfo.online)
+	}
+}
+
+func TestSqlUserDonate(t *testing.T) {
+	testdbdir := "./dbtest"
+	if !PathExist(testdbdir) {
+		os.Mkdir(testdbdir, os.ModeDir)
+	}
+
+	//	initialize
+	db := initDatabase("./dbtest/user.db")
+	if db == nil {
+		t.Fatal("Can't initialize database.")
+	}
+	defer db.Close()
+
+	donateMoney := 100
+	testUid := uint32(111)
+
+	//	update
+	if !dbUpdateUserDonateInfo(db, testUid, donateMoney) {
+		t.Error("dbUpdateUserDonateInfo failed")
+		return
+	}
+
+	//	get
+	info := &UserDonateInfo{}
+	if !dbGetUserDonateInfo(db, testUid, info) {
+		t.Error("dbUpdateUserDonateInfo failed")
+		return
+	}
+
+	if info.donate != donateMoney {
+		t.Error("dbUpdateUserDonateInfo failed")
+		return
+	}
+
+	//	inc
+	if !dbIncUserDonateInfo(db, testUid, 1000) {
+		t.Error("dbIncUserDonateInfo failed")
+		return
+	}
+
+	//	get
+	if !dbGetUserDonateInfo(db, testUid, info) {
+		t.Error("dbUpdateUserDonateInfo failed")
+		return
+	}
+
+	if info.donate != 1000+donateMoney {
+		t.Error("dbIncUserDonateInfo failed")
+		return
+	}
+
+	//	remove
+	if !dbRemoveUserDonateInfo(db, testUid) {
+		t.Error("dbRemoveUserDonateInfo failed")
+		return
 	}
 }

@@ -89,6 +89,15 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 			}
 			this.OnRsRegistAccountReq(registAccountWithInfoReq)
 		}
+	case LSControlProto.Opcode_PKG_ModifyPasswordReq:
+		{
+			modifyPasswordReq := &LSControlProto.RSModifyPasswordReq{}
+			err = proto.Unmarshal(msg[oft_body_start:], modifyPasswordReq)
+			if err != nil {
+				return
+			}
+			this.OnRsMofifyPassword(modifyPasswordReq)
+		}
 	}
 }
 
@@ -207,4 +216,46 @@ func (this *ServerUser) OnRegistAccountReq(req *LSControlProto.LSCRegistAccountR
 
 	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_RegistAccountAck),
 		data)
+}
+
+func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordReq) {
+	account := req.GetAccount()
+	password := req.GetPassword()
+
+	rsp := &LSControlProto.RSModifyPasswordRsp{}
+	rsp.Account = proto.String(account)
+
+	if !dbUserAccountExist(g_DBUser, account) {
+		rsp.Result = proto.Bool(false)
+		data, err := proto.Marshal(rsp)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordRsp), data)
+		return
+	}
+
+	if !dbUpdateUserAccountPassword(g_DBUser, account, password) {
+		rsp.Result = proto.Bool(false)
+		data, err := proto.Marshal(rsp)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordRsp), data)
+		return
+	}
+
+	rsp.Result = proto.Bool(true)
+	data, err := proto.Marshal(rsp)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordRsp), data)
+	return
 }
