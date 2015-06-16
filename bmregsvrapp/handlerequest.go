@@ -341,7 +341,7 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 		if len(userInfo.account) != 0 {
 			//	注册过 返回错误
 			retJson.ErrCode = 1
-			retJson.ErrMsg = "Congratulations! Your account had been registered ! mail address already registered."
+			retJson.ErrMsg = "使用该邮箱注册的账户已经注册成功"
 			jsData, err := json.Marshal(retJson)
 			if err == nil {
 				w.Write(jsData)
