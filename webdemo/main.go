@@ -11,6 +11,7 @@ var g_RegServerAddr string = "http://localhost:8081"
 var g_MailVerify string = "/mailverify"
 var g_RegAccount string = "/regaccount"
 var g_ModifyPassword string = "/modifypassword"
+var g_InsertDonate string = "/insertdonaterecord"
 
 func main() {
 	log.Println("main")

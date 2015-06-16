@@ -120,7 +120,7 @@ func dbTableExist(db *sql.DB, tableName string) (bool, error) {
 
 type UserDonateInfo struct {
 	uid            uint32
-	donate         int
+	donate         int32
 	lastdonatetime int
 	expiretime     int
 }
@@ -204,7 +204,7 @@ func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int, donateOrderId 
 		//	new record
 		info := &UserDonateInfo{}
 		info.uid = uid
-		info.donate = donateMoney
+		info.donate = int32(donateMoney)
 		info.lastdonatetime = int(time.Now().Unix())
 		info.expiretime = 0
 
@@ -215,7 +215,7 @@ func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int, donateOrderId 
 		if !dbGetUserDonateInfo(db, uid, info) {
 			return false
 		}
-		info.donate += donateMoney
+		info.donate += int32(donateMoney)
 		info.lastdonatetime = int(time.Now().Unix())
 		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
 
@@ -235,7 +235,7 @@ func dbUpdateUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
 		//	new record
 		info := &UserDonateInfo{}
 		info.uid = uid
-		info.donate = donateMoney
+		info.donate = int32(donateMoney)
 		info.lastdonatetime = int(time.Now().Unix())
 		info.expiretime = 0
 
@@ -246,7 +246,7 @@ func dbUpdateUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
 		if !dbGetUserDonateInfo(db, uid, info) {
 			return false
 		}
-		info.donate = donateMoney
+		info.donate = int32(donateMoney)
 		info.lastdonatetime = int(time.Now().Unix())
 		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
 

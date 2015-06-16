@@ -166,6 +166,11 @@ func insertDonateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	if pkgErr == nil {
 		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordReq), data)
 	}
+
+	retJson.ErrCode = 0
+	retJson.ErrMsg = "添加请求已发送"
+	jsData, _ := json.Marshal(retJson)
+	w.Write(jsData)
 }
 
 func modifyPasswordHandler(w http.ResponseWriter, r *http.Request) {

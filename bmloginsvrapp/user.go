@@ -670,6 +670,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	donateInfo := &UserDonateInfo{}
 	if dbGetUserDonateInfo(g_DBUser, this.uid, donateInfo) {
 		//	nothing
+		log.Println("player[", this.uid, "] donate money:", donateInfo.donate)
 	}
 
 	//	read head

@@ -13,6 +13,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("admin_name")
 	if err != nil || cookie.Value == "" {
 		http.Redirect(w, r, "/login/index", http.StatusFound)
+		return
 	}
 
 	pathInfo := strings.Trim(r.URL.Path, "/")
