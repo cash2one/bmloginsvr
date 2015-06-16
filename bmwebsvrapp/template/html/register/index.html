@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>注册BackMIR账户</title>
+        <link rel="stylesheet" type="text/css" href="/css/register.css" />
+        <script type="text/javascript" src="/js/jquery.js" ></script>
+    </head>
+    <body>
+    		<!--申请秘钥-->
+    		<div class="input_form">
+    			
+        <h1 class="title_step"> 申请秘钥</h1>
+        <h6><font color="red">请填入您绑定的邮箱，后续的密码修改、找回均依赖于此</font></h6>
+        <form data-type="getRegKeyAction" action="/ajax/regkey" style="align:center">
+            <table>
+            		<tr>
+                		<td>邮箱</td>
+                		<td><input type="text" name="reg_mail"/></td>
+                </tr>
+                <tr>
+                    <td align="center"><input type="submit" value="申请秘钥" style="width:100px;height:25px"/></td>
+                </tr>
+            </table>
+        </form>
+        
+      	</div>
+        
+        <!--注册账户-->
+        <div class="input_form">
+        
+        <h1 class="title_step"> 注册账户</h1>
+        <h6><font color="red">密钥和邮箱为上一个步骤完成后自动填入</font></h6>
+        <h6 id="reg_result"></h6>
+        <form data-type="regAccountAction" action="/ajax/register">
+            <table>
+            		<tr>
+                		<td>邮箱</td><td><input type="text" readonly="true" name="reg_mail2"></input></td>
+                </tr>
+            		<tr>
+                		<td>密钥</td><td><input type="text"  readonly="true" name="reg_key"></input></td>
+                </tr>
+                <tr>
+                		<td>账户</td><td><input type="text" style="ime-mode:disabled" name="reg_account"></input></td>
+                </tr>
+                <tr>
+                		<td>密码</td><td><input type="password" style="ime-mode:disabled" name="reg_password"></input></td>
+                </tr>
+                <tr>
+                		<td>密码确认</td><td><input type="password" style="ime-mode:disabled" name="reg_password2"></input></td>
+                </tr>
+                <tr>
+                    <td><input type="submit" value="注册账户" style="width:100px;height:25px"></input></td>
+                </tr>
+            </table>
+        </form>
+        
+        <!--修改密码-->
+        <div class="input_form">
+        
+        <h1 class="title_step"> 修改密码</h1>
+        <h6><font color="red">请输入要修改密码的账户及注册时候的邮箱</font></h6>
+        <h6 id="modify_result"></h6>
+        <form data-type="modifyPasswordAction" action="/ajax/modify">
+            <table>
+            		<tr>
+                		<td>邮箱</td><td><input type="text" name="modify_mail"></input></td>
+                </tr>
+                <tr>
+                		<td>账户</td><td><input type="text" style="ime-mode:disabled" name="modify_account"></input></td>
+                </tr>
+                <tr>
+                		<td>密码</td><td><input type="password" style="ime-mode:disabled" name="modify_password"></input></td>
+                </tr>
+                <tr>
+                		<td>密码确认</td><td><input type="password" style="ime-mode:disabled" name="modify_password2"></input></td>
+                </tr>
+                <tr>
+                    <td><input type="submit" value="修改密码" style="width:100px;height:25px"></input></td>
+                </tr>
+            </table>
+        </form>
+        
+      	</div>
+      	</br>
+      	</br>
+      	</br>
+      	</br>
+      	</br>
+      	</br>
+      	</br>
+      	</br>
+      <div class="body_about">
+      	<p>dev by sryan with golang</p>
+      	<p>您可以:<a href="http://sryanyuan.github.io/web/"  target="_blank" title=":">捐助BackMIR项目</a></p>
+    	</div>
+    </body>
+    <script charset="utf-8" type="text/javascript" src="/js/register.js" ></script>
+</html>

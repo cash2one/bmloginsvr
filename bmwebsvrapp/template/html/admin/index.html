@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>iMessage Admin</title>
+        <link rel="stylesheet" type="text/css" href="/css/main.css" />
+        <script type="text/javascript" src="/js/jquery.js" ></script>
+    </head>
+    <body>
+        <div class="head">
+            <div class="head_left"><h1>管理后台</h1></div>
+            <div class="head_right">欢迎登陆，管理员：{{.UserName}}|<a id="logout" href="#">退出系统</a></div>
+        </div>
+        <div>欢迎登陆管理后台首页</div>
+        
+        <!--申请秘钥-->
+    		<div class="input_form">
+    			
+        <h1 class="title_step"> 添加捐赠信息</h1>
+        <h6><font color="red">请填入捐赠者的游戏名称，支付宝订单号以及金额</font></h6>
+        <h6 id="adddonate_result"></h6>
+        <form data-type="insertDonateAction" action="/admin/insertDonate" style="align:center">
+            <table>
+            		<tr>
+                		<td>游戏名</td>
+                		<td><input type="text" name="donate_name"/></td>
+                </tr>
+                <tr>
+                		<td>订单号</td>
+                		<td><input type="text" name="donate_order"/></td>
+                </tr>
+                <tr>
+                		<td>金额</td>
+                		<td><input type="text" name="donate_money"/></td>
+                </tr>
+                <tr>
+                    <td align="center"><input type="submit" value="添加捐赠信息" style="width:100px;height:25px"/></td>
+                </tr>
+            </table>
+        </form>
+    </body>
+    <script type="text/javascript" src="/js/admin.js" ></script>
+</html>
