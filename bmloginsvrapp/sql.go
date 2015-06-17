@@ -215,9 +215,9 @@ func dbIncUserDonateInfo(db *sql.DB, uid uint32, donateMoney int, donateOrderId 
 		if !dbGetUserDonateInfo(db, uid, info) {
 			return false
 		}
-		info.donate += int32(donateMoney)
+		info.donate = int32(dbGetUserDonateHistorySum(db, uid))
 		info.lastdonatetime = int(time.Now().Unix())
-		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
+		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10) + " where uid=" + strconv.FormatUint(uint64(uid), 10)
 
 		_, err := db.Exec(expr)
 		if err != nil {
@@ -248,7 +248,7 @@ func dbUpdateUserDonateInfo(db *sql.DB, uid uint32, donateMoney int) bool {
 		}
 		info.donate = int32(donateMoney)
 		info.lastdonatetime = int(time.Now().Unix())
-		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10)
+		expr := "update userdonate set donate=" + strconv.FormatUint(uint64(info.donate), 10) + ", lastdonatetime=" + strconv.FormatUint(uint64(info.lastdonatetime), 10) + ", expiretime=" + strconv.FormatUint(uint64(info.expiretime), 10) + " where uid=" + strconv.FormatUint(uint64(uid), 10)
 
 		_, err := db.Exec(expr)
 		if err != nil {
@@ -317,6 +317,25 @@ func dbInsertUserDonateHistory(db *sql.DB, history *UserDonateHistory) bool {
 	}
 
 	return true
+}
+
+func dbGetUserDonateHistorySum(db *sql.DB, uid uint32) int {
+	expr := "select sum(donate) from userdonatehistory where uid=" + strconv.FormatUint(uint64(uid), 10)
+	sum := 0
+
+	rows, err := db.Query(expr)
+	if nil != err {
+		log.Println("db query failed.expr:", expr, " err:", err)
+		return 0
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		rows.Scan(&sum)
+	}
+
+	return sum
 }
 
 //	user account table

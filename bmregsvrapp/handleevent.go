@@ -181,6 +181,29 @@ func handleLSMsg(evt *client.ConnEvent) {
 			}
 			onMsgRegistAccountAck(registAccountAck)
 		}
+	case LSControlProto.Opcode_PKG_InsertDonateRecordRsp:
+		{
+			insertDonateRecordRsp := &LSControlProto.RSInsertDonateInfoRsp{}
+			err = proto.Unmarshal(msg[oft_body_start:], insertDonateRecordRsp)
+			if err != nil {
+				return
+			}
+			onMsgInsertDonateRecordRsp(insertDonateRecordRsp)
+		}
+	}
+}
+
+func onMsgInsertDonateRecordRsp(rsp *LSControlProto.RSInsertDonateInfoRsp) {
+	if 0 == rsp.GetResult() {
+		log.Println("添加游戏用户捐赠信息[", rsp.GetName(), "]成功")
+	} else {
+		if -1 == rsp.GetResult() {
+			log.Println("添加游戏用户捐赠信息[", rsp.GetName(), "]失败，无法获取当前游戏名对应UID")
+		} else if -2 == rsp.GetResult() {
+			log.Println("添加游戏用户捐赠信息[", rsp.GetName(), "]失败，订单号已被使用")
+		} else {
+			log.Println("添加游戏用户捐赠信息[", rsp.GetName(), "]失败，未知错误")
+		}
 	}
 }
 

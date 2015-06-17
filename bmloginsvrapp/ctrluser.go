@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
+	"github.com/axgle/mahonia"
 	"log"
 	"regexp"
 )
@@ -277,8 +278,12 @@ func (this *ServerUser) OnRsInsertDonateInfoReq(req *LSControlProto.RSInsertDona
 	rsp := &LSControlProto.RSInsertDonateInfoRsp{}
 	rsp.Name = proto.String(name)
 
+	//	convert to gbk-name
+	enc := mahonia.NewEncoder("gbk")
+	playerName := enc.ConvertString(name)
+
 	//	get uid
-	uid := dbGetUserUidByName(g_DBUser, name)
+	uid := dbGetUserUidByName(g_DBUser, playerName)
 	if 0 == uid {
 		rsp.Result = proto.Int32(-1)
 		data, _ := proto.Marshal(rsp)
