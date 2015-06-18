@@ -6,6 +6,7 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -584,6 +585,11 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	this.SendUseData(loginopstart+7, buf.Bytes())
 }
 
+type UserLoginExtendInfo struct {
+	DonateMoney int32
+	SystemGift  []int
+}
+
 func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	var namelen uint8 = 0
 	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
@@ -666,13 +672,6 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		datasize = uint32(r1)
 	}
 
-	//	获取当前uid捐助的金钱
-	donateInfo := &UserDonateInfo{}
-	if dbGetUserDonateInfo(g_DBUser, this.uid, donateInfo) {
-		//	nothing
-		log.Println("player[", this.uid, "] donate money:", donateInfo.donate)
-	}
-
 	//	read head
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
@@ -709,10 +708,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		binary.Write(buf, binary.LittleEndian, &datasize)
 
 		//	donate money
-		binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
-
-		gs.SendUseData(loginopstart+11, buf.Bytes())
-		log.Println("Data transfered to gs.")
+		//binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
+		//gs.SendUseData(loginopstart+11, buf.Bytes())
 	} else {
 		log.Println("Not new hum, read size ", datasize)
 
@@ -731,9 +728,41 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		binary.Write(buf, binary.LittleEndian, &datalen)
 		binary.Write(buf, binary.LittleEndian, humdata)
 		//	donate money
-		binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
-		gs.SendUseData(loginopstart+11, buf.Bytes())
+		//binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
+		//gs.SendUseData(loginopstart+11, buf.Bytes())
 	}
+
+	//	发送登录扩展信息，json格式
+	extInfo := &UserLoginExtendInfo{}
+	donateInfo := &UserDonateInfo{}
+	if dbGetUserDonateInfo(g_DBUser, this.uid, donateInfo) {
+		//	nothing
+		log.Println("player[", this.uid, "] donate money:", donateInfo.donate)
+	}
+	extInfo.DonateMoney = donateInfo.donate
+	extInfo.SystemGift = dbGetSystemGiftIdByUid(g_DBUser, this.uid)
+	binaryExtInfo, jsErr := json.Marshal(extInfo)
+	if jsErr != nil {
+		log.Println("failed to marshal user extend login information:", jsErr)
+
+		//	字符长度为0
+		zeroLength := uint32(0)
+		binary.Write(buf, binary.LittleEndian, &zeroLength)
+	} else {
+		//	发送扩展信息
+		zeroTerminate := uint8(0)
+		jsonLength := uint32(len(binaryExtInfo))
+
+		binary.Write(buf, binary.LittleEndian, &jsonLength)
+		if 0 != jsonLength {
+			//	写入json数据
+			binary.Write(buf, binary.LittleEndian, binaryExtInfo)
+			//	写入结束符
+			binary.Write(buf, binary.LittleEndian, &zeroTerminate)
+		}
+	}
+
+	gs.SendUseData(loginopstart+11, buf.Bytes())
 }
 
 func (this *User) GetUserTag() uint32 {

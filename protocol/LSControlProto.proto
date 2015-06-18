@@ -15,6 +15,8 @@ enum Opcode{
 	PKG_ModifyPasswordRsp = 11;
 	PKG_InsertDonateRecordReq = 12;
 	PKG_InsertDonateRecordRsp = 13;
+	PKG_InsertSystemGiftReq = 14;
+	PKG_InsertSystemGiftRsp = 15;
 }
 
 message LSCHead{
@@ -80,5 +82,17 @@ message RSInsertDonateInfoReq {
 
 message RSInsertDonateInfoRsp {
 	required string name = 1;
+	required int32 result = 2;
+}
+
+message RSInsertSystemGiftReq {
+	required string account = 1;
+	required int32 giftid = 2;
+	required int32 giftsum = 3;
+	required int32 expiretime = 4;
+}
+
+message RSInsertSystemGiftRsp {
+	required string account = 1;
 	required int32 result = 2;
 }

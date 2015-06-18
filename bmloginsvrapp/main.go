@@ -6,15 +6,13 @@ import "C"
 //	Go
 import (
 	"database/sql"
-	//	"dbgutil"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"server"
 	"time"
-	//	"syscall"
-	//"unsafe"
 )
 
 var (
@@ -98,6 +96,24 @@ func main() {
 	g_UserList = &UserInfoList{
 		allusers: make(map[uint32]IUserInterface),
 	}
+
+	//	test
+	extInfo := &UserLoginExtendInfo{}
+	donateInfo := &UserDonateInfo{}
+	if dbGetUserDonateInfo(g_DBUser, 1, donateInfo) {
+		//	nothing
+		log.Println("player[", 1, "] donate money:", donateInfo.donate)
+	}
+	extInfo.DonateMoney = donateInfo.donate
+	extInfo.SystemGift = dbGetSystemGiftIdByUid(g_DBUser, 1)
+	binaryExtInfo, jsErr := json.Marshal(extInfo)
+	if jsErr != nil {
+		log.Println("failed to marshal user extend login information:", jsErr)
+	} else {
+		//	发送扩展信息
+		log.Println(string(binaryExtInfo))
+	}
+	//	test
 
 	g_CtrlCh = make(chan uint8, 10)
 

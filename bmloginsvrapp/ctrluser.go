@@ -8,6 +8,7 @@ import (
 	"github.com/axgle/mahonia"
 	"log"
 	"regexp"
+	"time"
 )
 
 func (this *ServerUser) OnCtrlMsg(msg []byte) {
@@ -107,6 +108,15 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 				return
 			}
 			this.OnRsInsertDonateInfoReq(insertDonateRecordReq)
+		}
+	case LSControlProto.Opcode_PKG_InsertSystemGiftReq:
+		{
+			insertSystemGiftReq := &LSControlProto.RSInsertSystemGiftReq{}
+			err = proto.Unmarshal(msg[oft_body_start:], insertSystemGiftReq)
+			if err != nil {
+				return
+			}
+			this.OnRsInsertSystemGiftReq(insertSystemGiftReq)
 		}
 	}
 }
@@ -302,4 +312,43 @@ func (this *ServerUser) OnRsInsertDonateInfoReq(req *LSControlProto.RSInsertDona
 	rsp.Result = proto.Int32(0)
 	data, _ := proto.Marshal(rsp)
 	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertDonateRecordRsp), data)
+}
+
+func (this *ServerUser) OnRsInsertSystemGiftReq(req *LSControlProto.RSInsertSystemGiftReq) {
+	account := req.GetAccount()
+	giftId := req.GetGiftid()
+	giftSum := req.GetGiftsum()
+	expireTime := req.GetExpiretime()
+
+	rsp := &LSControlProto.RSInsertSystemGiftRsp{}
+	rsp.Account = proto.String(account)
+	rsp.Result = proto.Int32(0)
+
+	//	get uid
+	uid := dbGetUserUidByAccount(g_DBUser, account)
+	if 0 == uid {
+		rsp.Result = proto.Int32(-1)
+		data, _ := proto.Marshal(rsp)
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertSystemGiftRsp), data)
+		return
+	}
+
+	gift := &SystemGift{}
+	gift.uid = uid
+	gift.expiretime = int64(expireTime)
+	gift.giftid = int(giftId)
+	gift.giftsum = int(giftSum)
+	gift.givetime = time.Now().Unix()
+
+	// insert a record
+	if !dbInsertSystemGift(g_DBUser, gift) {
+		rsp.Result = proto.Int32(-2)
+		data, _ := proto.Marshal(rsp)
+		this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertSystemGiftRsp), data)
+		return
+	}
+
+	rsp.Result = proto.Int32(0)
+	data, _ := proto.Marshal(rsp)
+	this.SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertSystemGiftRsp), data)
 }

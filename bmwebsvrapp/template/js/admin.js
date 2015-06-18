@@ -41,3 +41,27 @@ $("form[data-type=insertDonateAction]").submit(function(event){
 				}
 			}, "json");
 })
+
+$("form[data-type=insertGiftAction]").submit(function(event){
+			event.preventDefault();
+			var target = event.target;
+			var action = $(target).attr("action");
+			var giftaccount = $("input[name='gift_account']").val();
+			var giftid = $("input[name='gift_id']").val();
+			var giftsum = $("input[name='gift_sum']").val();
+			
+			if(giftaccount.length == 0 ||
+			giftid.length == 0 ||
+			giftsum.length == 0) {
+				alert("输入不能为空!");
+				return;
+			}
+			
+			$.post(action, $(target).serialize(), function(ret){
+				if(ret.Ret == "0"){
+						$("#addgift_result").text(ret.Reason)
+				} else {
+						$("#addgift_result").text(ret.Reason)
+				}
+			}, "json");
+})

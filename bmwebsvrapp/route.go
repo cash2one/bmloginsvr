@@ -95,7 +95,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
-		http.Redirect(w, r, "/login/index", http.StatusFound)
+		//http.Redirect(w, r, "/login/index", http.StatusFound)
 	}
 
 	w.Header().Set("content-type", "text/plain; charset=UTF-8")

@@ -68,6 +68,155 @@ func fillRegKeyMsg(regKey string) string {
 	return content
 }
 
+func insertSystemGiftHandler(w http.ResponseWriter, r *http.Request) {
+	retJson := &httpResult{
+		ReqType: 2,
+		ErrCode: -1,
+		ErrMsg:  "",
+	}
+
+	//	获得参数
+	accountArgs, ok := r.Form["account"]
+	if !ok {
+		retJson.ErrMsg = "accountArgs is nil"
+	}
+	if ok {
+		if len(accountArgs) == 0 {
+			retJson.ErrMsg = "accountArgs is nil"
+			ok = false
+		}
+	}
+	if ok {
+		if len(accountArgs[0]) == 0 {
+			retJson.ErrMsg = "accountArgs list is nil"
+			ok = false
+		}
+	}
+
+	giftidArgs, pwdOk := r.Form["giftid"]
+	if !pwdOk {
+		retJson.ErrMsg = "giftidArgs arg is nil"
+	}
+	if pwdOk {
+		if len(giftidArgs) == 0 {
+			retJson.ErrMsg = "giftidArgs arg is nil"
+			pwdOk = false
+		}
+	}
+	if pwdOk {
+		if len(giftidArgs[0]) == 0 {
+			retJson.ErrMsg = "giftidArgs arg list is nil"
+			pwdOk = false
+		}
+	}
+
+	giftsumArgs, actOk := r.Form["giftsum"]
+	if !actOk {
+		retJson.ErrMsg = "giftsumArgs arg is nil"
+	}
+	if actOk {
+		if len(giftsumArgs) == 0 {
+			retJson.ErrMsg = "giftsumArgs arg is nil"
+			actOk = false
+		}
+	}
+	if actOk {
+		if len(giftsumArgs[0]) == 0 {
+			retJson.ErrMsg = "giftsumArgs arg list is nil"
+			actOk = false
+		}
+	}
+
+	expiretimeArgs, expOk := r.Form["expiretime"]
+	if !expOk {
+		retJson.ErrMsg = "expiretimeArgs arg is nil"
+	}
+	if expOk {
+		if len(expiretimeArgs) == 0 {
+			retJson.ErrMsg = "expiretimeArgs arg is nil"
+			expOk = false
+		}
+	}
+	if expOk {
+		if len(expiretimeArgs[0]) == 0 {
+			retJson.ErrMsg = "expiretimeArgs arg list is nil"
+			expOk = false
+		}
+	}
+
+	if !ok ||
+		!pwdOk ||
+		!actOk ||
+		!expOk {
+		retJson.ErrCode = 1
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+
+	//	解析参数
+	account := accountArgs[0]
+	expireTimeStr := expiretimeArgs[0]
+	expireTime, expireTimeErr := strconv.Atoi(expireTimeStr)
+	if nil != expireTimeErr {
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "can't convert expireTime from type string"
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+	giftIdStr := giftidArgs[0]
+	giftId, giftIdErr := strconv.Atoi(giftIdStr)
+	if nil != giftIdErr {
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "can't convert giftId from type string"
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+	giftSumStr := giftsumArgs[0]
+	giftSum, giftSumErr := strconv.Atoi(giftSumStr)
+	if nil != giftSumErr {
+		retJson.ErrCode = 1
+		retJson.ErrMsg = "can't convert giftSum from type string"
+		jsData, err := json.Marshal(retJson)
+		if err == nil {
+			w.Write(jsData)
+		} else {
+			log.Println("failed to marshal httpRet", retJson)
+		}
+		return
+	}
+
+	//	发送注册数据包到LS
+	pkg := &LSControlProto.RSInsertSystemGiftReq{}
+	pkg.Account = proto.String(account)
+	pkg.Giftid = proto.Int32(int32(giftId))
+	pkg.Giftsum = proto.Int32(int32(giftSum))
+	pkg.Expiretime = proto.Int32(int32(expireTime))
+	data, pkgErr := proto.Marshal(pkg)
+	if pkgErr == nil {
+		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_InsertSystemGiftReq), data)
+	}
+
+	retJson.ErrCode = 0
+	retJson.ErrMsg = "添加请求已发送"
+	jsData, _ := json.Marshal(retJson)
+	w.Write(jsData)
+}
+
 func insertDonateRecordHandler(w http.ResponseWriter, r *http.Request) {
 	retJson := &httpResult{
 		ReqType: 2,
@@ -727,6 +876,10 @@ func httpRequestEntry(w http.ResponseWriter, r *http.Request) {
 	case "/insertdonaterecord":
 		{
 			insertDonateRecordHandler(w, r)
+		}
+	case "/insertsystemgift":
+		{
+			insertSystemGiftHandler(w, r)
 		}
 	default:
 		{

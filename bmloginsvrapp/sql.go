@@ -86,6 +86,27 @@ func initDatabase(path string) *sql.DB {
 		}
 	}
 
+	//	check systemgift table
+	systemGiftTableExists, err := dbTableExist(db, "systemgift")
+	if err != nil {
+		log.Printf("failed to check systemgift table.err:", err)
+	} else {
+		if !systemGiftTableExists {
+			sqlexpr := `
+			create table systemgift(id integer primary key, uid integer, giftid integer, giftsum integer, givetime integer, expiretime integer)
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Printf("Create new table failed.Error[%d] DB[%s]", err, db)
+				db.Close()
+				return nil
+			} else {
+				log.Printf("create a new table[systemgift]")
+			}
+		}
+	}
+
 	return db
 }
 
@@ -618,4 +639,115 @@ func dbGetUserUidByName(db *sql.DB, name string) uint32 {
 	}
 
 	return uid
+}
+
+func dbGetUserUidByAccount(db *sql.DB, account string) uint32 {
+	expr := "select uid from useraccount where account='" + account + "'"
+	rows, err := db.Query(expr)
+
+	if err != nil {
+		log.Println(err)
+		return 0
+	}
+
+	defer rows.Close()
+
+	uid := uint32(0)
+
+	if rows.Next() {
+		rows.Scan(&uid)
+	}
+
+	return uid
+}
+
+//	system gift
+type SystemGift struct {
+	uid        uint32
+	giftid     int
+	giftsum    int
+	givetime   int64
+	expiretime int64
+}
+
+func dbInsertSystemGift(db *sql.DB, gift *SystemGift) bool {
+	expr := "insert into systemgift values(null, " +
+		strconv.FormatUint(uint64(gift.uid), 10) + "," +
+		strconv.FormatUint(uint64(gift.giftid), 10) + "," +
+		strconv.FormatUint(uint64(gift.giftsum), 10) + "," +
+		strconv.FormatUint(uint64(gift.givetime), 10) + "," +
+		strconv.FormatUint(uint64(gift.expiretime), 10) +
+		")"
+
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Println("db exec error, expr:", expr, "err:", err)
+		return false
+	}
+
+	return true
+}
+
+func dbGetSystemGiftByUid(db *sql.DB, uid uint32, gift *SystemGift) bool {
+	expr := "select giftid,giftsum,givetime,expiretime from systemgift where uid=" + strconv.FormatUint(uint64(uid), 10)
+	rows, err := db.Query(expr)
+
+	if err != nil {
+		log.Println("db query expr", expr, "err:", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		gift.uid = uid
+		rows.Scan(&gift.giftid)
+		rows.Scan(&gift.giftsum)
+		rows.Scan(&gift.givetime)
+		rows.Scan(&gift.expiretime)
+	}
+
+	return true
+}
+
+func dbGetSystemGiftIdByUid(db *sql.DB, uid uint32) []int {
+	expr := "select count(*) as cnt from systemgift where uid=" + strconv.FormatUint(uint64(uid), 10)
+	rowsCount, err := db.Query(expr)
+
+	if err != nil {
+		log.Println("sql expr ", expr, " error:", err)
+		return nil
+	}
+
+	count := 0
+	defer rowsCount.Close()
+
+	if rowsCount.Next() {
+		rowsCount.Scan(&count)
+	}
+
+	if 0 == count {
+		return nil
+	}
+
+	giftsArray := make([]int, count, count)
+
+	expr = "select giftid from systemgift where uid=" + strconv.FormatUint(uint64(uid), 10)
+	rowsRet, err := db.Query(expr)
+
+	if err != nil {
+		log.Println("sql expr ", expr, " error:", err)
+		return nil
+	}
+
+	defer rowsRet.Close()
+
+	index := 0
+	for rowsRet.Next() {
+		giftId := 0
+		rowsRet.Scan(&giftId)
+		giftsArray[index] = giftId
+	}
+
+	return giftsArray
 }

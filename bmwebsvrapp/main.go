@@ -12,6 +12,7 @@ var g_MailVerify string = "/mailverify"
 var g_RegAccount string = "/regaccount"
 var g_ModifyPassword string = "/modifypassword"
 var g_InsertDonate string = "/insertdonaterecord"
+var g_InsertGift string = "/insertsystemgift"
 
 func main() {
 	log.Println("main")

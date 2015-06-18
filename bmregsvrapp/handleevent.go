@@ -190,6 +190,27 @@ func handleLSMsg(evt *client.ConnEvent) {
 			}
 			onMsgInsertDonateRecordRsp(insertDonateRecordRsp)
 		}
+	case LSControlProto.Opcode_PKG_InsertSystemGiftRsp:
+		{
+			insertSystemGiftRsp := &LSControlProto.RSInsertSystemGiftRsp{}
+			err = proto.Unmarshal(msg[oft_body_start:], insertSystemGiftRsp)
+			if err != nil {
+				return
+			}
+			onMsgInsertSystemGiftRsp(insertSystemGiftRsp)
+		}
+	}
+}
+
+func onMsgInsertSystemGiftRsp(rsp *LSControlProto.RSInsertSystemGiftRsp) {
+	if 0 == rsp.GetResult() {
+		log.Println("添加账户[" + rsp.GetAccount() + "]礼包成功")
+	} else {
+		if -1 == rsp.GetResult() {
+			log.Println("添加账户[", rsp.GetAccount(), "]礼包失败，无法获取当前账户对应UID")
+		} else {
+			log.Println("添加账户[", rsp.GetAccount(), "]礼包失败，未知错误")
+		}
 	}
 }
 
