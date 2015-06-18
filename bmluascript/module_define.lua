@@ -1,0 +1,14 @@
+ItemTypeTable = {}
+ItemTypeTable.ITEM_NO		=	0
+ItemTypeTable.ITEM_BOOK		=	1
+ItemTypeTable.ITEM_CLOTH	=	2
+ItemTypeTable.ITEM_NECKLACE	=	3
+ItemTypeTable.ITEM_BRACELAT	=	4
+ItemTypeTable.ITEM_RING		=	5
+ItemTypeTable.ITEM_MEDAL	=	6
+ItemTypeTable.ITEM_HELMET	=	7
+ItemTypeTable.ITEM_WEAPON	=	9
+ItemTypeTable.ITEM_COST		=	11
+ItemTypeTable.ITEM_SHOE		=	14
+ItemTypeTable.ITEM_BELT     =	15
+ItemTypeTable.ITEM_GEM		=	16

@@ -1,6 +1,100 @@
 --	只能在GameWorld线程中进行调用
+ENGINE:LoadModule("module_up")
+
+function CompItems(player, itemTags)
+	--	非战网服务器 直接返回
+
+
+	--	物品数量<2的
+	if #itemTags < 2 then return false end
+
+	local itemIDTable = {}
+
+	for i, v in ipairs(itemTags) do
+		local itemID = player:ItemTagToAttribID(v)
+
+		if nil == itemIDTable[itemID] then
+			itemIDTable[itemID] = {}
+		end
+
+		table.insert(itemIDTable[itemID], v)
+	end
+
+	--	2个及以上物品 可以进行合成
+	local typeSum = 0
+	for _, _ in pairs(itemIDTable) do
+		typeSum = typeSum + 1
+	end
+
+	if typeSum == 0 or
+		typeSum > 2 then
+		return false
+	end
+
+	--	一种类型 直接进行合成操作
+	local hasStone = false
+	local upgradeItemID = 0
+
+	if 1 == typeSum then
+		--	检查是否是可合成的装备
+		for itemID, _ in pairs(itemIDTable) do
+			upgradeItemID = itemID
+		end
+
+		--	进行升级
+	elseif 2 == typeSum then
+		--	两种类型，装备+混元石，用以保留最高装备的等级
+		local hasStone = false
+		local stoneID = 100
+
+		--	先检查有没有石头
+		local costItemTags = itemIDTable[stoneID]
+		if nil == costItemTags then return false end
+
+		--	检查装备是否相符
+		hasStone = true
+		for itemID, _ in pairs(itemIDTable) do
+			if itemID ~= stoneID then
+				upgradeItemID = itemID
+			end
+		end
+	end
+
+	--	检查装备是否可以升级
+	local equipItemTag = itemIDTable[upgradeItemID][1]
+	if nil == equipItemTag then return false end
+
+	local item = player:getItemByTag(equipItemTag)
+	if not canUpgrade(item:GetType()) then
+		return false
+	end
+
+	--	进行升级
+	local itemCount = #itemIDTable[upgradeItemID]
+	local upgradeProb = 5 * itemCount
+
+	local randNumber = math.random(1, 100)
+	if randNumber <= upgradeProb then
+		
+	end
+
+	return false
+end
 
 function CubeItems(player, number, tag0, tag1, tag2, tag3, tag4, tag5, tag6, tag7)
+
+	--	第一步 装备的合成
+	local itemTags = {}
+	if tag0 ~= 0 then table.insert(itemTags, tag0) end
+	if tag1 ~= 0 then table.insert(itemTags, tag1) end
+	if tag2 ~= 0 then table.insert(itemTags, tag2) end
+	if tag3 ~= 0 then table.insert(itemTags, tag3) end
+	if tag4 ~= 0 then table.insert(itemTags, tag4) end
+	if tag5 ~= 0 then table.insert(itemTags, tag5) end
+	if tag6 ~= 0 then table.insert(itemTags, tag6) end
+	if tag7 ~= 0 then table.insert(itemTags, tag7) end
+
+	if CompItems(player, itemTags) then return end
 
 	local item0 = player:ItemTagToAttribID(tag0)
 	local item1 = player:ItemTagToAttribID(tag1)
@@ -20,8 +114,6 @@ function CubeItems(player, number, tag0, tag1, tag2, tag3, tag4, tag5, tag6, tag
 			player:RemoveItem(tag1)
 			player:RemoveItem(tag2)
 			player:AddItem(402)
-
-		--elseif
 
 		end
 	elseif number == 5 then
