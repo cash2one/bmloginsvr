@@ -671,6 +671,11 @@ type SystemGift struct {
 }
 
 func dbInsertSystemGift(db *sql.DB, gift *SystemGift) bool {
+	count := dbGetSystemGiftCountByUid(db, gift.uid, gift.giftid)
+	if count != 0 {
+		return false
+	}
+	
 	expr := "insert into systemgift values(null, " +
 		strconv.FormatUint(uint64(gift.uid), 10) + "," +
 		strconv.FormatUint(uint64(gift.giftid), 10) + "," +
@@ -710,6 +715,28 @@ func dbGetSystemGiftByUid(db *sql.DB, uid uint32, gift *SystemGift) bool {
 	return true
 }
 
+func dbGetSystemGiftCountByUid(db *sql.DB, uid uint32, itemid int) int {
+	expr := "select count(*) as cnt from systemgift where uid=" + 
+	strconv.FormatUint(uint64(uid), 10) +
+	" and giftid=" +
+	strconv.FormatUint(uint64(itemid), 10)
+	rowsCount, err := db.Query(expr)
+
+	if err != nil {
+		log.Println("sql expr ", expr, " error:", err)
+		return 0
+	}
+
+	count := 0
+	defer rowsCount.Close()
+
+	if rowsCount.Next() {
+		rowsCount.Scan(&count)
+	}
+	
+	return count
+}
+
 func dbGetSystemGiftIdByUid(db *sql.DB, uid uint32) []int {
 	expr := "select count(*) as cnt from systemgift where uid=" + strconv.FormatUint(uint64(uid), 10)
 	rowsCount, err := db.Query(expr)
@@ -747,6 +774,7 @@ func dbGetSystemGiftIdByUid(db *sql.DB, uid uint32) []int {
 		giftId := 0
 		rowsRet.Scan(&giftId)
 		giftsArray[index] = giftId
+		index++
 	}
 
 	return giftsArray

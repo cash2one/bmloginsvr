@@ -4,10 +4,11 @@ import (
 	"LSControlProto"
 	"bytes"
 	"client"
-	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"log"
 	"time"
+
+	"code.google.com/p/goprotobuf/proto"
 )
 
 const (
@@ -208,6 +209,8 @@ func onMsgInsertSystemGiftRsp(rsp *LSControlProto.RSInsertSystemGiftRsp) {
 	} else {
 		if -1 == rsp.GetResult() {
 			log.Println("添加账户[", rsp.GetAccount(), "]礼包失败，无法获取当前账户对应UID")
+		} else if -2 == rsp.GetResult() {
+			log.Println("添加账户[", rsp.GetAccount(), "]礼包失败，礼品ID已被添加")
 		} else {
 			log.Println("添加账户[", rsp.GetAccount(), "]礼包失败，未知错误")
 		}
