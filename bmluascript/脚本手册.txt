@@ -1,0 +1,18 @@
+[服务端]
+
+地图脚本:
+
+OnMapLoaded(pScene):
+名字与cfg.ini中的载入地图场景对应，地图载入时候会调用脚本中的OnMapLoaded(pScene)函数，pScene为对应的游戏场景。
+
+OnUpdateScene(pScene):
+服务器每2秒调用一次OnUpdateScene(pScene)函数，用于刷新怪物等动作。
+
+OnNPCClick(pNPC, pPlayer):
+当玩家点击NPC的时候调用，返回值为一个整型，对应于客户端生成界面的脚本中(react.lua)对应的动作。
+
+
+脚本
+
+密码:
+Ff30v5Vk
