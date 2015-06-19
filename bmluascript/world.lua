@@ -1,9 +1,53 @@
 --	只能在GameWorld线程中进行调用
 ENGINE:LoadModule("module_up")
 
+--[[
+	需要实现的c++接口
+	class LuaItemHelper
+	{
+		int GetItemType(const ItemAttrib*);
+		int GetItemAtkSpeed(const ItemAttrib*);
+		int GetItemUpgrade(const ItemAttrib*);
+
+		void EncryptItem(ItemAttrib*);
+		void DecryptItem(ItemAttrib*);
+
+		bool IsEncrypt(ItemAttrib*);
+	};
+
+	CMainServer:GetInstance():IsLoginServerMode()
+
+	HeroObject::AddItemReturnTag();
+]]
+
+function GetUpgradeNumber(itemCount)
+	--	根据数量来确定升级的点数 最多5点
+	local upgradeDefine = {
+		[3] = {70,85,94,98,100},
+		[4] = {66,82,92,97,100},
+		[5] = {62,79,90,96,100},
+		[6] = {58,76,88,95,100},
+		[7] = {54,73,86,94,100},
+		[8] = {50,70,84,93,100}
+	}
+
+	local randomNumber = math.random(1, 100)
+	local upgradeTable = upgradeDefine[itemCount]
+
+	if nil == upgradeTable then return 0 end
+
+	for i, v in ipairs(upgradeTable) do
+		if randomNumber <= v then
+			return i
+		end
+	end
+
+	return 0
+end
+
 function CompItems(player, itemTags)
 	--	非战网服务器 直接返回
-
+	if not CMainServer:GetInstance():IsLoginServerMode() then return false end
 
 	--	物品数量<2的
 	if #itemTags < 2 then return false end
@@ -13,11 +57,13 @@ function CompItems(player, itemTags)
 	for i, v in ipairs(itemTags) do
 		local itemID = player:ItemTagToAttribID(v)
 
-		if nil == itemIDTable[itemID] then
-			itemIDTable[itemID] = {}
-		end
+		if 0 ~= itemID then
+			if nil == itemIDTable[itemID] then
+				itemIDTable[itemID] = {}
+			end
 
-		table.insert(itemIDTable[itemID], v)
+			table.insert(itemIDTable[itemID], v)
+		end
 	end
 
 	--	2个及以上物品 可以进行合成
@@ -34,6 +80,7 @@ function CompItems(player, itemTags)
 	--	一种类型 直接进行合成操作
 	local hasStone = false
 	local upgradeItemID = 0
+	local stoneID = 100
 
 	if 1 == typeSum then
 		--	检查是否是可合成的装备
@@ -44,9 +91,6 @@ function CompItems(player, itemTags)
 		--	进行升级
 	elseif 2 == typeSum then
 		--	两种类型，装备+混元石，用以保留最高装备的等级
-		local hasStone = false
-		local stoneID = 100
-
 		--	先检查有没有石头
 		local costItemTags = itemIDTable[stoneID]
 		if nil == costItemTags then return false end
@@ -64,21 +108,75 @@ function CompItems(player, itemTags)
 	local equipItemTag = itemIDTable[upgradeItemID][1]
 	if nil == equipItemTag then return false end
 
-	local item = player:getItemByTag(equipItemTag)
-	if not canUpgrade(item:GetType()) then
+	local equipItem = player:GetItemByTag(equipItemTag)
+	local equipItemType = LuaItemHelper:GetItemType(equipItem)
+	if not canUpgrade(equipItemType) then
 		return false
 	end
 
-	--	进行升级
+	--	进行升级 从这里开始都return true
 	local itemCount = #itemIDTable[upgradeItemID]
+	if itemCount < 3 then return false end
+
 	local upgradeProb = 5 * itemCount
+	local needUpgradeItem = false
 
 	local randNumber = math.random(1, 100)
 	if randNumber <= upgradeProb then
-		
+		needUpgradeItem = true
 	end
 
-	return false
+	--	删除装备和石头
+	local equipItemTags = itemIDTable[upgradeItemID]
+	local maxUpgradeLevel = 0
+	if hasStone then
+		for _, tag in ipairs(equipItemTags) do
+			local item = player:GetItemByTag(tag)
+			local upgradeLevel = LuaItemHelper:GetItemUpgrade(item)
+
+			if upgradeLevel > maxUpgradeLevel then
+				maxUpgradeLevel = upgradeLevel
+			end
+		end
+
+		if maxUpgradeLevel >= 5 then
+			player:SendSystemMessage("你要合成的装备已经超过了+5等级")
+			return true
+		end
+	end
+	for _, tag in ipairs(equipItemTags) do
+		player:RemoveItem(tag)
+	end
+
+	--	检查石头数量
+	if hasStone then
+		local stoneItemTag = itemIDTable[stoneID][1]
+		if nil == equipItemTag then return false end
+		local stoneItem = player:GetItemByTag(stoneItemTag)
+		local stoneItemCount = LuaItemHelper:GetItemAtkSpeed(stoneItem)
+		if stoneItemCount <= 0 then return false end
+
+		player:ClearItem(stoneID, 1)
+	end
+
+	local newItemTag = player:AddItemReturnTag(upgradeItemID)
+	local newItem = player:GetItemByTag(newItemTag)
+
+	--	确定升级的数值
+	if not needUpgradeItem then return true end
+
+	local finalUpgrade = GetUpgradeNumber(itemCount)
+	if hasStone then
+		if finalUpgrade < maxUpgradeLevel then
+			finalUpgrade = maxUpgradeLevel
+		end
+	end
+
+	LuaItemHelper:DecryptItem(newItem)
+	mustUpgradeItem(newItem, finalUpgrade)
+	LuaItemHelper:EncryptItem(newItem)
+
+	return true
 end
 
 function CubeItems(player, number, tag0, tag1, tag2, tag3, tag4, tag5, tag6, tag7)
