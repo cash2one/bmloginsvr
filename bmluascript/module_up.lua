@@ -192,6 +192,26 @@ function canUpgrade(_type)
 	return false
 end
 
+function canComp(_type)
+	if type(_type) ~= type(1) then
+		return false
+	end
+
+	if _type == ITEM_CLOTH or
+	_type == ITEM_NECKLACE or
+	_type == ITEM_BRACELAT or
+	_type == ITEM_RING or
+	_type == ITEM_MEDAL or
+	_type == ITEM_HELMET or
+	_type == ITEM_WEAPON or
+	_type == ITEM_SHOE or
+	_type == ITEM_BELT then
+		return true
+	end
+
+	return false
+end
+
 function upgradeAttrib(_item, _index, _up)
 	local ok = false
 
@@ -321,12 +341,12 @@ function upgradeItem(_item, _magicProb, _magicMinProb)
 end
 
 function mustUpgradeItem(item, upgradeNumber)
-	if LuaItemHelper:isEncrypt(item) then
+	if LuaItemHelper:IsEncrypt(item) then
 		MirLog("trying to upgrade an encrypt item")
 		return
 	end
 
-	local itemTable = upgradeTable[_item:GetType()]
+	local itemTable = upgradeTable[item:GetType()]
 	if nil == itemTable then
 		return
 	end
@@ -347,11 +367,11 @@ function mustUpgradeItem(item, upgradeNumber)
 
 		if nil ~= attrib then
 			--	necklace
-			if _item:GetType() == ITEM_NECKLACE and
-			_item:GetLucky() + up > 3 then
+			if item:GetType() == ITEM_NECKLACE and
+			item:GetLucky() + up > 3 then
 				--	nothing
 			else
-				if upgradeAttrib(_item, attrib, up) then
+				if upgradeAttrib(item, attrib, up) then
 					totalUp = totalUp - up
 				end
 			end

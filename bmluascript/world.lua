@@ -20,6 +20,12 @@ ENGINE:LoadModule("module_up")
 	HeroObject::AddItemReturnTag();
 ]]
 
+local function debug(text)
+	if DEBUG then
+		ConsolePrint(text)
+	end
+end
+
 function GetUpgradeNumber(itemCount)
 	--	根据数量来确定升级的点数 最多5点
 	local upgradeDefine = {
@@ -42,12 +48,16 @@ function GetUpgradeNumber(itemCount)
 		end
 	end
 
+	if DEBUG then
+		--return 5
+	end
+
 	return 0
 end
 
 function CompItems(player, itemTags)
 	--	非战网服务器 直接返回
-	if not CMainServer:GetInstance():IsLoginServerMode() then return false end
+	--if not CMainServer:GetInstance():IsLoginServerMode() then return false end
 
 	--	物品数量<2的
 	if #itemTags < 2 then return false end
@@ -72,24 +82,16 @@ function CompItems(player, itemTags)
 		typeSum = typeSum + 1
 	end
 
-	if typeSum == 0 or
-		typeSum > 2 then
+	if typeSum ~= 2 then
 		return false
 	end
 
 	--	一种类型 直接进行合成操作
 	local hasStone = false
 	local upgradeItemID = 0
-	local stoneID = 100
+	local stoneID = 749
 
-	if 1 == typeSum then
-		--	检查是否是可合成的装备
-		for itemID, _ in pairs(itemIDTable) do
-			upgradeItemID = itemID
-		end
-
-		--	进行升级
-	elseif 2 == typeSum then
+	if 2 == typeSum then
 		--	两种类型，装备+混元石，用以保留最高装备的等级
 		--	先检查有没有石头
 		local costItemTags = itemIDTable[stoneID]
@@ -108,9 +110,9 @@ function CompItems(player, itemTags)
 	local equipItemTag = itemIDTable[upgradeItemID][1]
 	if nil == equipItemTag then return false end
 
-	local equipItem = player:GetItemByTag(equipItemTag)
+	local equipItem = player:Lua_GetItemByTag(equipItemTag)
 	local equipItemType = LuaItemHelper:GetItemType(equipItem)
-	if not canUpgrade(equipItemType) then
+	if not canComp(equipItemType) then
 		return false
 	end
 
@@ -118,21 +120,15 @@ function CompItems(player, itemTags)
 	local itemCount = #itemIDTable[upgradeItemID]
 	if itemCount < 3 then return false end
 
-	local upgradeProb = 5 * itemCount
-	local needUpgradeItem = false
-
-	local randNumber = math.random(1, 100)
-	if randNumber <= upgradeProb then
-		needUpgradeItem = true
-	end
-
 	--	删除装备和石头
 	local equipItemTags = itemIDTable[upgradeItemID]
 	local maxUpgradeLevel = 0
+	local totalUpgradeLevel = 0
 	if hasStone then
 		for _, tag in ipairs(equipItemTags) do
-			local item = player:GetItemByTag(tag)
+			local item = player:Lua_GetItemByTag(tag)
 			local upgradeLevel = LuaItemHelper:GetItemUpgrade(item)
+			totalUpgradeLevel = totalUpgradeLevel + upgradeLevel
 
 			if upgradeLevel > maxUpgradeLevel then
 				maxUpgradeLevel = upgradeLevel
@@ -144,6 +140,15 @@ function CompItems(player, itemTags)
 			return true
 		end
 	end
+
+	--	计算价格
+	local costMoney = (maxUpgradeLevel + 1) * 15000
+	if costMoney > player:GetMoney() then
+		player:SendSystemMessage("您的金钱不足，此次操作需要花费金钱:"..costMoney)
+		return true
+	end
+	player:MinusMoney(costMoney)
+
 	for _, tag in ipairs(equipItemTags) do
 		player:RemoveItem(tag)
 	end
@@ -152,7 +157,7 @@ function CompItems(player, itemTags)
 	if hasStone then
 		local stoneItemTag = itemIDTable[stoneID][1]
 		if nil == equipItemTag then return false end
-		local stoneItem = player:GetItemByTag(stoneItemTag)
+		local stoneItem = player:Lua_GetItemByTag(stoneItemTag)
 		local stoneItemCount = LuaItemHelper:GetItemAtkSpeed(stoneItem)
 		if stoneItemCount <= 0 then return false end
 
@@ -160,20 +165,41 @@ function CompItems(player, itemTags)
 	end
 
 	local newItemTag = player:AddItemReturnTag(upgradeItemID)
-	local newItem = player:GetItemByTag(newItemTag)
+	local newItem = player:Lua_GetItemByTag(newItemTag)
+
+	local needUpgradeItem = false
+	local baseUpgradeNumber = 7 * maxUpgradeLevel
+
+	if 0 == maxUpgradeLevel then
+		--	0级装备升级 看数量
+		local randomNumber = math.random(1, 8)
+		if randomNumber <= itemCount then
+			needUpgradeItem = true
+		end
+		debug("随机基数:8 随机测试值:"..itemCount.." 随机点数:"..randomNumber)
+	else
+		local randomNumber = math.random(1, baseUpgradeNumber)
+		if randomNumber <= totalUpgradeLevel then
+			needUpgradeItem = true
+		end
+		debug("随机基数:"..baseUpgradeNumber.." 随机测试值:"..totalUpgradeLevel.." 随机点数:"..randomNumber)
+	end
 
 	--	确定升级的数值
-	if not needUpgradeItem then return true end
+	local finalUpgrade = 0
+	if not needUpgradeItem then
+		finalUpgrade = maxUpgradeLevel
+	else
+		finalUpgrade = maxUpgradeLevel + 1
+	end
 
-	local finalUpgrade = GetUpgradeNumber(itemCount)
-	if hasStone then
-		if finalUpgrade < maxUpgradeLevel then
-			finalUpgrade = maxUpgradeLevel
-		end
+	if finalUpgrade > 5 then
+		finalUpgrade = 5
 	end
 
 	LuaItemHelper:DecryptItem(newItem)
 	mustUpgradeItem(newItem, finalUpgrade)
+	player:SyncItemAttrib(newItemTag)
 	LuaItemHelper:EncryptItem(newItem)
 
 	return true
