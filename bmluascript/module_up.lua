@@ -192,26 +192,6 @@ function canUpgrade(_type)
 	return false
 end
 
-function canComp(_type)
-	if type(_type) ~= type(1) then
-		return false
-	end
-
-	if _type == ITEM_CLOTH or
-	_type == ITEM_NECKLACE or
-	_type == ITEM_BRACELAT or
-	_type == ITEM_RING or
-	_type == ITEM_MEDAL or
-	_type == ITEM_HELMET or
-	_type == ITEM_WEAPON or
-	_type == ITEM_SHOE or
-	_type == ITEM_BELT then
-		return true
-	end
-
-	return false
-end
-
 function upgradeAttrib(_item, _index, _up)
 	local ok = false
 

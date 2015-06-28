@@ -112,7 +112,7 @@ function CompItems(player, itemTags)
 
 	local equipItem = player:Lua_GetItemByTag(equipItemTag)
 	local equipItemType = LuaItemHelper:GetItemType(equipItem)
-	if not canComp(equipItemType) then
+	if not canUpgrade(equipItemType) then
 		return false
 	end
 
