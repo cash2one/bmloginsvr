@@ -30,6 +30,7 @@ type User struct {
 	ipaddr     string
 	uid        uint32
 	svrconnidx uint32
+	conncode   uint32
 	conn       *server.Connection
 	verified   bool
 	conntime   time.Time
@@ -675,6 +676,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	//	read head
 	buf := new(bytes.Buffer)
 	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
+	binary.Write(buf, binary.LittleEndian, &this.conncode)
 	var tag uint32 = this.conn.GetConnTag()
 	binary.Write(buf, binary.LittleEndian, &tag)
 	binary.Write(buf, binary.LittleEndian, &this.uid)

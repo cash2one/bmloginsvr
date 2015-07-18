@@ -36,6 +36,7 @@ var (
 	//	+16	login-game connindex //	login connindex 4bytes;game connindex 4bytes
 	//	+17	send gamerole data to loginserver // lsvrconnidx 4bytes;uid 4bytes;namelen 1byte;name namelen;level 2bytes;datalen 4bytes;data datalen
 	//	+18	send gamerole head data to client	//	roleidx 1byte;namelen 1byte;name namelen;job 1byte;sex 1byte;level 2byte
+	//	+19	login-game connindex //	login connindex 4bytes;game connindex 4bytes;conn code 4bytes
 )
 
 /*

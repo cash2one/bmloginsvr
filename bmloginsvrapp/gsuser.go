@@ -106,7 +106,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 	case loginopstart + 16:
 		{
 			//	connidx
-			var gsidx uint32 = 0
+			/*var gsidx uint32 = 0
 			var lsidx uint32 = 0
 			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &gsidx)
 			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &lsidx)
@@ -118,7 +118,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				user := cuser.(*User)
 				user.svrconnidx = gsidx
 				log.Println("Registe user gs index ok!")
-			}
+			}*/
 		}
 	case loginopstart + 17:
 		{
@@ -154,6 +154,26 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				if uid != 0 {
 					cuser.OnRequestSaveGameRole(msg)
 				}
+			}
+		}
+	case loginopstart + 19:
+		{
+			//	connidx
+			var gsidx uint32 = 0
+			var lsidx uint32 = 0
+			var conncode uint32 = 0
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &gsidx)
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &lsidx)
+			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &conncode)
+
+			cuser := g_UserList.GetUser(lsidx)
+			if cuser == nil {
+				log.Println("Can't registe user[", lsidx, "]")
+			} else {
+				user := cuser.(*User)
+				user.svrconnidx = gsidx
+				user.conncode = conncode
+				log.Println("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
 			}
 		}
 	}
