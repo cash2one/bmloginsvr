@@ -8,7 +8,7 @@
 
 @title	BMLoginSvr
 @if not exist .\bmloginsvrapp.exe (go build -o .\bmloginsvrapp.exe ..\)
-@if exist .\bmloginsvrapp.exe (bmloginsvrapp.exe -lsaddr=127.0.0.1:8200 -lsgsaddr=127.0.0.1:8300)
+@if exist .\bmloginsvrapp.exe (bmloginsvrapp.exe -lsaddr=0.0.0.0:8200 -lsgsaddr=0.0.0.0:8201)
 @if	not	%ERRORLEVEL% == 0	@goto ERROR
 
 @goto	END
@@ -18,4 +18,5 @@
 
 :END
 
+@pause
 @POPD

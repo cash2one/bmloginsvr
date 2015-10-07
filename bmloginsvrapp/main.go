@@ -6,11 +6,12 @@ import "C"
 //	Go
 import (
 	"database/sql"
-	"encoding/json"
+	//	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"runtime/debug"
 	"server"
 	"time"
 )
@@ -28,12 +29,21 @@ var (
 	g_ControlAddr    []string
 )
 
+func exceptionDetails() {
+	if err := recover(); err != nil {
+		log.Println("Exception!error:", err, "stack:")
+		debug.PrintStack()
+	}
+}
+
 func main() {
 	defer func() {
 		log.Println("Server terminated.")
+		exceptionDetails()
 		var input string
 		fmt.Scanln(&input)
 	}()
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	g_ControlAddr = make([]string, 0, 10)
 	ReadControlAddr("./login/gmlist.txt")
@@ -42,6 +52,7 @@ func main() {
 	ipaddrclient := flag.String("lsaddr", "", "Listen clients")
 	ipaddrserver := flag.String("lsgsaddr", "", "Listen gameserver")
 	redisAddress := flag.String("redisaddr", "", "Redis address")
+	httpAddr := flag.String("httpaddr", "", "http listen address")
 	flag.Parse()
 	if len(*ipaddrclient) == 0 || len(*ipaddrserver) == 0 {
 		log.Println("invalid input parameters.")
@@ -98,7 +109,7 @@ func main() {
 	}
 
 	//	test
-	extInfo := &UserLoginExtendInfo{}
+	/*extInfo := &UserLoginExtendInfo{}
 	donateInfo := &UserDonateInfo{}
 	if dbGetUserDonateInfo(g_DBUser, 1, donateInfo) {
 		//	nothing
@@ -112,8 +123,17 @@ func main() {
 	} else {
 		//	发送扩展信息
 		log.Println(string(binaryExtInfo))
-	}
+	}*/
 	//	test
+
+	//	http server
+	if httpAddr != nil &&
+		len(*httpAddr) != 0 {
+		startHttpServer(*httpAddr)
+	}
+
+	//	main thread message handler
+	MainThreadInit()
 
 	g_CtrlCh = make(chan uint8, 10)
 
@@ -150,6 +170,14 @@ func main() {
 			case <-time.After(time.Duration(5) * time.Minute):
 				{
 					ReadControlAddr("./login/gmlist.txt")
+				}
+			case evt := <-g_chanMainThread:
+				{
+					ProcessMThreadMsg(evt)
+				}
+			case <-time.After(time.Duration(30) * time.Second):
+				{
+					UpdateMThreadMsg()
 				}
 			}
 		}
