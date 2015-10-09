@@ -68,6 +68,8 @@
 								<Label text="登陆密码:" float="true" pos="30,185,100,220" textcolor="0xff0000ff" />
 								<Edit name="edit_password_onlineclient" password="true" bkcolor="0x00000000" textpadding="10,2,10,2" pos="100,185,227,220" float="true" normalimage="file='edit_normal.png' source='0,0,127,35'" hotimage="file='edit_normal.png' source='0,35,127,70'" pushedimage="file='edit_normal.png' source='0,35,127,70'" textcolor="0xFF777777" disabledtextcolor="0xFFCCCCCC"/>
 								<Button name="button_login_onlineclient" pos="247,50,449,124" float="true"  width="102" height="74" normalimage=" file='button_login.png' source='0,0,102,74' " hotimage=" file='button_login.png' source='0,74,102,148' " pushedimage=" file='button_login.png' source='0,148,102,222' " disabledimage=" file='button_login.png' source='0,222,102,296' " />
+								<Button name="button_online_game_room" text="联机游戏大厅" pos="247,140,343,175" float="true" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
+								<Button name="button_get_battlenet_address" text="获取战网地址" pos="247,185,343,220" float="true" width="96" height="35" normalimage=" file='ok.png' source='0,0,96,35' " hotimage=" file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105' " selectedimage="file='ok.png' source='0,35,96,70' " pushedimage=" file='ok.png' source='0,70,96,105'" />	
 							</HorizontalLayout>
 						</VerticalLayout>
 						<VerticalLayout>

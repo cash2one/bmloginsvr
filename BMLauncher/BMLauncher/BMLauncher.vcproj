@@ -232,7 +232,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GameRoomDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\LauncherUtils.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PingThread.cpp"
 				>
 			</File>
 			<File
@@ -290,6 +298,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GameRoomDlg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\LauncherUtils.h"
 				>
 			</File>
@@ -334,5 +346,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="BMLauncher.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

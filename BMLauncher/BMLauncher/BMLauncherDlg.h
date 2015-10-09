@@ -32,6 +32,9 @@ public:
 	void OnMailVerifyResult(const char* _pData, size_t _uLen);
 	void DoRegAccount();
 	void OnRegAccountResult(const char* _pData, size_t _uLen);
+	void OnGsAddrResult(const char *_pData, size_t _uLen);
+	void OnOnlineRoomClicked();
+	void OnGetBattleNetAddress();
 
 	void LoadConfig();
 	void SaveConfig();
@@ -48,6 +51,11 @@ protected:
 
 	//	http请求地址
 	string m_xRegHttpAddr;
+	//	游戏大厅的请求地址
+	string m_xGameRoomHttpAddr;
+	//	战网IP
+	string m_xBattleNetIP;
+	string m_xBattleNetPort;
 
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();

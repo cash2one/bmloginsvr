@@ -13,6 +13,7 @@
 #include "BMHttpManager.h"
 #include "EasyUtils.h"
 #include "cJSON.h"
+#include "GameRoomDlg.h"
 
 #include <fastdelegate.h>
 #include <FastDelegateBind.h>
@@ -180,14 +181,14 @@ void CBMLauncherDlg::DownloadConfigFile()
 {
 	char szDestPath[MAX_PATH] = {0};
 	GetRootPath(szDestPath);
-	strcat(szDestPath, "/config/url.ini");
+	strcat(szDestPath, "/config/url_2.ini");
 
 	if(!PathFileExists(szDestPath))
 	{
 #ifdef _DEBUG
-		if(!EasyDownloadFile("http://sryanyuan.github.io/web/config/url_d.ini", szDestPath))
+		if(!EasyDownloadFile("http://sryanyuan.github.io/web/config/url_2_d.ini", szDestPath))
 #else
-		if(!EasyDownloadFile("http://sryanyuan.github.io/web/config/url.ini", szDestPath))
+		if(!EasyDownloadFile("http://sryanyuan.github.io/web/config/url_2.ini", szDestPath))
 #endif
 		{
 			MessageBox("无法下载配置文件", "错误", MB_ICONERROR | MB_OK);
@@ -214,6 +215,45 @@ void CBMLauncherDlg::DownloadConfigFile()
 	if(NULL != pszRegUrl)
 	{
 		m_xRegHttpAddr = pszRegUrl;
+	}
+	const char* pszGameRoomUrl = xIniFile.GetValue("CONFIG", "GAMEROOMURL");
+	if(NULL != pszGameRoomUrl)
+	{
+		m_xGameRoomHttpAddr = pszGameRoomUrl;
+	}
+
+	const char* pszBattleNetAddress = xIniFile.GetValue("CONFIG", "BATTLENETADDRESS");
+	if(NULL != pszBattleNetAddress)
+	{
+		char szIp[20] = {0};
+		char szPort[20] = {0};
+		bool bParsedIp = false;
+
+		for(int i = 0; i < strlen(pszBattleNetAddress); ++i)
+		{
+			if(pszBattleNetAddress[i] == ':')
+			{
+				bParsedIp = true;
+			}
+			else
+			{
+				if(!bParsedIp)
+				{
+					szIp[strlen(szIp)] = pszBattleNetAddress[i];
+				}
+				else
+				{
+					szPort[strlen(szPort)] = pszBattleNetAddress[i];
+				}
+			}
+		}
+		
+		if(bParsedIp &&
+			szPort[0] != 0)
+		{
+			m_xBattleNetIP = szIp;
+			m_xBattleNetPort = szPort;
+		}
 	}
 
 	delete[] pContent;
@@ -371,6 +411,14 @@ void CBMLauncherDlg::Notify(TNotifyUI& msg)
 		else if(0 == _tcscmp(pszSenderName, "button_reg"))
 		{
 			DoRegAccount();
+		}
+		else if(0 == _tcscmp(pszSenderName, "button_online_game_room"))
+		{
+			OnOnlineRoomClicked();
+		}
+		else if(0 == _tcscmp(pszSenderName, "button_get_battlenet_address"))
+		{
+			OnGetBattleNetAddress();
 		}
 	}
 
@@ -626,4 +674,111 @@ void CBMLauncherDlg::DoDiagnosis()
 	MessageBox("您的运行环境一切正常，若无法运行，请检测游戏端口是否被占用。出现E6错误，请关闭I7处理器的超线程技术。",
 		"提示",
 		MB_OK | MB_ICONINFORMATION);
+}
+
+void CBMLauncherDlg::OnOnlineRoomClicked()
+{
+	if(m_xGameRoomHttpAddr.empty())
+	{
+		ErrorMsgBox("无法获取请求地址，请关闭后重试");
+		return;
+	}
+
+	GameRoomDlg dlg(this);
+	dlg.m_xRoomRequestUrl = m_xGameRoomHttpAddr;
+	dlg.DoModal();
+
+	/*
+	if(dlg.m_nLoginServerID != 0)
+		{
+			//	加入服务器
+			char szUrl[MAX_PATH] = {0};
+			sprintf(szUrl, "%s/getgsaddr?id=%d&password=%s",
+				m_xGameRoomHttpAddr.c_str(),
+				dlg.m_nLoginServerID,
+				dlg.m_xLoginServerPsw.c_str());
+			BMHttpManager::GetInstance()->DoGetRequestSync(szUrl, fastdelegate::bind(&CBMLauncherDlg::OnGsAddrResult, this));
+		}*/
+	
+}
+
+void CBMLauncherDlg::OnGsAddrResult(const char *_pData, size_t _uLen)
+{
+	if(0 == _uLen)
+	{
+		//	timeout
+		ErrorMsgBox("连接游戏服务器超时");
+		return;
+	}
+
+	cJSON* pRoot = cJSON_Parse(_pData);
+	if(NULL == pRoot)
+	{
+		ErrorMsgBox("解析json失败");
+		return;
+	}
+
+	int nRet = cJSON_GetObjectItem(pRoot, "Result")->valueint;
+	if(0 == nRet)
+	{
+		const char* pszAddr = cJSON_GetObjectItem(pRoot, "Msg")->valuestring;
+		if(NULL != pszAddr)
+		{
+			char szIp[20] = {0};
+			char szPort[10] = {0};
+			bool bReadIp = true;
+
+			for(int i = 0; i < strlen(pszAddr); ++i)
+			{
+				if(pszAddr[i] == ':')
+				{
+					bReadIp = false;
+				}
+				else
+				{
+					if(bReadIp)
+					{
+						szIp[strlen(szIp)] = pszAddr[i];
+					}
+					else
+					{
+						szPort[strlen(szPort)] = pszAddr[i];
+					}
+				}
+			}
+
+			if(szPort[0] != 0 &&
+				!bReadIp)
+			{
+				int nPort = atoi(szPort);
+				Launcher_Client(szIp, nPort, "", "");
+			}
+		}
+	}
+	else
+	{
+		char szMsg[MAX_PATH] = {0};
+		sprintf(szMsg, "验证失败，可能是由于密码错误。");
+
+		const char* pszErr = cJSON_GetObjectItem(pRoot, "Msg")->valuestring;
+		if(NULL != pszErr)
+		{
+			strcat(szMsg, pszErr);
+		}
+		ErrorMsgBox(pszErr);
+	}
+}
+
+void CBMLauncherDlg::OnGetBattleNetAddress()
+{
+	if(m_xBattleNetIP.empty())
+	{
+		ErrorMsgBox("无法获得战网地址");
+		return;
+	}
+
+	CControlUI* pButton = m_pm.FindControl("edit_ip_onlineclient");
+	pButton->SetText(m_xBattleNetIP.c_str());
+	pButton = m_pm.FindControl("edit_port_onlineclient");
+	pButton->SetText(m_xBattleNetPort.c_str());
 }
