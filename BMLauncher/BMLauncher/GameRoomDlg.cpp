@@ -56,10 +56,13 @@ void GameRoomDlg::OnDestroy()
 	if(m_xPingThread.GetThreadState() == ThreadRunner::TS_RUN)
 	{
 		m_xPingThread.Stop();
+		ThreadRunner::THREAD_STATE ts = m_xPingThread.GetThreadState();
 
-		while(m_xPingThread.GetThreadState() == ThreadRunner::TS_RUN)
+		while(ts == ThreadRunner::TS_RUN)
 		{
 			//	nothing
+			ts = m_xPingThread.GetThreadState();
+			Sleep(1000);
 		}
 		m_xPingThread.UnInit();
 	}

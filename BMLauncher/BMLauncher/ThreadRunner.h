@@ -165,13 +165,13 @@ private:
 			}
 
 			//	Stop or pause this thread
-			if(pThread->m_uPause)
+			if(0 != pThread->m_uPause)
 			{
 				pThread->m_eThreadState = TS_PAUSE;
 				SleepEx(pThread->GetRunSleepTime(), TRUE);
 				continue;
 			}
-			if(pThread->m_uTerminate)
+			if(0 != pThread->m_uTerminate)
 			{
 				break;
 			}
