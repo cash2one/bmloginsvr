@@ -65,7 +65,7 @@ bool PingThread::Init()
 	{
 		int nErrorCode = WSAGetLastError();
 		char szErrorMsg[MAX_PATH];
-		sprintf(szErrorMsg, "Socket error:%d", nErrorCode);
+		sprintf(szErrorMsg, "Socket error:%d, 请以管理员身份运行此程序", nErrorCode);
 		AfxMessageBox(szErrorMsg, MB_OK | MB_ICONERROR);
 		UnInit();
 	}

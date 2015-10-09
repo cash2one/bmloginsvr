@@ -509,7 +509,7 @@ void CBMLauncherDlg::OnMailVerifyResult(const char* _pData, size_t _uLen)
 	}
 	else
 	{
-		MessageBox("请求成功，请注意登陆邮箱查收邮件，若没有查收到，可能再垃圾箱内，或选择再次验证", "提示", MB_OK | MB_ICONINFORMATION);
+		MessageBox("请求成功，请注意登陆邮箱查收邮件，若没有查收到，可能在垃圾箱内，或选择再次验证", "提示", MB_OK | MB_ICONINFORMATION);
 
 		m_pm.FindControl("edit_reg_regkey")->SetText(pszMsg);
 	}
