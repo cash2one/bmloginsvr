@@ -60,9 +60,8 @@ void GameRoomDlg::OnDestroy()
 
 		while(ts == ThreadRunner::TS_RUN)
 		{
-			//	nothing
+			Sleep(5);
 			ts = m_xPingThread.GetThreadState();
-			Sleep(1000);
 		}
 		m_xPingThread.UnInit();
 	}
