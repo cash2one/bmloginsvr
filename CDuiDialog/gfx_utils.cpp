@@ -160,3 +160,99 @@ void Gfx_Render9Path(hgeSprite* _pSpr, HTEXTURE _tex, const RECT* _pTexRect, con
 	_pSpr->Render(_fx + _fw - _p9Rect->right,
 		_fy + _fh - _p9Rect->bottom);
 }
+
+HTEXTURE GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd)
+{
+	if(NULL == _hSource)
+	{
+		return NULL;
+	}
+
+	int nTextureWidth = _pHge->Texture_GetWidth(_hSource);
+	int nTextureHeight = _pHge->Texture_GetHeight(_hSource);
+
+	if(0 == nTextureHeight ||
+		0 == nTextureWidth)
+	{
+		return NULL;
+	}
+
+	HTEXTURE texNew = _pHge->Texture_Create(nTextureWidth, nTextureHeight);
+	DWORD* pDestData = _pHge->Texture_Lock(texNew, false);
+	DWORD* pSrcData = _pHge->Texture_Lock(_hSource);
+
+	for(int nRow = 0; nRow < nTextureHeight; ++nRow)
+	{
+		for(int nCol = 0; nCol < nTextureWidth; ++nCol)
+		{
+			DWORD dwPixelIndex = nRow * nTextureWidth + nCol;
+			DWORD dwPixel = pSrcData[dwPixelIndex];
+			BYTE bAlpha = (dwPixel & 0xff000000) >> 24;
+
+			if(bAlpha)
+			{
+				//	取出RGB值
+				BYTE bR = (dwPixel & 0x00ff0000) >> 16;
+				BYTE bG = (dwPixel & 0x0000ff00) >> 8;
+				BYTE bB = dwPixel & 0x000000ff;
+
+				if(0 == bR &&
+					0 == bG &&
+					0 == bB)
+				{
+					continue;
+				}
+				
+				//	转为YUV
+				float fY = 0.299f * (float)bR + 0.587f * (float)bG + 0.114f * (float)bB;
+				float fU = 0.565f * ((float)bB - fY);
+				float fV = 0.713f * ((float)bR - fY);
+
+				//	提升Y值 提高亮度
+				if(fY + _nBrightAdd > 0xff)
+				{
+					fY = 0xff;
+				}
+				else
+				{
+					fY = fY + _nBrightAdd;
+				}
+
+				//	转换为RGB
+				int nR = fY + 1.403f * fV;
+				if(nR > 0xff)
+				{
+					bR = 0xff;
+				}
+				else
+				{
+					bR = nR;
+				}
+				int nG = fY - 0.344f * fU - 0.714f * fV;
+				if(nG > 0xff)
+				{
+					bG = 0xff;
+				}
+				else
+				{
+					bG = nG;
+				}
+				int nB = fY + 1.77f * fU;
+				if(nB > 0xff)
+				{
+					bB = 0xff;
+				}
+				else
+				{
+					bB = nB;
+				}
+				pDestData[dwPixelIndex] = ARGB(bAlpha, bR, bG, bB);
+			}
+		}
+	}
+
+	_pHge->Texture_Unlock(_hSource);
+	_pHge->Texture_Unlock(texNew);
+
+	return texNew;
+}
