@@ -10,6 +10,6 @@ class hgeSprite;
 //////////////////////////////////////////////////////////////////////////
 //	statement
 void Gfx_Render9Path(hgeSprite* _pSpr, HTEXTURE _tex, const RECT* _pTexRect, const RECT* _p9Rect, float _fx, float _fy, float _fw, float _fh);
-HTEXTURE GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd);
+HTEXTURE Gfx_GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd);
 //////////////////////////////////////////////////////////////////////////
 #endif

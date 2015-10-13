@@ -161,7 +161,7 @@ void Gfx_Render9Path(hgeSprite* _pSpr, HTEXTURE _tex, const RECT* _pTexRect, con
 		_fy + _fh - _p9Rect->bottom);
 }
 
-HTEXTURE GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd)
+HTEXTURE Gfx_GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd)
 {
 	if(NULL == _hSource)
 	{
