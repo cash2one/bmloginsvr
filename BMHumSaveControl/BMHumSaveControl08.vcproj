@@ -120,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="D:\VsProject\Inc\ZipArchive"
+				AdditionalIncludeDirectories="$(DEVLIB_DIR)\Inc\ZipArchive"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BMHUMSAVECONTROL_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -141,7 +141,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/BMHumSaveControl.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="D:\VsProject\Lib"
+				AdditionalLibraryDirectories="$(DEVLIB_DIR)\Lib\ZipArchive"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
