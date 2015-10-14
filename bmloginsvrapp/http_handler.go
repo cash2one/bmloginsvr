@@ -174,6 +174,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 	onlineArg := r.FormValue("online")
 	noteArg := r.FormValue("note")
 	passwordArg := r.FormValue("password")
+	versionArg := r.FormValue("version")
 
 	us := &UserGameServer{}
 	us.Address = addrArg
@@ -185,6 +186,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 	us.Port = portInt
 	us.Note = noteArg
 	us.Password = passwordArg
+	us.Version = versionArg
 	if len(onlineArg) != 0 {
 		us.Online, _ = strconv.Atoi(onlineArg)
 	}

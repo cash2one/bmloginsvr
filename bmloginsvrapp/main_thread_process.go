@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
-	"strings"
+	//	"strings"
 	"time"
 )
 
@@ -24,6 +24,7 @@ type UserGameServer struct {
 	Note         string `json:"Note"`
 	Online       int    `json:Online`
 	Password     string `json:"Password"`
+	Version      string `json:"Version"`
 	LastLiveTime int64
 }
 
@@ -124,8 +125,10 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 
 			for _, ug := range g_UserGameServerMap {
 				gsList[index] = *ug
-				ipNumberList := strings.Split(ug.Address, ".")
-				gsList[index].Address = ipNumberList[0] + "." + ipNumberList[1] + "." + ipNumberList[2] + ".*"
+				if len(ug.Password) != 0 {
+					gsList[index].Password = "1"
+					gsList[index].Port = 0
+				}
 				index++
 			}
 
