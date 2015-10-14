@@ -140,6 +140,7 @@ void CloseHumSave(int _hFileHandle){
 		if(pFile->pFile){
 			pFile->pFile->Close();
 			delete pFile->pFile;
+			pFile->pFile = NULL;
 		}
 #ifdef _DEBUG
 		printf("\nfile has been closed.\n");
@@ -164,6 +165,7 @@ int OpenHumSave(const char* _pszPath){
 	if(!bRet){
 		pSave->pFile->Close();
 		delete pSave->pFile;
+		pSave->pFile = NULL;
 		delete pSave;
 #ifdef _DEBUG
 		printf("\nCan't open the file");
