@@ -5,6 +5,33 @@
 #define RECT_WIDTH(RC)	(RC.right - RC.left)
 #define RECT_HEIGHT(RC)	(RC.bottom - RC.top)
 //////////////////////////////////////////////////////////////////////////
+//	±êÌâÀ¸À­Éì
+static bool s_bGfx_9Path_CenterStretch = true;
+//////////////////////////////////////////////////////////////////////////
+void Gfx_SetRenderState(Gfx_RenderState _eState, int _nParam)
+{
+	switch(_eState)
+	{
+	case kGfx_9Path_CenterStretch:
+		{
+			s_bGfx_9Path_CenterStretch = (_nParam != 0);
+		}break;
+	}
+}
+
+int Gfx_GetRenderState(Gfx_RenderState _eState)
+{
+	switch(_eState)
+	{
+	case kGfx_9Path_CenterStretch:
+		{
+			return s_bGfx_9Path_CenterStretch ? 1 : 0;
+		}break;
+	}
+
+	return 0;
+}
+
 void Gfx_Render9Path(hgeSprite* _pSpr, HTEXTURE _tex, const RECT* _pTexRect, const RECT* _p9Rect, float _fx, float _fy, float _fw, float _fh)
 {
 	if(NULL == _pTexRect ||
@@ -91,10 +118,39 @@ void Gfx_Render9Path(hgeSprite* _pSpr, HTEXTURE _tex, const RECT* _pTexRect, con
 		rc9Path[1].top,
 		RECT_WIDTH(rc9Path[1]),
 		RECT_HEIGHT(rc9Path[1]));
-	_pSpr->RenderStretch(_fx + _p9Rect->left,
-		_fy,
-		_fx + _fw - _p9Rect->right,
-		_fy + _p9Rect->top);
+
+	if(s_bGfx_9Path_CenterStretch)
+	{
+		_pSpr->RenderStretch(_fx + _p9Rect->left,
+			_fy,
+			_fx + _fw - _p9Rect->right,
+			_fy + _p9Rect->top);
+	}
+	else
+	{
+		int nRepeatFullTimes = (_fw - _p9Rect->right - _p9Rect->left) / RECT_WIDTH(rc9Path[1]);
+		int nRepeatRemainderPixels = (_fw - _p9Rect->right - _p9Rect->left) - nRepeatFullTimes * RECT_WIDTH(rc9Path[1]);
+
+		//	render repeat parts
+		float fRenderX, fRenderY = 0;
+		for(int i = 0; i < nRepeatFullTimes; ++i)
+		{
+			fRenderX = _fx + _p9Rect->left + i * RECT_WIDTH(rc9Path[1]);
+			fRenderY = _fy;
+			_pSpr->Render(fRenderX, fRenderY);
+		}
+
+		//	render left part
+		if(0 != nRepeatRemainderPixels)
+		{
+			fRenderX = _fy + _p9Rect->left + nRepeatFullTimes * RECT_WIDTH(rc9Path[1]);
+			_pSpr->SetTextureRect(rc9Path[1].left,
+				rc9Path[1].top,
+				nRepeatRemainderPixels,
+				RECT_HEIGHT(rc9Path[1]));
+			_pSpr->Render(fRenderX, fRenderY);
+		}
+	}
 
 	//	right top
 	_pSpr->SetTextureRect(rc9Path[2].left,
