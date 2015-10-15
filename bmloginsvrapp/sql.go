@@ -107,6 +107,48 @@ func initDatabase(path string) *sql.DB {
 		}
 	}
 
+	//	check user donate consume
+	userDonateConsumeExists, err := dbTableExist(db, "userdonateconsume")
+	if err != nil {
+		log.Println("failed to check userdonateconsume table.err:", err)
+	} else {
+		if !userDonateConsumeExists {
+			sqlexpr := `
+			create table userdonateconsume(id integer primary key, uid integer, itemid integer, cost integer, buytime integer)
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Println("Failed to create new table,err:", err)
+				db.Close()
+				return nil
+			} else {
+				log.Println("Create new table[userdonateconsume]")
+			}
+		}
+	}
+
+	//	check player rank
+	playerRankExists, err := dbTableExist(db, "player_rank")
+	if err != nil {
+		log.Println("failed to check player_rank table.err:", err)
+	} else {
+		if !playerRankExists {
+			sqlexpr := `
+			create table player_rank(uid integer primary key, name varchar(21), job integer, level integer, expr integer, power integer)
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Println("Failed to create new table,err:", err)
+				db.Close()
+				return nil
+			} else {
+				log.Println("Create new table[player_rank]")
+			}
+		}
+	}
+
 	return db
 }
 
@@ -137,6 +179,184 @@ func dbTableExist(db *sql.DB, tableName string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+type UserRankInfo struct {
+	uid   uint32
+	name  string
+	job   int
+	level int
+	expr  int
+	power int
+}
+
+func dbIsUserRankExists(db *sql.DB, uid uint32) bool {
+	rows, err := db.Query("select count(*) as cnt from player_rank where uid = '" + strconv.FormatUint(uint64(uid), 10) + "'")
+	if err != nil {
+		log.Printf("Error on selecting uid,error[%s]", err.Error())
+		return true
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		count := 0
+		rows.Scan(&count)
+
+		if count == 0 {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func dbGetUserRankInfo(db *sql.DB, uid uint32, info *UserRankInfo) bool {
+	if nil == db {
+		return false
+	}
+
+	//	Select
+	fetched := false
+	sqlexpr := "select name,job,level,expr,power from player_rank where uid = " + strconv.Itoa(int(uid))
+	rows, err := db.Query(sqlexpr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
+		return false
+	} else {
+		defer rows.Close()
+		//	Read data
+		if rows.Next() {
+			fetched = true
+			rows.Scan(&info.name, &info.job, &info.level, &info.expr, &info.power)
+			info.uid = uid
+		}
+	}
+
+	return fetched
+}
+
+func dbUpdateUserRankInfo(db *sql.DB, info *UserRankInfo) bool {
+	if nil == db {
+		return false
+	}
+
+	if !dbIsUserRankExists(db, info.uid) {
+		//	new record
+		expr := "insert into player_rank values(" + strconv.FormatUint(uint64(info.uid), 10) + ",'" + info.name + "'," + strconv.Itoa(int(info.job)) + "," + strconv.Itoa(int(info.level)) + "," + strconv.FormatUint(uint64(info.expr), 10) + "," + strconv.FormatUint(uint64(info.power), 10) + ")"
+		_, err := db.Exec(expr)
+		if err != nil {
+			log.Println("db exec failed.expr:", expr, " err:", err)
+			return false
+		}
+
+		return true
+	} else {
+		//	update record
+		expr := "update player_rank set "
+		exprInitialLength := len(expr)
+
+		if 0 == info.level &&
+			0 == info.expr &&
+			0 == info.power {
+			return true
+		}
+
+		if 0 != info.level {
+			expr += " level=" + strconv.Itoa(info.level)
+		}
+		if 0 != info.expr {
+			if len(expr) != exprInitialLength {
+				expr += ","
+			}
+			expr += " expr=" + strconv.Itoa(info.expr)
+		}
+		if 0 != info.power {
+			if len(expr) != exprInitialLength {
+				expr += ","
+			}
+			expr += " power=" + strconv.Itoa(info.power)
+		}
+		expr += " where uid=" + strconv.Itoa(int(info.uid))
+
+		_, err := db.Exec(expr)
+		if err != nil {
+			log.Printf("Error on executing expression[%s] Error[%s]",
+				expr, err.Error())
+			return false
+		}
+
+		return true
+	}
+}
+
+func dbGetUserRankInfoOrderAsc(db *sql.DB, limit int) []UserRankInfo {
+	var ret []UserRankInfo = nil
+
+	expr := "select uid, name, job, level, expr, power from player_rank order by level desc limit " + strconv.Itoa(limit)
+
+	return nil
+}
+
+type UserDonateConsume struct {
+	uid     uint32
+	itemid  int
+	cost    int
+	buytime int64
+}
+
+func dbInsertUserDonateConsume(db *sql.DB, uid uint32, itemid int, cost int) bool {
+	expr := "insert into userdonateconsume values(null, " + strconv.FormatUint(uint64(uid), 10) + "," + strconv.FormatUint(uint64(itemid), 10) + "," + strconv.FormatUint(uint64(cost), 10) + "," + strconv.FormatUint(uint64(time.Now().Unix()), 10) + ")"
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Println("db exec failed.expr:", expr, " err:", err)
+		return false
+	}
+
+	return true
+}
+
+func dbGetUserDonateConsumeSum(db *sql.DB, uid uint32) int {
+	expr := "select sum(cost) from userdonateconsume where uid=" + strconv.FormatUint(uint64(uid), 10)
+	sum := 0
+
+	rows, err := db.Query(expr)
+	if nil != err {
+		log.Println("db query failed.expr:", expr, " err:", err)
+		return 0
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		rows.Scan(&sum)
+	}
+
+	return sum
+}
+
+func dbOnConsumeDonate(db *sql.DB, uid uint32, itemid int, cost int) (bool, int) {
+	if cost < 0 {
+		return false, -1
+	}
+	//	先检查是否有捐赠的金币
+	donateInfo := &UserDonateInfo{}
+	if !dbGetUserDonateInfo(db, uid, donateInfo) {
+		return false, -2
+	}
+
+	nCostMoney := dbGetUserDonateConsumeSum(db, uid)
+	nLeftMoney := int(donateInfo.donate) - nCostMoney
+	if nLeftMoney < cost {
+		//	钱不够
+		return false, -3
+	}
+
+	//	钱够了
+	if !dbInsertUserDonateConsume(db, uid, itemid, cost) {
+		return false, -4
+	}
+
+	return true, nLeftMoney - cost
 }
 
 type UserDonateInfo struct {
@@ -675,7 +895,7 @@ func dbInsertSystemGift(db *sql.DB, gift *SystemGift) bool {
 	if count != 0 {
 		return false
 	}
-	
+
 	expr := "insert into systemgift values(null, " +
 		strconv.FormatUint(uint64(gift.uid), 10) + "," +
 		strconv.FormatUint(uint64(gift.giftid), 10) + "," +
@@ -716,10 +936,10 @@ func dbGetSystemGiftByUid(db *sql.DB, uid uint32, gift *SystemGift) bool {
 }
 
 func dbGetSystemGiftCountByUid(db *sql.DB, uid uint32, itemid int) int {
-	expr := "select count(*) as cnt from systemgift where uid=" + 
-	strconv.FormatUint(uint64(uid), 10) +
-	" and giftid=" +
-	strconv.FormatUint(uint64(itemid), 10)
+	expr := "select count(*) as cnt from systemgift where uid=" +
+		strconv.FormatUint(uint64(uid), 10) +
+		" and giftid=" +
+		strconv.FormatUint(uint64(itemid), 10)
 	rowsCount, err := db.Query(expr)
 
 	if err != nil {
@@ -733,7 +953,7 @@ func dbGetSystemGiftCountByUid(db *sql.DB, uid uint32, itemid int) int {
 	if rowsCount.Next() {
 		rowsCount.Scan(&count)
 	}
-	
+
 	return count
 }
 

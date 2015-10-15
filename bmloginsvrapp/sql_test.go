@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math/rand"
+	"strconv"
 	//"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
@@ -132,7 +134,7 @@ func TestSqlUserDonate(t *testing.T) {
 		return
 	}
 
-	if info.donate != donateMoney {
+	if int(info.donate) != donateMoney {
 		t.Error("dbIncUserDonateInfo failed")
 		return
 	}
@@ -153,5 +155,87 @@ func TestSqlUserDonate(t *testing.T) {
 	if dbIsUserDonateExists(db, testUid) {
 		t.Error("dbIsUserDonateExists failed")
 		return
+	}
+
+	//	inc
+	if !dbIncUserDonateInfo(db, testUid, donateMoney, "34252543") {
+		t.Error("dbIncUserDonateInfo failed")
+		return
+	}
+
+	//	constom
+	consumeOk, leftMoney := dbOnConsumeDonate(db, testUid, 1, 50)
+	if !consumeOk {
+		t.Error("dbOnConsumeDonate failed:", leftMoney)
+		return
+	}
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 2, 30)
+	if !consumeOk ||
+		leftMoney != 20 {
+		t.Error("dbOnConsumeDonate failed:", leftMoney)
+		return
+	}
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 3, 30)
+	if consumeOk ||
+		leftMoney != -3 {
+		t.Error("dbOnConsumeDonate failed:", leftMoney)
+		return
+	}
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 3, 20)
+	if !consumeOk ||
+		leftMoney != 0 {
+		t.Error("dbOnConsumeDonate failed:", leftMoney)
+		return
+	}
+
+	//	player rank
+	rankInfo := &UserRankInfo{}
+	rankInfo.uid = 1
+	rankInfo.job = 1
+	rankInfo.level = 33
+	rankInfo.name = "test"
+	rankInfo.expr = 12333
+	playerRankOk := dbUpdateUserRankInfo(db, rankInfo)
+	if !playerRankOk {
+		t.Error("dbUpdateUserRankInfo failed")
+	}
+
+	getRankInfo := &UserRankInfo{}
+	playerRankOk = dbGetUserRankInfo(db, 1, getRankInfo)
+	if !playerRankOk ||
+		getRankInfo.uid != rankInfo.uid ||
+		getRankInfo.job != rankInfo.job ||
+		getRankInfo.level != rankInfo.level ||
+		getRankInfo.expr != rankInfo.expr {
+		t.Error("dbGetUserRankInfo failed")
+	}
+
+	rankInfo.level = 34
+	rankInfo.power = 55
+	rankInfo.expr = 0
+	playerRankOk = dbUpdateUserRankInfo(db, rankInfo)
+	if !playerRankOk {
+		t.Error("dbUpdateUserRankInfo failed")
+	}
+
+	playerRankOk = dbGetUserRankInfo(db, 1, getRankInfo)
+	if !playerRankOk ||
+		getRankInfo.uid != 1 ||
+		getRankInfo.job != 1 ||
+		getRankInfo.level != 34 ||
+		getRankInfo.expr != 12333 ||
+		getRankInfo.power != 55 {
+		t.Error("dbGetUserRankInfo failed")
+	}
+
+	for uid := 1000; uid <= 1250; uid++ {
+		rankInfo.uid = uint32(uid)
+		rankInfo.job = rand.Intn(3)
+		rankInfo.expr = 10000 + rand.Intn(5000)
+		rankInfo.level = 20 + rand.Intn(40)
+		rankInfo.name = "tester_" + strconv.Itoa(uid)
+		if !dbUpdateUserRankInfo(db, rankInfo) {
+			t.Error("dbUpdateUserRankInfo failed")
+		}
 	}
 }
