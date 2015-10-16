@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestSqlUserAccount(t *testing.T) {
@@ -228,14 +229,29 @@ func TestSqlUserDonate(t *testing.T) {
 		t.Error("dbGetUserRankInfo failed")
 	}
 
+	randGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for uid := 1000; uid <= 1250; uid++ {
 		rankInfo.uid = uint32(uid)
-		rankInfo.job = rand.Intn(3)
-		rankInfo.expr = 10000 + rand.Intn(5000)
-		rankInfo.level = 20 + rand.Intn(40)
+		rankInfo.job = randGenerator.Intn(3)
+		rankInfo.expr = 10000 + randGenerator.Intn(5000)
+		rankInfo.level = 20 + randGenerator.Intn(40)
 		rankInfo.name = "tester_" + strconv.Itoa(uid)
 		if !dbUpdateUserRankInfo(db, rankInfo) {
 			t.Error("dbUpdateUserRankInfo failed")
 		}
+	}
+
+	//	select by level
+	rankList := dbGetUserRankInfoOrderByLevel(db, 10, -1)
+	if nil != rankList {
+		log.Println(rankList)
+	} else {
+		t.Error("dbGetUserRankInfoOrderByLevel failed")
+	}
+	rankList = dbGetUserRankInfoOrderByPower(db, 10, 1)
+	if nil != rankList {
+		log.Println(rankList)
+	} else {
+		t.Error("dbGetUserRankInfoOrderByPower failed")
 	}
 }

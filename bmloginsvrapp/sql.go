@@ -289,12 +289,86 @@ func dbUpdateUserRankInfo(db *sql.DB, info *UserRankInfo) bool {
 	}
 }
 
-func dbGetUserRankInfoOrderAsc(db *sql.DB, limit int) []UserRankInfo {
+func dbGetUserRankInfoOrderByPower(db *sql.DB, limit int, job int) []UserRankInfo {
 	var ret []UserRankInfo = nil
 
-	expr := "select uid, name, job, level, expr, power from player_rank order by level desc limit " + strconv.Itoa(limit)
+	expr := "select uid, name, job, level, expr, power from player_rank "
+	if job >= 0 &&
+		job <= 2 {
+		expr += " where job=" + strconv.Itoa(job)
+	}
 
-	return nil
+	expr += " order by power asc limit " + strconv.Itoa(limit)
+	rows, err := db.Query(expr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return nil
+	}
+
+	defer rows.Close()
+	ret = make([]UserRankInfo, limit)
+	index := 0
+	//	Read data
+	for rows.Next() {
+		rows.Scan(&ret[index].uid, &ret[index].name, &ret[index].job, &ret[index].level, &ret[index].expr, &ret[index].power)
+		index++
+	}
+
+	if index == 0 {
+		return nil
+	}
+
+	//	reverse
+	var tmp UserRankInfo
+	for i := 0; i < index/2; i++ {
+		tmp = ret[i]
+		ret[i] = ret[index-1-i]
+		ret[index-1-i] = tmp
+	}
+
+	return ret[:index-1]
+}
+
+func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInfo {
+	var ret []UserRankInfo = nil
+
+	expr := "select uid, name, job, level, expr, power from player_rank "
+	if job >= 0 &&
+		job <= 2 {
+		expr += " where job=" + strconv.Itoa(job)
+	}
+
+	expr += " order by level asc limit " + strconv.Itoa(limit)
+	rows, err := db.Query(expr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return nil
+	}
+
+	defer rows.Close()
+	ret = make([]UserRankInfo, limit)
+	index := 0
+	//	Read data
+	for rows.Next() {
+		rows.Scan(&ret[index].uid, &ret[index].name, &ret[index].job, &ret[index].level, &ret[index].expr, &ret[index].power)
+		index++
+	}
+
+	if index == 0 {
+		return nil
+	}
+
+	//	reverse
+	var tmp UserRankInfo
+	for i := 0; i < index/2; i++ {
+		tmp = ret[i]
+		ret[i] = ret[index-1-i]
+		ret[index-1-i] = tmp
+	}
+
+	return ret[:index-1]
 }
 
 type UserDonateConsume struct {
