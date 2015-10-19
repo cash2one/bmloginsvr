@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"github.com/axgle/mahonia"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
@@ -135,7 +136,7 @@ func initDatabase(path string) *sql.DB {
 	} else {
 		if !playerRankExists {
 			sqlexpr := `
-			create table player_rank(uid integer primary key, name varchar(21), job integer, level integer, expr integer, power integer)
+			create table player_rank(id integer primary key, uid integer, name varchar(21), job integer, level integer, expr integer, power integer)
 			`
 
 			_, err = db.Exec(sqlexpr)
@@ -182,16 +183,16 @@ func dbTableExist(db *sql.DB, tableName string) (bool, error) {
 }
 
 type UserRankInfo struct {
-	uid   uint32
-	name  string
-	job   int
-	level int
-	expr  int
-	power int
+	Uid   uint32 `json:"uid"`
+	Name  string `json:"name"`
+	Job   int    `json:"job"`
+	Level int    `json:"level"`
+	Expr  int    `json:"expr"`
+	Power int    `json:"power"`
 }
 
-func dbIsUserRankExists(db *sql.DB, uid uint32) bool {
-	rows, err := db.Query("select count(*) as cnt from player_rank where uid = '" + strconv.FormatUint(uint64(uid), 10) + "'")
+func dbIsUserRankExists(db *sql.DB, name string) bool {
+	rows, err := db.Query("select count(*) as cnt from player_rank where name = '" + name + "'")
 	if err != nil {
 		log.Printf("Error on selecting uid,error[%s]", err.Error())
 		return true
@@ -227,8 +228,8 @@ func dbGetUserRankInfo(db *sql.DB, uid uint32, info *UserRankInfo) bool {
 		//	Read data
 		if rows.Next() {
 			fetched = true
-			rows.Scan(&info.name, &info.job, &info.level, &info.expr, &info.power)
-			info.uid = uid
+			rows.Scan(&info.Name, &info.Job, &info.Level, &info.Expr, &info.Power)
+			info.Uid = uid
 		}
 	}
 
@@ -240,9 +241,9 @@ func dbUpdateUserRankInfo(db *sql.DB, info *UserRankInfo) bool {
 		return false
 	}
 
-	if !dbIsUserRankExists(db, info.uid) {
+	if !dbIsUserRankExists(db, info.Name) {
 		//	new record
-		expr := "insert into player_rank values(" + strconv.FormatUint(uint64(info.uid), 10) + ",'" + info.name + "'," + strconv.Itoa(int(info.job)) + "," + strconv.Itoa(int(info.level)) + "," + strconv.FormatUint(uint64(info.expr), 10) + "," + strconv.FormatUint(uint64(info.power), 10) + ")"
+		expr := "insert into player_rank values(null, " + strconv.FormatUint(uint64(info.Uid), 10) + ",'" + info.Name + "'," + strconv.Itoa(int(info.Job)) + "," + strconv.Itoa(int(info.Level)) + "," + strconv.FormatUint(uint64(info.Expr), 10) + "," + strconv.FormatUint(uint64(info.Power), 10) + ")"
 		_, err := db.Exec(expr)
 		if err != nil {
 			log.Println("db exec failed.expr:", expr, " err:", err)
@@ -255,28 +256,28 @@ func dbUpdateUserRankInfo(db *sql.DB, info *UserRankInfo) bool {
 		expr := "update player_rank set "
 		exprInitialLength := len(expr)
 
-		if 0 == info.level &&
-			0 == info.expr &&
-			0 == info.power {
+		if 0 == info.Level &&
+			0 == info.Expr &&
+			0 == info.Power {
 			return true
 		}
 
-		if 0 != info.level {
-			expr += " level=" + strconv.Itoa(info.level)
+		if 0 != info.Level {
+			expr += " level=" + strconv.Itoa(info.Level)
 		}
-		if 0 != info.expr {
+		if 0 != info.Expr {
 			if len(expr) != exprInitialLength {
 				expr += ","
 			}
-			expr += " expr=" + strconv.Itoa(info.expr)
+			expr += " expr=" + strconv.Itoa(info.Expr)
 		}
-		if 0 != info.power {
+		if 0 != info.Power {
 			if len(expr) != exprInitialLength {
 				expr += ","
 			}
-			expr += " power=" + strconv.Itoa(info.power)
+			expr += " power=" + strconv.Itoa(info.Power)
 		}
-		expr += " where uid=" + strconv.Itoa(int(info.uid))
+		expr += " where name='" + info.Name + "'"
 
 		_, err := db.Exec(expr)
 		if err != nil {
@@ -298,7 +299,7 @@ func dbGetUserRankInfoOrderByPower(db *sql.DB, limit int, job int) []UserRankInf
 		expr += " where job=" + strconv.Itoa(job)
 	}
 
-	expr += " order by power asc limit " + strconv.Itoa(limit)
+	expr += " order by power desc, level desc limit " + strconv.Itoa(limit)
 	rows, err := db.Query(expr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s] Error[%s]",
@@ -311,7 +312,11 @@ func dbGetUserRankInfoOrderByPower(db *sql.DB, limit int, job int) []UserRankInf
 	index := 0
 	//	Read data
 	for rows.Next() {
-		rows.Scan(&ret[index].uid, &ret[index].name, &ret[index].job, &ret[index].level, &ret[index].expr, &ret[index].power)
+		rows.Scan(&ret[index].Uid, &ret[index].Name, &ret[index].Job, &ret[index].Level, &ret[index].Expr, &ret[index].Power)
+		//	gbk转utf8
+		decoder := mahonia.NewDecoder("gb18030")
+		u8Str := decoder.ConvertString(ret[index].Name)
+		ret[index].Name = u8Str
 		index++
 	}
 
@@ -319,15 +324,7 @@ func dbGetUserRankInfoOrderByPower(db *sql.DB, limit int, job int) []UserRankInf
 		return nil
 	}
 
-	//	reverse
-	var tmp UserRankInfo
-	for i := 0; i < index/2; i++ {
-		tmp = ret[i]
-		ret[i] = ret[index-1-i]
-		ret[index-1-i] = tmp
-	}
-
-	return ret[:index-1]
+	return ret[0:index]
 }
 
 func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInfo {
@@ -339,7 +336,7 @@ func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInf
 		expr += " where job=" + strconv.Itoa(job)
 	}
 
-	expr += " order by level asc limit " + strconv.Itoa(limit)
+	expr += " order by level desc, power desc limit " + strconv.Itoa(limit)
 	rows, err := db.Query(expr)
 	if err != nil {
 		log.Printf("Error on executing expression[%s] Error[%s]",
@@ -352,7 +349,11 @@ func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInf
 	index := 0
 	//	Read data
 	for rows.Next() {
-		rows.Scan(&ret[index].uid, &ret[index].name, &ret[index].job, &ret[index].level, &ret[index].expr, &ret[index].power)
+		rows.Scan(&ret[index].Uid, &ret[index].Name, &ret[index].Job, &ret[index].Level, &ret[index].Expr, &ret[index].Power)
+		//	gbk转utf8
+		decoder := mahonia.NewDecoder("gb18030")
+		u8Str := decoder.ConvertString(ret[index].Name)
+		ret[index].Name = u8Str
 		index++
 	}
 
@@ -360,15 +361,7 @@ func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInf
 		return nil
 	}
 
-	//	reverse
-	var tmp UserRankInfo
-	for i := 0; i < index/2; i++ {
-		tmp = ret[i]
-		ret[i] = ret[index-1-i]
-		ret[index-1-i] = tmp
-	}
-
-	return ret[:index-1]
+	return ret[:index]
 }
 
 type UserDonateConsume struct {

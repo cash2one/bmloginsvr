@@ -314,6 +314,38 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 			binary.Write(buf, binary.LittleEndian, &qkmsgcode)
 			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
 		}
+	case loginopstart + 22:
+		{
+			jsStr := ""
+			var strEndFlag int8 = 0
+			for i, v := range args {
+				if i == 0 {
+					switch argtype := v.(type) {
+					case string:
+						{
+							jsStr = argtype
+						}
+					default:
+						{
+							logSendMsgTypeErr(opcode, "", "string")
+							return false
+						}
+					}
+				}
+			}
+
+			if len(jsStr) == 0 {
+				logSendMsgTypeErr(opcode, "nil", "string")
+				return false
+			}
+
+			buf := new(bytes.Buffer)
+			jsLength := uint32(len(jsStr))
+			binary.Write(buf, binary.LittleEndian, &jsLength)
+			binary.Write(buf, binary.LittleEndian, []byte(jsStr))
+			binary.Write(buf, binary.LittleEndian, &strEndFlag)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
 	}
 	return true
 }

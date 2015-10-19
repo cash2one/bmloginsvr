@@ -40,7 +40,14 @@ func CreateServerUser(clientconn *server.Connection) *ServerUser {
 }
 
 func (this *ServerUser) OnConnect() {
-	log.Println("GameServer ", this.ipaddr, " connected...")
+	log.Println("GameServer ", this.ipaddr, " connected... id:", this.serverid)
+	if this.serverid >= 0 &&
+		this.serverid < 100 {
+
+	}
+	rankListData := getPlayerRankList()
+	//log.Println("get rank list:", rankListData)
+	this.SendUserMsg(loginopstart+22, rankListData)
 }
 
 func (this *ServerUser) OnVerified() {
@@ -174,6 +181,47 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				user.svrconnidx = gsidx
 				user.conncode = conncode
 				log.Println("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
+			}
+		}
+	case loginopstart + 21:
+		{
+			//	update player rank
+			var uid uint32 = 0
+			var nameLength int32 = 0
+			var name string
+			var level int32 = 0
+			var job int8 = 0
+			var power int32 = 0
+
+			//	read
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &uid)
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &nameLength)
+			if nameLength != 0 {
+				name = string(msg[8+4+4 : 8+4+4+nameLength])
+				nameLength++
+			} else {
+				log.Println("Trying to update player rank with no name.")
+				return
+			}
+
+			binary.Read(bytes.NewBuffer(msg[8+4+4+nameLength:8+4+4+nameLength+4]), binary.LittleEndian, &level)
+			binary.Read(bytes.NewBuffer(msg[8+4+4+nameLength+4:8+4+4+nameLength+4+1]), binary.LittleEndian, &job)
+			binary.Read(bytes.NewBuffer(msg[8+4+4+nameLength+4+1:]), binary.LittleEndian, &power)
+
+			if 0 == level {
+				log.Println("Trying to update player rank with 0 level.")
+				return
+			}
+
+			//log.Println("Update player rank:", name, "uid:", uid, "job:", job, "level:", level, "power:", power)
+			var rankInfo UserRankInfo
+			rankInfo.Uid = uid
+			rankInfo.Job = int(job)
+			rankInfo.Level = int(level)
+			rankInfo.Name = name
+			rankInfo.Power = int(power)
+			if !dbUpdateUserRankInfo(g_DBUser, &rankInfo) {
+				log.Println("Failed to insert player rank info")
 			}
 		}
 	}
@@ -349,6 +397,7 @@ func ControlValid(addr string) bool {
 }
 
 func ReadControlAddr(path string) bool {
+	//	read control addr
 	file, err := os.Open(path)
 	if err != nil {
 		log.Println(err)

@@ -140,6 +140,8 @@ func main() {
 	ch := make(chan string, 10)
 	go go_handleInput(ch)
 
+	timerTick := time.Tick(time.Duration(5) * time.Second)
+
 	if g_ServerS.StartListen(*ipaddrserver) && g_ServerC.StartListen(*ipaddrclient) {
 		log.Println("Start process event.listen server:", *ipaddrserver, " listen client:", *ipaddrclient)
 
@@ -178,6 +180,10 @@ func main() {
 			case <-time.After(time.Duration(30) * time.Second):
 				{
 					UpdateMThreadMsg()
+				}
+			case <-timerTick:
+				{
+					UpdateTimerEvent()
 				}
 			}
 		}
