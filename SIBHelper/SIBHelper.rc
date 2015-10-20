@@ -1,0 +1,238 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 中文(中华人民共和国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)\r\n"
+    "LANGUAGE 4, 2\r\n"
+    "#pragma code_page(936)\r\n"
+    "#include ""res\\SIBHelper.rc2""  // 非 Microsoft Visual C++ 编辑过的资源\r\n"
+    "#include ""afxres.rc""         // 标准组件\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\SIBHelper.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 235, 55
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "关于 SIBHelper"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
+    LTEXT           "SIBHelper Version 1.0",IDC_STATIC,40,10,119,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2013",IDC_STATIC,40,25,119,8
+    DEFPUSHBUTTON   "确定",IDOK,178,7,50,16,WS_GROUP
+END
+
+IDD_SIBHELPER_DIALOG DIALOGEX 0, 0, 319, 324
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "SIBHelper"
+FONT 9, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "执行",IDOK,77,301,50,16
+    PUSHBUTTON      "退出",IDCANCEL,211,301,50,16
+    GROUPBOX        "解包SIB",IDC_STATIC,7,9,305,56
+    GROUPBOX        "打包SIB",IDC_STATIC,7,65,305,48
+    CONTROL         "执行",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,279,35,30,10
+    LTEXT           "SIB文件位置:",IDC_STATIC,15,27,45,8
+    LTEXT           "释放位置:",IDC_STATIC,16,45,47,8
+    EDITTEXT        IDC_EDIT1,65,22,144,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT2,65,43,144,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON1,222,22,50,14
+    PUSHBUTTON      "浏览",IDC_BUTTON2,222,43,50,14
+    LTEXT           "图片文件夹:",IDC_STATIC,15,79,47,8
+    LTEXT           "打包为:",IDC_STATIC,16,96,46,8
+    EDITTEXT        IDC_EDIT3,63,76,145,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_EDIT4,62,93,146,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON3,223,75,50,14
+    PUSHBUTTON      "浏览",IDC_BUTTON4,222,93,50,14
+    CONTROL         "执行",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,278,87,27,10
+    GROUPBOX        "打包任务脚本",IDC_STATIC,7,113,305,51
+    LTEXT           "任务脚本路径:",IDC_STATIC,14,128,48,8
+    EDITTEXT        IDC_EDIT5,62,125,145,14,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "执行",IDC_CHECK3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,277,137,28,10
+    PUSHBUTTON      "浏览",IDC_BUTTON5,220,124,50,14
+    LTEXT           "密码:",IDC_STATIC,14,146,40,8
+    EDITTEXT        IDC_EDIT7,62,144,145,14,ES_AUTOHSCROLL
+    LTEXT           "地图信息路径:",IDC_STATIC,15,179,53,8
+    GROUPBOX        "生成地图信息",IDC_STATIC,7,165,305,48
+    EDITTEXT        IDC_EDIT6,61,176,145,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON6,220,174,50,14
+    CONTROL         "执行",IDC_CHECK4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,276,181,30,10
+    LTEXT           "密码:",IDC_STATIC,15,199,38,8
+    EDITTEXT        IDC_EDIT8,61,194,145,14,ES_AUTOHSCROLL
+    GROUPBOX        "打包地图资源",IDC_STATIC,7,220,305,69
+    LTEXT           "地图文件:",IDC_STATIC,13,233,36,8
+    EDITTEXT        IDC_EDIT9,61,230,145,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON7,219,230,50,14
+    CONTROL         "执行",IDC_CHECK5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,276,250,30,10
+    LTEXT           "源资源路径:",IDC_STATIC,14,249,45,8
+    EDITTEXT        IDC_EDIT10,61,248,144,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON8,219,248,50,14
+    LTEXT           "目标资源路径:",IDC_STATIC,14,267,47,8
+    EDITTEXT        IDC_EDIT11,62,265,142,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "浏览",IDC_BUTTON9,219,265,50,14
+    CONTROL         "打包INI",IDC_CHECK7,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,147,40,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080403a8"
+        BEGIN
+            VALUE "CompanyName", "TODO: <公司名>"
+            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "SIBHelper.exe"
+            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
+            VALUE "OriginalFilename", "SIBHelper.exe"
+            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "翻译", 0x804, 936
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 228
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_SIBHELPER_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 317
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_ABOUTBOX            "关于 SIBHelper(&A)..."
+END
+
+#endif    // 中文(中华人民共和国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_SPLITTER_RESOURCES
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE 4, 2
+#pragma code_page(936)
+#include "res\SIBHelper.rc2"  // 非 Microsoft Visual C++ 编辑过的资源
+#include "afxres.rc"         // 标准组件
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
