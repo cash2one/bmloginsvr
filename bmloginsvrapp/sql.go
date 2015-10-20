@@ -115,7 +115,7 @@ func initDatabase(path string) *sql.DB {
 	} else {
 		if !userDonateConsumeExists {
 			sqlexpr := `
-			create table userdonateconsume(id integer primary key, uid integer, itemid integer, cost integer, buytime integer)
+			create table userdonateconsume(id integer primary key, uid integer, name varchar(21), itemid integer, cost integer, buytime integer)
 			`
 
 			_, err = db.Exec(sqlexpr)
@@ -366,13 +366,14 @@ func dbGetUserRankInfoOrderByLevel(db *sql.DB, limit int, job int) []UserRankInf
 
 type UserDonateConsume struct {
 	uid     uint32
+	name    string
 	itemid  int
 	cost    int
 	buytime int64
 }
 
-func dbInsertUserDonateConsume(db *sql.DB, uid uint32, itemid int, cost int) bool {
-	expr := "insert into userdonateconsume values(null, " + strconv.FormatUint(uint64(uid), 10) + "," + strconv.FormatUint(uint64(itemid), 10) + "," + strconv.FormatUint(uint64(cost), 10) + "," + strconv.FormatUint(uint64(time.Now().Unix()), 10) + ")"
+func dbInsertUserDonateConsume(db *sql.DB, uid uint32, name string, itemid int, cost int) bool {
+	expr := "insert into userdonateconsume values(null, " + strconv.FormatUint(uint64(uid), 10) + ",'" + name + "' ," + strconv.FormatUint(uint64(itemid), 10) + "," + strconv.FormatUint(uint64(cost), 10) + "," + strconv.FormatUint(uint64(time.Now().Unix()), 10) + ")"
 	_, err := db.Exec(expr)
 	if err != nil {
 		log.Println("db exec failed.expr:", expr, " err:", err)
@@ -401,7 +402,42 @@ func dbGetUserDonateConsumeSum(db *sql.DB, uid uint32) int {
 	return sum
 }
 
-func dbOnConsumeDonate(db *sql.DB, uid uint32, itemid int, cost int) (bool, int) {
+func dbGetUserDonateLeft(db *sql.DB, uid uint32) int {
+	var info UserDonateInfo
+	if !dbGetUserDonateInfo(db, uid, &info) {
+		return 0
+	}
+
+	used := dbGetUserDonateConsumeSum(db, uid)
+	left := int(info.donate) - used
+	if left >= 0 {
+		return left
+	}
+	return 0
+}
+
+func dbCheckConsumeDonate(db *sql.DB, uid uint32, cost int) bool {
+	if cost < 0 {
+		return false
+	}
+
+	//	先检查是否有捐赠的金币
+	donateInfo := &UserDonateInfo{}
+	if !dbGetUserDonateInfo(db, uid, donateInfo) {
+		return false
+	}
+
+	nCostMoney := dbGetUserDonateConsumeSum(db, uid)
+	nLeftMoney := int(donateInfo.donate) - nCostMoney
+	if nLeftMoney < cost {
+		//	钱不够
+		return false
+	}
+
+	return true
+}
+
+func dbOnConsumeDonate(db *sql.DB, uid uint32, name string, itemid int, cost int) (bool, int) {
 	if cost < 0 {
 		return false, -1
 	}
@@ -419,7 +455,7 @@ func dbOnConsumeDonate(db *sql.DB, uid uint32, itemid int, cost int) (bool, int)
 	}
 
 	//	钱够了
-	if !dbInsertUserDonateConsume(db, uid, itemid, cost) {
+	if !dbInsertUserDonateConsume(db, uid, name, itemid, cost) {
 		return false, -4
 	}
 
@@ -578,6 +614,16 @@ func dbRemoveUserDonateInfo(db *sql.DB, uid uint32) bool {
 				expr, err.Error())
 			return false
 		}
+
+		//	remove all donate history
+		expr = "delete from userdonatehistory where uid=" + strconv.FormatUint(uint64(uid), 10)
+		_, err = db.Exec(expr)
+		if err != nil {
+			log.Printf("Error on executing expression[%s] Error[%s]",
+				expr, err.Error())
+			return false
+		}
+
 		return true
 	}
 

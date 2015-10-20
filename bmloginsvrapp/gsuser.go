@@ -224,6 +224,60 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				log.Println("Failed to insert player rank info")
 			}
 		}
+	case loginopstart + 23:
+		{
+			//	check can buy item
+			//	var : uid gsid queryid cost
+			var uid uint32 = 0
+			var gsid uint32
+			var queryId uint32
+			var cost int32
+
+			//	read
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &uid)
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &gsid)
+			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &uid)
+			binary.Read(bytes.NewBuffer(msg[8+4+4+4:8+4+4+4+4]), binary.LittleEndian, &cost)
+
+			ret := dbCheckConsumeDonate(g_DBUser, uid, int(cost))
+			retInt8 := int8(0)
+			if ret {
+				retInt8 = 1
+			}
+			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId)
+		}
+	case loginopstart + 25:
+		{
+			//	add buy item record
+			//	var : uid gsid name itemid cost
+			var uid uint32 = 0
+			var gsid uint32
+			var nameLength uint32
+			name := ""
+			var itemid int32
+			var cost int32
+
+			//	read
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &uid)
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &gsid)
+			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &nameLength)
+			if 0 != nameLength {
+				name = string(msg[8+4+4+4 : 8+4+4+4+nameLength])
+				nameLength++
+			} else {
+				log.Println("Invalid buyer name")
+				return
+			}
+			binary.Read(bytes.NewBuffer(msg[8+4+4+4+nameLength:8+4+4+4+nameLength+4]), binary.LittleEndian, &itemid)
+			binary.Read(bytes.NewBuffer(msg[8+4+4+4+nameLength+4:8+4+4+4+nameLength+4+4]), binary.LittleEndian, &cost)
+
+			ret, left := dbOnConsumeDonate(g_DBUser, uid, name, int(itemid), int(cost))
+			retInt8 := int8(0)
+			if ret {
+				retInt8 = 1
+			}
+			this.SendUserMsg(loginopstart+26, retInt8, uid, gsid, int32(left))
+		}
 	}
 }
 

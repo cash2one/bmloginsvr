@@ -165,37 +165,65 @@ func TestSqlUserDonate(t *testing.T) {
 	}
 
 	//	constom
-	consumeOk, leftMoney := dbOnConsumeDonate(db, testUid, 1, 50)
+	name := "buyer123"
+	consumeOk, leftMoney := dbOnConsumeDonate(db, testUid, name, 1, 50)
 	if !consumeOk {
 		t.Error("dbOnConsumeDonate failed:", leftMoney)
 		return
 	}
-	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 2, 30)
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, name, 2, 30)
 	if !consumeOk ||
 		leftMoney != 20 {
 		t.Error("dbOnConsumeDonate failed:", leftMoney)
 		return
 	}
-	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 3, 30)
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, name, 3, 30)
 	if consumeOk ||
 		leftMoney != -3 {
 		t.Error("dbOnConsumeDonate failed:", leftMoney)
 		return
 	}
-	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, 3, 20)
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, name, 3, 20)
 	if !consumeOk ||
 		leftMoney != 0 {
 		t.Error("dbOnConsumeDonate failed:", leftMoney)
 		return
 	}
 
+	//	inc
+	if !dbIncUserDonateInfo(db, testUid, donateMoney, "342525443") {
+		t.Error("dbIncUserDonateInfo failed")
+		return
+	}
+
+	//	check
+	if dbCheckConsumeDonate(db, testUid, 101) {
+		t.Error("dbCheckConsumeDonate failed")
+		return
+	}
+	if !dbCheckConsumeDonate(db, testUid, 100) {
+		t.Error("dbCheckConsumeDonate failed")
+		return
+	}
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, name, 3, 100)
+	if !consumeOk ||
+		leftMoney != 0 {
+		t.Error("dbOnConsumeDonate failed.")
+		return
+	}
+	t.Log("dbOnConsumeDonate left money:", leftMoney)
+	consumeOk, leftMoney = dbOnConsumeDonate(db, testUid, name, 3, 1)
+	if consumeOk {
+		t.Error("dbOnConsumeDonate failed.")
+		return
+	}
 	//	player rank
 	rankInfo := &UserRankInfo{}
-	rankInfo.uid = 1
-	rankInfo.job = 1
-	rankInfo.level = 33
-	rankInfo.name = "test"
-	rankInfo.expr = 12333
+	rankInfo.Uid = 1
+	rankInfo.Job = 1
+	rankInfo.Level = 33
+	rankInfo.Name = "test"
+	rankInfo.Expr = 12333
 	playerRankOk := dbUpdateUserRankInfo(db, rankInfo)
 	if !playerRankOk {
 		t.Error("dbUpdateUserRankInfo failed")
@@ -204,16 +232,16 @@ func TestSqlUserDonate(t *testing.T) {
 	getRankInfo := &UserRankInfo{}
 	playerRankOk = dbGetUserRankInfo(db, 1, getRankInfo)
 	if !playerRankOk ||
-		getRankInfo.uid != rankInfo.uid ||
-		getRankInfo.job != rankInfo.job ||
-		getRankInfo.level != rankInfo.level ||
-		getRankInfo.expr != rankInfo.expr {
+		getRankInfo.Uid != rankInfo.Uid ||
+		getRankInfo.Job != rankInfo.Job ||
+		getRankInfo.Level != rankInfo.Level ||
+		getRankInfo.Expr != rankInfo.Expr {
 		t.Error("dbGetUserRankInfo failed")
 	}
 
-	rankInfo.level = 34
-	rankInfo.power = 55
-	rankInfo.expr = 0
+	rankInfo.Level = 34
+	rankInfo.Power = 55
+	rankInfo.Expr = 0
 	playerRankOk = dbUpdateUserRankInfo(db, rankInfo)
 	if !playerRankOk {
 		t.Error("dbUpdateUserRankInfo failed")
@@ -221,21 +249,21 @@ func TestSqlUserDonate(t *testing.T) {
 
 	playerRankOk = dbGetUserRankInfo(db, 1, getRankInfo)
 	if !playerRankOk ||
-		getRankInfo.uid != 1 ||
-		getRankInfo.job != 1 ||
-		getRankInfo.level != 34 ||
-		getRankInfo.expr != 12333 ||
-		getRankInfo.power != 55 {
+		getRankInfo.Uid != 1 ||
+		getRankInfo.Job != 1 ||
+		getRankInfo.Level != 34 ||
+		getRankInfo.Expr != 12333 ||
+		getRankInfo.Power != 55 {
 		t.Error("dbGetUserRankInfo failed")
 	}
 
 	randGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for uid := 1000; uid <= 1250; uid++ {
-		rankInfo.uid = uint32(uid)
-		rankInfo.job = randGenerator.Intn(3)
-		rankInfo.expr = 10000 + randGenerator.Intn(5000)
-		rankInfo.level = 20 + randGenerator.Intn(40)
-		rankInfo.name = "tester_" + strconv.Itoa(uid)
+		rankInfo.Uid = uint32(uid)
+		rankInfo.Job = randGenerator.Intn(3)
+		rankInfo.Expr = 10000 + randGenerator.Intn(5000)
+		rankInfo.Level = 20 + randGenerator.Intn(40)
+		rankInfo.Name = "tester_" + strconv.Itoa(uid)
 		if !dbUpdateUserRankInfo(db, rankInfo) {
 			t.Error("dbUpdateUserRankInfo failed")
 		}
