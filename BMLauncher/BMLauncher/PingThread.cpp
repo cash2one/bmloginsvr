@@ -112,15 +112,37 @@ int PingThread::AddTask(const char* _pszIP)
 
 	LockTaskList();
 
-	PingTask* pTask = new PingTask;
-	strcpy(pTask->szDeskIP, _pszIP);
-	pTask->ulInetIP = ulAddr;
-	pTask->nTaskID = ++m_nTaskIDSeed;
-	m_xPingTaskList.push_back(pTask);
+	//	检测是否已经有相同的任务了
+	int nTaskExistsID = 0;
+	PingTaskList::iterator begIter = m_xPingTaskList.begin();
+	PingTaskList::iterator endIter = m_xPingTaskList.end();
+
+	for(begIter;
+		begIter != endIter;
+		++begIter)
+	{
+		PingTask* pTask = *begIter;
+
+		if(pTask->ulInetIP == ulAddr)
+		{
+			nTaskExistsID = pTask->nTaskID;
+			break;
+		}
+	}
+
+	if(0 == nTaskExistsID)
+	{
+		PingTask* pTask = new PingTask;
+		strcpy(pTask->szDeskIP, _pszIP);
+		pTask->ulInetIP = ulAddr;
+		pTask->nTaskID = ++m_nTaskIDSeed;
+		m_xPingTaskList.push_back(pTask);
+		nTaskExistsID = pTask->nTaskID;
+	}
 
 	UnlockTaskList();
 
-	return pTask->nTaskID;
+	return nTaskExistsID;
 }
 
 bool PingThread::RemoveTask(int _nTaskID)

@@ -149,8 +149,7 @@ LRESULT GameRoomDlg::OnUserMsgPingResult(WPARAM _wParam, LPARAM _lParam)
 			{
 				sprintf(szBuf, "%d ms", nDelay);
 			}
-			m_xListCtrl.SetItemText(0, 5, szBuf);
-			break;
+			m_xListCtrl.SetItemText(i, 5, szBuf);
 		}
 	}
 
