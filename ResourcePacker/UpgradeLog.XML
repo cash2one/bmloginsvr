@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="ResourcePacker10">
+</Property><Property Name="解决方案文件" Value="D:\VsProject\ResourcePacker\ResourcePacker\ResourcePacker10.sln">
+</Property><Property Name="Date" Value="2013年4月24日">
+</Property><Property Name="Time" Value="8:48">
+</Property></Properties><Event ErrorLevel="0" Project="ResourcePacker10" Source="ResourcePacker\ResourcePacker10.vcproj" Description="Converting project file 'D:\VsProject\ResourcePacker\ResourcePacker\ResourcePacker\ResourcePacker10.vcproj'.">
+</Event><Event ErrorLevel="1" Project="ResourcePacker10" Source="ResourcePacker\ResourcePacker10.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="ResourcePacker10" Source="ResourcePacker\ResourcePacker10.vcproj" Description="Done converting to new project file 'D:\VsProject\ResourcePacker\ResourcePacker\ResourcePacker\ResourcePacker10.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="ResourcePacker10" Source="ResourcePacker\ResourcePacker10.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="ResourcePacker10.sln" Description="成功转换解决方案">
+</Event><Event ErrorLevel="3" Project="" Source="ResourcePacker10.sln" Description="Converted">
+</Event></UpgradeLog>
