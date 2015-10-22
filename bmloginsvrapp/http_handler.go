@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
+	"runtime"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 )
@@ -16,6 +19,9 @@ func startHttpServer(addr string) {
 	http.HandleFunc("/getgsaddr", getGsAddressHandler)
 	http.HandleFunc("/registergs", registergsHandler)
 	http.HandleFunc("/getgslist", getGsListHandler)
+	http.HandleFunc("/debug", debugHandler)
+
+	log.Println("Start http server:", addr)
 	go http.ListenAndServe(addr, nil)
 }
 
@@ -28,6 +34,41 @@ type getGsListRsp struct {
 	Result  int              `json:"Result"`
 	Msg     string           `json:"Msg"`
 	Servers []UserGameServer `json:"Servers"`
+}
+
+type DebugHandlerRsp struct {
+	Result int    `json:"Result"`
+	Msg    string `json:"Msg"`
+}
+
+func debugHandler(w http.ResponseWriter, r *http.Request) {
+	var rsp DebugHandlerRsp
+	defaultRsp := true
+
+	defer func() {
+		if defaultRsp {
+			bytes, _ := json.Marshal(&rsp)
+			w.Write(bytes)
+		}
+	}()
+
+	debugType := r.FormValue("type")
+	switch debugType {
+	case "goroutinecount":
+		{
+			rsp.Msg = strconv.Itoa(runtime.NumGoroutine())
+		}
+	case "heap":
+		{
+			pprof.Lookup("heap").WriteTo(w, 1)
+			defaultRsp = false
+		}
+	default:
+		{
+			rsp.Result = -1
+			rsp.Msg = "invalid debug type"
+		}
+	}
 }
 
 func removeGsAddrHandler(w http.ResponseWriter, r *http.Request) {
