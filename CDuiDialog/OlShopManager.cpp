@@ -59,3 +59,43 @@ int OlShopManager::GetQueryID(int _nUid)
 	}
 	return fndIter->second.nQueryID;
 }
+
+void OlShopManager::AddShopItem(int _nID)
+{
+	//	find exists
+	bool bExists = false;
+
+	for(OlShopItemList::const_iterator begIter = m_xOlShopItemList.begin();
+		begIter != m_xOlShopItemList.end();
+		++begIter){
+			if(*begIter == _nID){
+				return;
+			}
+	}
+
+	m_xOlShopItemList.push_back(_nID);
+}
+
+void OlShopManager::RemoveShopItem(int _nID)
+{
+	for(OlShopItemList::iterator begIter = m_xOlShopItemList.begin();
+		begIter != m_xOlShopItemList.end();
+		++begIter){
+			if(*begIter == _nID){
+				m_xOlShopItemList.erase(begIter);
+				return;
+			}
+	}
+}
+
+void OlShopManager::GetShopItems(OlShopItemVector& _refItems)
+{
+	_refItems.resize(m_xOlShopItemList.size());
+	int nInsertIndex = 0;
+
+	for(OlShopItemList::const_iterator begIter = m_xOlShopItemList.begin();
+		begIter != m_xOlShopItemList.end();
+		++begIter){
+			_refItems[nInsertIndex++] = *begIter;
+	}
+}
