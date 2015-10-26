@@ -353,6 +353,7 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 			var uid uint32
 			var gsid uint32
 			var queryid uint32
+			var itemid int32
 
 			for i, v := range args {
 				if 0 == i {
@@ -385,6 +386,14 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 					}
 
 					queryid = argValue
+				} else if 4 == i {
+					argValue, ok := v.(int32)
+					if !ok {
+						logSendMsgTypeErr(opcode, "", "int32")
+						return false
+					}
+
+					itemid = argValue
 				}
 			}
 
@@ -393,6 +402,7 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 			binary.Write(buf, binary.LittleEndian, &uid)
 			binary.Write(buf, binary.LittleEndian, &gsid)
 			binary.Write(buf, binary.LittleEndian, &queryid)
+			binary.Write(buf, binary.LittleEndian, &itemid)
 			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
 		}
 	case loginopstart + 26:

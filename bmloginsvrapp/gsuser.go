@@ -227,24 +227,26 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 	case loginopstart + 23:
 		{
 			//	check can buy item
-			//	var : uid gsid queryid cost
+			//	var : uid gsid queryid cost itemid
 			var uid uint32 = 0
 			var gsid uint32
 			var queryId uint32
 			var cost int32
+			var itemid int32
 
 			//	read
 			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &uid)
 			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &gsid)
 			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &uid)
 			binary.Read(bytes.NewBuffer(msg[8+4+4+4:8+4+4+4+4]), binary.LittleEndian, &cost)
+			binary.Read(bytes.NewBuffer(msg[8+4+4+4+4:8+4+4+4+4+4]), binary.LittleEndian, &itemid)
 
 			ret := dbCheckConsumeDonate(g_DBUser, uid, int(cost))
 			retInt8 := int8(0)
 			if ret {
 				retInt8 = 1
 			}
-			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId)
+			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId, itemid)
 		}
 	case loginopstart + 25:
 		{
