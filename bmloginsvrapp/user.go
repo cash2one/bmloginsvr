@@ -409,7 +409,8 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 		{
 			//	ret int8 uid uint32 gsid uint32 left int32
 			var ret int8
-			name := ""
+			var uid uint32
+			var gsid uint32
 			var left int32
 
 			for i, v := range args {
@@ -426,14 +427,22 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 						}
 					}
 				} else if 1 == i {
-					argValue, ok := v.(string)
+					argValue, ok := v.(uint32)
 					if !ok {
-						logSendMsgTypeErr(opcode, "", "string")
+						logSendMsgTypeErr(opcode, "", "uint32")
 						return false
 					}
 
-					name = argValue
+					uid = argValue
 				} else if 2 == i {
+					argValue, ok := v.(uint32)
+					if !ok {
+						logSendMsgTypeErr(opcode, "", "uint32")
+						return false
+					}
+
+					gsid = argValue
+				} else if 3 == i {
 					argValue, ok := v.(int32)
 					if !ok {
 						logSendMsgTypeErr(opcode, "", "int32")
@@ -446,12 +455,8 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 
 			buf := new(bytes.Buffer)
 			binary.Write(buf, binary.LittleEndian, &ret)
-			nameLength := int32(len(name))
-			binary.Write(buf, binary.LittleEndian, &nameLength)
-			if 0 != nameLength {
-				binary.Write(buf, binary.LittleEndian, []byte(name))
-				binary.Write(buf, binary.LittleEndian, int8(0))
-			}
+			binary.Write(buf, binary.LittleEndian, &uid)
+			binary.Write(buf, binary.LittleEndian, &gsid)
 			binary.Write(buf, binary.LittleEndian, &left)
 			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
 		}
@@ -728,8 +733,9 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 }
 
 type UserLoginExtendInfo struct {
-	DonateMoney int32
-	SystemGift  []int
+	DonateMoney int32 `json:"DonateMoney"`
+	DonateLeft  int32 `json:"DonateLeft"`
+	SystemGift  []int `json:"SystemGift"`
 }
 
 func (this *User) OnRequestLoginGameSvr(msg []byte) {
@@ -880,8 +886,11 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	donateInfo := &UserDonateInfo{}
 	if dbGetUserDonateInfo(g_DBUser, this.uid, donateInfo) {
 		//	nothing
-		log.Println("player[", this.uid, "] donate money:", donateInfo.donate)
+		extInfo.DonateLeft = int32(dbGetUserDonateLeft(g_DBUser, this.uid))
+
+		log.Println("player[", this.uid, "] donate money:", donateInfo.donate, "donate left:", extInfo.DonateLeft)
 	}
+
 	extInfo.DonateMoney = donateInfo.donate
 	extInfo.SystemGift = dbGetSystemGiftIdByUid(g_DBUser, this.uid)
 	binaryExtInfo, jsErr := json.Marshal(extInfo)

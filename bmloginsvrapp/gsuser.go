@@ -237,7 +237,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			//	read
 			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &uid)
 			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &gsid)
-			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &uid)
+			binary.Read(bytes.NewBuffer(msg[8+4+4:8+4+4+4]), binary.LittleEndian, &queryId)
 			binary.Read(bytes.NewBuffer(msg[8+4+4+4:8+4+4+4+4]), binary.LittleEndian, &cost)
 			binary.Read(bytes.NewBuffer(msg[8+4+4+4+4:8+4+4+4+4+4]), binary.LittleEndian, &itemid)
 
@@ -246,6 +246,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			if ret {
 				retInt8 = 1
 			}
+			log.Println("Player[", uid, "] consume item:", itemid, "result:", ret)
 			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId, itemid)
 		}
 	case loginopstart + 25:

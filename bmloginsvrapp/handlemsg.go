@@ -13,6 +13,7 @@ import (
 	//	"strconv"
 	//	"time"
 	//	"unsafe"
+	"runtime/debug"
 )
 
 var (
@@ -151,6 +152,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 		err := recover()
 		if err != nil {
 			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
+			debug.PrintStack()
 		}
 	}()
 
