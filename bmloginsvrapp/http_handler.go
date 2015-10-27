@@ -11,6 +11,13 @@ import (
 	"strings"
 )
 
+//	global variables
+var g_enableGsListRequest bool
+
+func init() {
+	g_enableGsListRequest = true
+}
+
 func startHttpServer(addr string) {
 	if len(addr) == 0 {
 		return
@@ -20,6 +27,8 @@ func startHttpServer(addr string) {
 	http.HandleFunc("/registergs", registergsHandler)
 	http.HandleFunc("/getgslist", getGsListHandler)
 	http.HandleFunc("/debug", debugHandler)
+
+	http.HandleFunc("/admin", adminHandler)
 
 	log.Println("Start http server:", addr)
 	go http.ListenAndServe(addr, nil)
@@ -149,6 +158,11 @@ func getGsListHandler(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		exceptionDetails()
 	}()
+
+	if !g_enableGsListRequest {
+		w.Write([]byte("{\"Result\":0,\"Msg\":\"\",\"Servers\":[]}"))
+		return
+	}
 
 	rsp := &getGsListRsp{}
 	rsp.Result = -1

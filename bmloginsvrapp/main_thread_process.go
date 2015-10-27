@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"strings"
 	//	"strings"
 	"time"
 )
@@ -34,6 +35,10 @@ const (
 	kMThreadMsg_GetGsList
 	kMThreadMsg_GetGsAddr
 	kMThreadMsg_RemoveGsAddr
+	kMThreadMsg_VerifyAdmin
+	kMThreadMsg_AddAdmin
+	kMThreadMsg_DelAdmin
+	kMThreadMsg_EnableOlRoom
 )
 
 var g_chanMainThread chan *MThreadMsg
@@ -47,6 +52,23 @@ func MainThreadInit() {
 
 func PostMThreadMsg(msg *MThreadMsg) {
 	g_chanMainThread <- msg
+}
+
+func WaitMThreadMsg(msg *MThreadMsg, timeout int) (bool, bool) {
+	if timeout == 0 {
+		timeout = 1000
+	}
+
+	select {
+	case ret := <-msg.RetChan:
+		{
+			return ret, false
+		}
+	case <-time.After(time.Duration(timeout) * time.Millisecond):
+		{
+			return false, true
+		}
+	}
 }
 
 //	user game server process
@@ -163,6 +185,36 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 			if nil != msg.RetChan {
 				msg.RetChan <- true
 			}
+		}
+	case kMThreadMsg_VerifyAdmin:
+		{
+			stringList := strings.Split(msg.Msg, " ")
+			if len(stringList) != 2 {
+				msg.RetChan <- false
+			} else {
+				ok, level := dbAdminAccountVerify(g_DBUser, stringList[0], stringList[1])
+				msg.WParam = level
+				msg.RetChan <- ok
+			}
+		}
+	case kMThreadMsg_AddAdmin:
+		{
+			ret := dbInsertAdminAccount(g_DBUser, msg.Msg, msg.WParam)
+			msg.RetChan <- ret
+		}
+	case kMThreadMsg_DelAdmin:
+		{
+			ret := dbRemoveAdminAccount(g_DBUser, msg.Msg)
+			msg.RetChan <- ret
+		}
+	case kMThreadMsg_EnableOlRoom:
+		{
+			enable := true
+			if 0 == msg.WParam {
+				enable = false
+			}
+			g_enableGsListRequest = enable
+			msg.RetChan <- true
 		}
 	default:
 		{

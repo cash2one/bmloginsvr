@@ -150,7 +150,160 @@ func initDatabase(path string) *sql.DB {
 		}
 	}
 
+	//	check admin_account
+	adminAccountExists, err := dbTableExist(db, "admin_account")
+	if err != nil {
+		log.Println("failed to check admin_account table.err:", err)
+	} else {
+		if !adminAccountExists {
+			sqlexpr := `
+			create table admin_account(id integer primary key, account varchar(20), level integer)
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				log.Println("Failed to create new table,err:", err)
+				db.Close()
+				return nil
+			} else {
+				log.Println("Create new table[admin_account]")
+			}
+		}
+	}
+
 	return db
+}
+
+//	admin_account
+type AdminAccountInfo struct {
+	account string
+	level   int
+}
+
+func dbAdminAccountVerify(db *sql.DB, account string, password string) (bool, int) {
+	if !dbAdminAccountExists(db, account) {
+		return false, 0
+	}
+
+	var adminAccountInfo AdminAccountInfo
+	if !dbGetAdminAccountInfo(db, account, &adminAccountInfo) {
+		return false, 0
+	}
+
+	var userAccountInfo UserAccountInfo
+	ok, _ := dbGetUserAccountInfo(db, account, &userAccountInfo)
+	if !ok {
+		return false, 0
+	}
+
+	if userAccountInfo.password == password {
+		return true, adminAccountInfo.level
+	}
+
+	return false, 0
+}
+
+func dbInsertAdminAccount(db *sql.DB, account string, level int) bool {
+	if level <= 0 {
+		return false
+	}
+
+	if dbAdminAccountExists(db, account) {
+		return true
+	}
+
+	var ainfo UserAccountInfo
+	ok, _ := dbGetUserAccountInfo(db, account, &ainfo)
+	if !ok {
+		log.Println("Unexists account, opeartion failed.")
+		return false
+	}
+
+	expr := "insert into admin_account values(null, '" + account + "'," + strconv.Itoa(level) + ")"
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Println("db exec failed.expr:", expr, " err:", err)
+		return false
+	}
+
+	return true
+}
+
+func dbGetAdminAccountInfo(db *sql.DB, account string, info *AdminAccountInfo) bool {
+	if nil == db {
+		return false
+	}
+	if len(account) > 20 {
+		return false
+	}
+
+	//	Select
+	fetched := false
+	sqlexpr := "select level from admin_account where account = '" + account + "'"
+	rows, err := db.Query(sqlexpr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s]error[%s]", sqlexpr, err.Error())
+		return false
+	} else {
+		defer rows.Close()
+		//	Read data
+		if rows.Next() {
+			fetched = true
+			rows.Scan(&info.level)
+			info.account = account
+		}
+	}
+
+	return fetched
+}
+
+func dbAdminAccountExists(db *sql.DB, account string) bool {
+	rows, err := db.Query("select count(*) as cnt from admin_account where account = '" + account + "'")
+	if err != nil {
+		log.Printf("Error on selecting uid,error[%s]", err.Error())
+		return true
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		count := 0
+		rows.Scan(&count)
+
+		if count == 0 {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func dbUpdateAdminAccount(db *sql.DB, account string, level int) bool {
+	expr := "update admin_account set level=" + strconv.Itoa(level) + " where account='" + account + "'"
+
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
+}
+
+func dbRemoveAdminAccount(db *sql.DB, account string) bool {
+	if !dbAdminAccountExists(db, account) {
+		return true
+	}
+
+	expr := "delete from admin_account where account='" + account + "'"
+	_, err := db.Exec(expr)
+	if err != nil {
+		log.Printf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
 }
 
 //	user donate table
