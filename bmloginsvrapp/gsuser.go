@@ -460,7 +460,7 @@ func ReadControlAddr(path string) bool {
 		return false
 	}
 
-	buf := make([]byte, 256)
+	buf := make([]byte, 512)
 	defer file.Close()
 	readbytes, readerr := file.Read(buf)
 	if readerr != nil {

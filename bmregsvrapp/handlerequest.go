@@ -4,6 +4,7 @@ import (
 	"LSControlProto"
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/smtp"
@@ -635,6 +636,11 @@ func mailVerifyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type LsRequestRsp struct {
+	Result int    `json:"Result"`
+	Msg    string `json:"Msg"`
+}
+
 func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 	retJson := &httpResult{
 		ReqType: 2,
@@ -802,21 +808,92 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//	发送成功接收json
-	retJson.ErrCode = 0
-	//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
-	retJson.ErrMsg = "您的请求已接收，请过几秒后再次注册确认是否注册成功。失败的话可能由于账户密码格式不正确（英文字母），或者该邮箱或者账户已被注册过。"
-	jsData, _ := json.Marshal(retJson)
-	w.Write(jsData)
+	if 0 == g_usingHttpMode {
+		//	发送成功接收json
+		retJson.ErrCode = 0
+		//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
+		retJson.ErrMsg = "您的请求已接收，请过几秒后再次注册确认是否注册成功。失败的话可能由于账户密码格式不正确（英文字母），或者该邮箱或者账户已被注册过。"
+		jsData, _ := json.Marshal(retJson)
+		w.Write(jsData)
 
-	//	发送注册数据包到LS
-	pkg := &LSControlProto.RSRegistAccountReq{}
-	pkg.Account = proto.String(account)
-	pkg.Password = proto.String(password)
-	pkg.Mail = proto.String(mailAddr)
-	data, pkgErr := proto.Marshal(pkg)
-	if pkgErr == nil {
-		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_RegistAccountWithInfoReq), data)
+		//	发送注册数据包到LS
+		pkg := &LSControlProto.RSRegistAccountReq{}
+		pkg.Account = proto.String(account)
+		pkg.Password = proto.String(password)
+		pkg.Mail = proto.String(mailAddr)
+		data, pkgErr := proto.Marshal(pkg)
+		if pkgErr == nil {
+			SendProtoBuf(uint32(LSControlProto.Opcode_PKG_RegistAccountWithInfoReq), data)
+		}
+	} else {
+		reqAddr := g_lsAddress + "/ls?action=register&account=" + account + "&password=" + password
+		var rsp *http.Response
+		rsp, err := http.Get(reqAddr)
+		if err != nil {
+			retJson.ErrCode = 1
+			retJson.ErrMsg = "mail address not registered"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+		defer rsp.Body.Close()
+		body, err := ioutil.ReadAll(rsp.Body)
+		if err != nil {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = "读取缓冲区失败"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+
+		regMailRet := &LsRequestRsp{}
+		err = json.Unmarshal(body, regMailRet)
+		if err != nil {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = "反序列化json失败"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+
+		if 0 != regMailRet.Result {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = regMailRet.Msg
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		} else {
+			//	success
+			if !dbUpdateAccountByMail(g_DBUser, mailAddr, account) {
+				log.Println("can't update account by mail!!")
+			}
+
+			retJson.ErrCode = 1
+			retJson.ErrMsg = "您的账户已经注册成功"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
 	}
 }
 

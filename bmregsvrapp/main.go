@@ -16,6 +16,7 @@ var g_mailPassword string
 var g_smtpAddress string
 var g_lsAddress string
 var g_userLsAddress string
+var g_usingHttpMode int
 
 var g_Client *client.Client
 var g_ChanEvent chan *goChanEvent
@@ -43,6 +44,7 @@ func main() {
 	flag.StringVar(&g_smtpAddress, "smtpaddr", "", "mail smtp server address")
 	flag.StringVar(&g_lsAddress, "lsaddress", "", "login server address")
 	flag.StringVar(&g_userLsAddress, "ulsaddress", "", "user login server address")
+	flag.IntVar(&g_usingHttpMode, "usinghttpmode", 0, "using http mode")
 	flag.Parse()
 
 	//g_lsAddress = "localhost:6050"
