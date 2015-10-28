@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"log"
 	"net/http"
 )
@@ -16,6 +17,10 @@ var g_InsertGift string = "/insertsystemgift"
 
 func main() {
 	log.Println("main")
+
+	//	get settings
+	flag.StringVar(&g_RegServerAddr, "http://localhost:8081", "register server request address.exp:localhost:8888")
+	flag.Parse()
 
 	//	initialize sqlite...
 	g_DBUser = initDatabase("./webusers.db")

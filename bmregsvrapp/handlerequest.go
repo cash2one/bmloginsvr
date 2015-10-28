@@ -477,20 +477,87 @@ func modifyPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//	发送成功接收json
-	retJson.ErrCode = 0
-	//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
-	retJson.ErrMsg = "您的请求已接收，请过几秒后重新进入游戏。"
-	jsData, _ := json.Marshal(retJson)
-	w.Write(jsData)
+	if 0 == g_usingHttpMode {
+		//	发送成功接收json
+		retJson.ErrCode = 0
+		//retJson.ErrMsg = "您的请求已接收，请注意查收邮件"
+		retJson.ErrMsg = "您的请求已接收，请过几秒后重新进入游戏。"
+		jsData, _ := json.Marshal(retJson)
+		w.Write(jsData)
 
-	//	发送注册数据包到LS
-	pkg := &LSControlProto.RSModifyPasswordReq{}
-	pkg.Account = proto.String(account)
-	pkg.Password = proto.String(password)
-	data, pkgErr := proto.Marshal(pkg)
-	if pkgErr == nil {
-		SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordReq), data)
+		//	发送注册数据包到LS
+		pkg := &LSControlProto.RSModifyPasswordReq{}
+		pkg.Account = proto.String(account)
+		pkg.Password = proto.String(password)
+		data, pkgErr := proto.Marshal(pkg)
+		if pkgErr == nil {
+			SendProtoBuf(uint32(LSControlProto.Opcode_PKG_ModifyPasswordReq), data)
+		}
+	} else {
+		reqAddr := g_lsHttpAddr + "/rs?action=modifypassword&account=" + account + "&password=" + password
+		var rsp *http.Response
+		rsp, err := http.Get(reqAddr)
+		if err != nil {
+			retJson.ErrCode = 1
+			retJson.ErrMsg = "请求修改密码失败:" + err.Error()
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+		defer rsp.Body.Close()
+		body, err := ioutil.ReadAll(rsp.Body)
+		if err != nil {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = "读取缓冲区失败"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+
+		modPasswordRet := &LsRequestRsp{}
+		err = json.Unmarshal(body, modPasswordRet)
+		if err != nil {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = "反序列化json失败" + string(body)
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
+
+		if 0 != modPasswordRet.Result {
+			retJson.ErrCode = 0
+			retJson.ErrMsg = modPasswordRet.Msg
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		} else {
+			//	success
+			retJson.ErrCode = 1
+			retJson.ErrMsg = "您的账户密码已经修改"
+			jsData, err := json.Marshal(retJson)
+			if err == nil {
+				w.Write(jsData)
+			} else {
+				log.Println("failed to marshal httpRet", retJson)
+			}
+			return
+		}
 	}
 }
 
@@ -826,12 +893,12 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 			SendProtoBuf(uint32(LSControlProto.Opcode_PKG_RegistAccountWithInfoReq), data)
 		}
 	} else {
-		reqAddr := g_lsAddress + "/ls?action=register&account=" + account + "&password=" + password
+		reqAddr := g_lsHttpAddr + "/rs?action=registeraccount&account=" + account + "&password=" + password
 		var rsp *http.Response
 		rsp, err := http.Get(reqAddr)
 		if err != nil {
 			retJson.ErrCode = 1
-			retJson.ErrMsg = "mail address not registered"
+			retJson.ErrMsg = "请求注册账户失败.error:" + err.Error()
 			jsData, err := json.Marshal(retJson)
 			if err == nil {
 				w.Write(jsData)
@@ -858,7 +925,7 @@ func regAccountHandler(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(body, regMailRet)
 		if err != nil {
 			retJson.ErrCode = 0
-			retJson.ErrMsg = "反序列化json失败"
+			retJson.ErrMsg = "反序列化json失败:" + string(body)
 			jsData, err := json.Marshal(retJson)
 			if err == nil {
 				w.Write(jsData)

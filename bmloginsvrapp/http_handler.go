@@ -28,7 +28,7 @@ func startHttpServer(addr string) {
 	http.HandleFunc("/getgslist", getGsListHandler)
 	http.HandleFunc("/debug", debugHandler)
 	http.HandleFunc("/admin", adminHandler)
-	http.HandleFunc("/ls", lsHandler)
+	http.HandleFunc("/rs", rsHandler)
 
 	log.Println("Start http server:", addr)
 	go http.ListenAndServe(addr, nil)

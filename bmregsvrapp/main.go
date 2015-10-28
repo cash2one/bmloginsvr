@@ -15,6 +15,7 @@ var g_mailAccount string
 var g_mailPassword string
 var g_smtpAddress string
 var g_lsAddress string
+var g_lsHttpAddr string
 var g_userLsAddress string
 var g_usingHttpMode int
 
@@ -43,6 +44,7 @@ func main() {
 	flag.StringVar(&g_mailPassword, "mailpassword", "", "mail password")
 	flag.StringVar(&g_smtpAddress, "smtpaddr", "", "mail smtp server address")
 	flag.StringVar(&g_lsAddress, "lsaddress", "", "login server address")
+	flag.StringVar(&g_lsHttpAddr, "lshttpaddr", "0", "login server http address")
 	flag.StringVar(&g_userLsAddress, "ulsaddress", "", "user login server address")
 	flag.IntVar(&g_usingHttpMode, "usinghttpmode", 0, "using http mode")
 	flag.Parse()

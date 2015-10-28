@@ -41,6 +41,7 @@ const (
 	kMThreadMsg_DelAdmin
 	kMThreadMsg_EnableOlRoom
 	kMThreadMsg_LsRegisterAccount
+	kMThreadMsg_LsModifyPassword
 )
 
 var g_chanMainThread chan *MThreadMsg
@@ -262,6 +263,44 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 					msg.Msg = "Account already exists"
 					msg.RetChan <- false
 					return
+				}
+			}
+
+			msg.RetChan <- true
+		}
+	case kMThreadMsg_LsModifyPassword:
+		{
+			stringList := strings.Split(msg.Msg, " ")
+			if len(stringList) != 2 {
+				msg.RetChan <- false
+				return
+			}
+
+			account := stringList[0]
+			password := stringList[1]
+
+			//	check
+			reg, _ := regexp.Compile("^[A-Za-z0-9]+$")
+			var ret = false
+
+			if reg.MatchString(account) && reg.MatchString(password) {
+				ret = true
+			}
+
+			if !ret {
+				msg.RetChan <- false
+				return
+			}
+
+			//	regist
+			if len(account) > 15 || len(password) > 15 {
+				msg.Msg = "Account or password format error"
+				msg.RetChan <- false
+				return
+			} else {
+				if !dbUpdateUserAccountPassword(g_DBUser, account, password) {
+					msg.Msg = "Modify password error"
+					msg.RetChan <- false
 				}
 			}
 
