@@ -80,7 +80,7 @@ $("form[data-type=regAccountAction]").submit(function(event){
 				if(ret.Ret == "0"){
 						$("#reg_result").text(ret.Reason)
 				} else {
-						$("#reg_result").text(ret.Reason+"(若一直是此提示，请更换账户名，该账户名已被注册)")
+						$("#reg_result").text(ret.Reason)
 				}
 			}, "json");
 })
@@ -110,7 +110,7 @@ $("form[data-type=modifyPasswordAction]").submit(function(event){
 				if(ret.Ret == "0"){
 						$("#modify_result").text(ret.Reason)
 				} else {
-						$("#modify_result").text(ret.Reason+"(请重新登录游戏，假如修改失败，请检查账户与邮箱是否对应)")
+						$("#modify_result").text(ret.Reason)
 				}
 			}, "json");
 })
