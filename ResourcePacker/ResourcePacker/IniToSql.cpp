@@ -400,6 +400,100 @@ bool Ini2SqlDropItem(sqlite3* _pSql, const char* _pszFilename)
 	return true;
 }
 
+bool Ini2SqlItemsDesc(sqlite3* _pSql, const char* _pszFilename)
+{
+	char* pErr = NULL;
+	char buf[10240];
+	ZeroMemory(buf, sizeof(buf));
+	ItemAttrib item;
+	ZeroMemory(&item, sizeof(ItemAttrib));
+	char szID[10];
+	char szValue[MAX_PATH];
+
+	std::vector<int> xSections;
+	GetIniFileSections(_pszFilename, xSections);
+
+	//	Item表
+	if(strlen(_pszFilename) != 0)
+	{
+		sprintf(buf, "create table ItemsDesc (id integer primary key, desc varchar(256))");
+
+		if(SQLITE_OK != sqlite3_exec(_pSql, buf, NULL, NULL, &pErr))
+		{
+			printf("%s\n", pErr);
+			printf("\n创建表ItemsDesc失败\n");
+			sqlite3_free(pErr);
+			return false;
+		}
+
+		int nRet = sqlite3_exec(_pSql, "Begin transaction", 0, 0, &pErr);
+		if(nRet != SQLITE_OK)
+		{
+			printf("%s\n", pErr);
+			sqlite3_free(pErr);
+			return false;
+		}
+
+		for(int i = 0; i < xSections.size(); ++i)
+		{
+			sprintf(szID, "%d", xSections[i]);
+			::GetPrivateProfileString(szID, "name", "", szValue, sizeof(szValue), _pszFilename);
+			if(strlen(szValue) == 0)
+			{
+				//	无效的NAME
+				continue;
+			}
+
+			//	name
+			item.id = xSections[i];
+			strcpy(item.name, szValue);
+
+			DWORD dwDescLength = ::GetPrivateProfileString(szID, "desc", "", szValue, sizeof(szValue), _pszFilename);
+			if(dwDescLength >= 256)
+			{
+				printf("Too long describe.item:%d", item.id);
+				continue;
+			}
+			
+			if(0 == dwDescLength)
+			{
+				continue;
+			}
+
+			sprintf(buf, "insert into ItemsDesc values(%d,"\
+				"'%s')",
+				xSections[i],
+				szValue);
+
+			if(SQLITE_OK != sqlite3_exec(_pSql, buf, NULL, NULL, &pErr))
+			{
+				printf("%s\n", pErr);
+				printf("ID[%d]写入表ItemDesc失败\n", item.id);
+				sqlite3_free(pErr);
+				return -3;
+			}
+			else
+			{
+				printf("成功写入ID[%d]进表ItemDesc\n", item.id);
+			}
+		}
+
+		nRet = sqlite3_exec(_pSql, "Commit transaction", NULL, 0, &pErr);
+		if(nRet != SQLITE_OK)
+		{
+			printf("%s\n", pErr);
+			sqlite3_free(pErr);
+			return false;
+		}
+		else
+		{
+			printf("transaction ItemsDesc OK!\n");
+		}
+	}
+
+	return true;
+}
+
 bool Ini2SqlItems(sqlite3* _pSql, const char* _pszFilename)
 {
 	char* pErr = NULL;
@@ -1004,6 +1098,7 @@ int IniFileTransToSqlFile(const char* lpszCfg, sqlite3* pSql)
 	nMonsterNum = ::GetPrivateProfileInt("INPUT", "MONSTERSUM", 0, lpszCfg);
 
 	Ini2SqlItems(pSql, szItemPath);
+	Ini2SqlItemsDesc(pSql, szItemPath);
 	Ini2SqlMonsters(pSql, szMonsPath);
 	Ini2SqlDropItem(pSql, szDropItem);
 	Ini2SqlMagic(pSql, szMagicsPath);

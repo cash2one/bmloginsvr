@@ -87,6 +87,7 @@ bool Ini2SqlDropItem(sqlite3* _pSql, const char* _pszFilename);
 bool Ini2SqlMonsters(sqlite3* _pSql, const char* _pszFilename);
 bool Ini2SqlItems(sqlite3* _pSql, const char* _pszFilename);
 bool Ini2SqlMagic(sqlite3* _pSql, const char* _pszFilename);
+bool Ini2SqlItemsDesc(sqlite3* _pSql, const char* _pszFilename);
 
 void GetIniFileSections(const char* _pszFile, std::vector<int>& _xOutput);
 void GetIniFileKeys(const char* _pszAppName, const char* _pszFile, std::vector<int>& _xOutput);

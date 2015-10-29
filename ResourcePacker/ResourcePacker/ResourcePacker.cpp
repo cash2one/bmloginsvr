@@ -13,7 +13,8 @@
 //#define EXTRACTOR
 //#define MAPLOOKER
 //#define WILEXTRACTOR
-#define MAPPACKER
+//#define MAPPACKER
+#define INI2SQL
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -40,6 +41,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 #ifdef MAPPACKER
 	MapPackerMain();
+#endif
+
+#ifdef INI2SQL
+	IniFileTransToSqlFileMain();
 #endif
 
 
