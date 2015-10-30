@@ -696,14 +696,11 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 	}
 
 	//	encrypt all bjt file
-	for(int i = 0; i < xAllFiles.size(); ++i)
+	if(_bEncryptBjt)
 	{
-		char szFirst5[6] = {0};
-		int nLength = xAllFiles[i].GetLength();
-		if(xAllFiles[i].GetAt(nLength - 1) == 't' &&
-			xAllFiles[i].GetAt(nLength - 2) == 'j' &&
-			xAllFiles[i].GetAt(nLength - 3) == 'b')
+		for(int i = 0; i < xAllFiles.size(); ++i)
 		{
+			char szFirst5[6] = {0};
 			memcpy(szFirst5, (const char*)xAllFiles[i], 5);
 			if(0 == stricmp(szFirst5, "react") ||
 				0 == stricmp(szFirst5, "quest"))
@@ -713,7 +710,7 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 			else
 			{
 				//	server file, encrypt
-				sprintf(szPath, "%s/%s.bbt",
+				sprintf(szPath, "%s/%s.bjt",
 					_pszPath, (const char*)xAllFiles[i]);
 				DataEncryptor::DoEncryptFile(szPath);
 			}
