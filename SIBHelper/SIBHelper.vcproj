@@ -202,10 +202,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DataEncryptor.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\MirMap.cpp"
 				>
 			</File>
@@ -260,10 +256,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\DataEncryptor.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Resource.h"
 				>
 			</File>
@@ -303,6 +295,18 @@
 			</File>
 			<File
 				RelativePath=".\res\SIBHelper.rc2"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Module"
+			>
+			<File
+				RelativePath="..\..\CommonModule\DataEncryptor.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\CommonModule\DataEncryptor.h"
 				>
 			</File>
 		</Filter>

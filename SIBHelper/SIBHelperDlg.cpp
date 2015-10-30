@@ -7,7 +7,7 @@
 #include ".\sibhelperdlg.h"
 #include "SimpleIni.h"
 #include <ZipArchive.h>
-#include "../../CommonModule/ByteBuffer.h"
+#include "ByteBuffer.h"
 #include "../../CommonModule/DataEncryptor.h"
 #include "MirMap.h"
 
