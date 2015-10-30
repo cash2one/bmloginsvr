@@ -41,7 +41,7 @@ protected:
 private:
 	bool PackSIB(const char* _pszPath, const char* _pszFileName);
 	bool ExtraSIB(const char* _pszFileName, const char* _pszPath);
-	bool PackLua(const char* _pszPath, const char* _pszPsw = NULL);
+	bool PackLua(const char* _pszPath, const char* _pszPsw = NULL, bool _bEncryptBjt = false);
 	bool PackINI(const char* _pszPath, const char* _pszPsw = NULL);
 	bool GenMapInfo(const char* _pszPath, const char* _pszPsw = NULL);
 	bool PackMap(const char* _pszDestMap, const char* _pszSrcPath, const char* _pszDestPath);

@@ -477,7 +477,12 @@ void CSIBHelperDlg::OnOK()
 			pEdit->GetWindowText(xParam1);
 		}
 
-		PackLua(xParam0, xParam1.IsEmpty() ? NULL : xParam1);
+		CButton* pEncryptBjt = (CButton*)GetDlgItem(IDC_CHECK6);
+
+		if(PackLua(xParam0, xParam1.IsEmpty() ? NULL : xParam1, pEncryptBjt->GetCheck() != 0))
+		{
+			AfxMessageBox("打包Lua脚本完成");
+		}
 	}
 	if(bGenMapInfo)
 	{
@@ -573,7 +578,7 @@ bool CSIBHelperDlg::ExtraSIB(const char* _pszFileName, const char* _pszPath)
 	return true;
 }
 
-bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL */)
+bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL */, bool _bEncryptBjt /* = false */)
 {
 	if(!PathFileExists(_pszPath))
 	{
@@ -690,6 +695,31 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 		}
 	}
 
+	//	encrypt all bjt file
+	for(int i = 0; i < xAllFiles.size(); ++i)
+	{
+		char szFirst5[6] = {0};
+		int nLength = xAllFiles[i].GetLength();
+		if(xAllFiles[i].GetAt(nLength - 1) == 't' &&
+			xAllFiles[i].GetAt(nLength - 2) == 'j' &&
+			xAllFiles[i].GetAt(nLength - 3) == 'b')
+		{
+			memcpy(szFirst5, (const char*)xAllFiles[i], 5);
+			if(0 == stricmp(szFirst5, "react") ||
+				0 == stricmp(szFirst5, "quest"))
+			{
+				//	client, do not encrypt
+			}
+			else
+			{
+				//	server file, encrypt
+				sprintf(szPath, "%s/%s.bbt",
+					_pszPath, (const char*)xAllFiles[i]);
+				DataEncryptor::DoEncryptFile(szPath);
+			}
+		}
+	}
+
 	/*for(int i = 0; i < 200; ++i)
 	{
 		sprintf(szPath, "%s/scene%d.bbt",
@@ -702,6 +732,8 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 	sprintf(szPath, "%s/db.bbt",
 		xWorkingPath);
 	DeleteFile(szPath);*/
+
+	bool bResult = true;
 
 
 	//	zip bbt
@@ -726,6 +758,7 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 	else
 	{
 		AfxMessageBox("Can't execute 7z.exe...");
+		bResult = false;
 	}
 
 	//	zip bjt
@@ -750,6 +783,7 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 	else
 	{
 		AfxMessageBox("Can't execute 7z.exe...");
+		bResult = false;
 	}
 
 	if(!xAllBBTList.empty())
@@ -765,7 +799,7 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 		}
 	}
 
-	return true;
+	return bResult;
 }
 
 bool CSIBHelperDlg::PackINI(const char* _pszPath, const char* _pszPsw /* = NULL */)
