@@ -202,11 +202,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ItemEditDlg.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MirMap.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\MirMap.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PotentialDlg.cpp"
 				>
 			</File>
 			<File
@@ -253,6 +261,14 @@
 			</File>
 			<File
 				RelativePath=".\ConvertUTF.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ItemEditDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\PotentialDlg.h"
 				>
 			</File>
 			<File

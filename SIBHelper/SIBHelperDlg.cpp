@@ -8,6 +8,7 @@
 #include "SimpleIni.h"
 #include <ZipArchive.h>
 #include "ByteBuffer.h"
+#include "PotentialDlg.h"
 #include "../../CommonModule/DataEncryptor.h"
 #include "MirMap.h"
 
@@ -91,6 +92,7 @@ BEGIN_MESSAGE_MAP(CSIBHelperDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON7, &CSIBHelperDlg::OnBnClickedButton7)
 	ON_BN_CLICKED(IDC_BUTTON8, &CSIBHelperDlg::OnBnClickedButton8)
 	ON_BN_CLICKED(IDC_BUTTON9, &CSIBHelperDlg::OnBnClickedButton9)
+	ON_BN_CLICKED(IDC_BUTTON10, &CSIBHelperDlg::OnBnClickedButton10)
 END_MESSAGE_MAP()
 
 
@@ -1782,4 +1784,10 @@ BOOL DeleteFolder(LPCTSTR pstrFolder)
 
 	/*删除空目录*/
 	return RemoveDirectory(pstrFolder);
+}
+void CSIBHelperDlg::OnBnClickedButton10()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CPotentialDlg dlg;
+	dlg.DoModal();
 }
