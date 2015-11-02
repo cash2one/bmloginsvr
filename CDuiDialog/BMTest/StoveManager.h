@@ -23,6 +23,15 @@ struct LifeSkillInfo
 	int nMaxLevel;
 	short uExp[15];
 };
+
+struct MakeEquipInfo
+{
+	int nItemId;
+	int nMaterialCount;
+	int nMaterialsId[5];
+	int nMaterialsCount[5];
+};
+typedef std::map<int, MakeEquipInfo> MakeEquipInfoMap;
 //////////////////////////////////////////////////////////////////////////
 class StoveManager
 {
@@ -46,9 +55,11 @@ public:
 	bool LoadBuffer(const char* _pBuffer, size_t _uSize);
 
 	const LifeSkillInfo* GetLifeSkillInfo(LifeSkillType _eType);
+	const MakeEquipInfo* GetMakeEquipInfo(int _nItemId);
 
 private:
 	LifeSkillInfo m_ayLifeSkills[kLifeSkill_Total];
+	MakeEquipInfoMap m_xMakeEquipMap;
 };
 //////////////////////////////////////////////////////////////////////////
 #endif
