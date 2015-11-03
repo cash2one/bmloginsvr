@@ -325,6 +325,14 @@
 				RelativePath="..\..\CommonModule\DataEncryptor.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Sha1Calc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Sha1Calc.h"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"

@@ -11,6 +11,7 @@
 #include "PotentialDlg.h"
 #include "../../CommonModule/DataEncryptor.h"
 #include "MirMap.h"
+#include "Sha1Calc.h"
 
 #include <Shlwapi.h>
 #include <list>
@@ -28,6 +29,8 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+//////////////////////////////////////////////////////////////////////////
 
 
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
@@ -785,6 +788,23 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 		bResult = false;
 	}
 
+	//	remove react*.bjt
+	xRunParam.Format("7z d %s\\dog.idx react*.bjt",
+		_pszPath);
+
+	si.cb = sizeof(si);
+	bRet = CreateProcess(NULL, xRunParam.GetBuffer(), NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+	if(TRUE == bRet)
+	{
+		WaitForSingleObject(pi.hThread, INFINITE);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+	else
+	{
+		AfxMessageBox("Can't execute 7z.exe...");
+	}
+
 	if(!xAllBBTList.empty())
 	{
 		std::list<CString>::const_iterator begIter = xAllBBTList.begin();
@@ -805,6 +825,32 @@ bool CSIBHelperDlg::PackINI(const char* _pszPath, const char* _pszPsw /* = NULL 
 {
 	if(!PathFileExists(_pszPath))
 	{
+		return false;
+	}
+
+	//	read version
+	char szVersionFile[MAX_PATH] = {0};
+	sprintf(szVersionFile, "%s\\ver.ini", _pszPath);
+	HANDLE hVersionFile = ::CreateFile(szVersionFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, NULL, NULL);
+	if(INVALID_HANDLE_VALUE == hVersionFile)
+	{
+		AfxMessageBox("Invalid version file");
+		return false;
+	}
+	DWORD dwRead = 0;
+	char szVer[10] = {0};
+	BOOL bReadVersion = ReadFile(hVersionFile, szVer, sizeof(szVer), &dwRead, NULL);
+	CloseHandle(hVersionFile);
+	hVersionFile = INVALID_HANDLE_VALUE;
+
+	if(!bReadVersion)
+	{
+		AfxMessageBox("Can't read version file.");
+		return false;
+	}
+	if(0 == dwRead)
+	{
+		AfxMessageBox("version file read size == 0.");
 		return false;
 	}
 
@@ -853,6 +899,17 @@ bool CSIBHelperDlg::PackINI(const char* _pszPath, const char* _pszPsw /* = NULL 
 				DataEncryptor::DoEncryptFile(szDest);
 			}
 		}
+
+		//	stove
+		sprintf(szPath, "%s/stove.ini", _pszPath);
+		sprintf(szDest, "%s/stove.bmd", _pszPath);
+		if(PathFileExists(szPath))
+		{
+			if(CopyFile(szPath, szDest, FALSE))
+			{
+				DataEncryptor::DoEncryptFile(szDest);
+			}
+		}
 	}
 
 	if(bNeedEncrypt)
@@ -878,6 +935,79 @@ bool CSIBHelperDlg::PackINI(const char* _pszPath, const char* _pszPsw /* = NULL 
 	else
 	{
 		AfxMessageBox("Can't execute 7z.exe...");
+	}
+
+	//	remove stove.ini
+	xRunParam.Format("7z d %s\\Mouse.idx stove.ini",
+		_pszPath);
+	si.cb = sizeof(si);
+	bRet = CreateProcess(NULL, xRunParam.GetBuffer(), NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+	if(TRUE == bRet)
+	{
+		WaitForSingleObject(pi.hThread, INFINITE);
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+	}
+	else
+	{
+		AfxMessageBox("Can't execute 7z.exe...");
+	}
+
+	//	sha-1 validator
+	char szLuaPath[MAX_PATH] = {0};
+	sprintf(szLuaPath, "%s\\dog.idx", _pszPath);
+	if(PathFileExists(szLuaPath))
+	{
+		char szSha1File[MAX_PATH] = {0};
+		sprintf(szSha1File, "%s\\data.bmd", _pszPath);
+		HANDLE hFile = ::CreateFile(szSha1File, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, NULL, NULL);
+		if(hFile != INVALID_HANDLE_VALUE)
+		{
+			char szErr[MAX_PATH] = {0};
+			char szSha1[40 + 10 + 1] = {0};
+
+			GetFileSHA1(szLuaPath, szSha1, szErr);
+			DWORD dwWrite = 0;
+			if(szSha1[0] != 0)
+			{
+				strcat(szSha1, szVer);
+				WriteFile(hFile, szSha1, strlen(szSha1), &dwWrite, NULL);
+			}
+
+			CloseHandle(hFile);
+			hFile = INVALID_HANDLE_VALUE;
+
+			if(dwWrite > 0)
+			{
+				//	encrypt
+				DataEncryptor::DoEncryptFile(szSha1File);
+
+				// add to zip
+				if(bNeedEncrypt)
+				{
+					xRunParam.Format("7z a -tzip -p%s %s\\Mouse.idx %s\\data.bmd",
+						_pszPsw, _pszPath, _pszPath);
+				}
+				else
+				{
+					xRunParam.Format("7z a -tzip %s\\Mouse.idx %s\\data.bmd",
+						_pszPath, _pszPath);
+				}
+
+				si.cb = sizeof(si);
+				bRet = CreateProcess(NULL, xRunParam.GetBuffer(), NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+				if(TRUE == bRet)
+				{
+					WaitForSingleObject(pi.hThread, INFINITE);
+					CloseHandle(pi.hThread);
+					CloseHandle(pi.hProcess);
+				}
+				else
+				{
+					AfxMessageBox("Can't execute 7z.exe...");
+				}
+			}
+		}
 	}
 
 	return true;
