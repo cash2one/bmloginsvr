@@ -540,7 +540,7 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
 	var data []byte = msg[8+8+1+namelen+2+4 : 8+8+1+uint32(namelen)+2+4+datalen]
 
-	log.Println(name, " request to save data.")
+	LogDebugln(name, " request to save data.")
 
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"

@@ -6,7 +6,7 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
+	//	"log"
 	"os"
 	"server"
 	"strconv"
@@ -40,7 +40,7 @@ func CreateServerUser(clientconn *server.Connection) *ServerUser {
 }
 
 func (this *ServerUser) OnConnect() {
-	log.Println("GameServer ", this.ipaddr, " connected... id:", this.serverid)
+	LogInfoln("GameServer ", this.ipaddr, " connected... id:", this.serverid)
 	if this.serverid >= 0 &&
 		this.serverid < 100 {
 
@@ -57,7 +57,7 @@ func (this *ServerUser) OnVerified() {
 func (this *ServerUser) OnDisconnect() {
 	if g_AvaliableGS == uint32(this.serverid) {
 		g_AvaliableGS = 0
-		log.Println("Lose game server...")
+		LogInfoln("Lose game server...")
 	}
 }
 
@@ -144,19 +144,19 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			var cuser *User
 			var ok bool = false
 			if nil == iuser {
-				log.Println("Can't get the player wants save data")
+				LogDebugln("Can't get the player wants save data")
 				this.OnOfflineSave(msg)
 				return
 			} else {
 				cuser, ok = iuser.(*User)
 				if !ok {
-					log.Println("Can't transform IUser to *User")
+					LogErrorln("Can't transform IUser to *User")
 					return
 				}
 			}
 
 			if len(msg) != calclen {
-				log.Println("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
+				LogErrorln("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
 			} else {
 				if uid != 0 {
 					cuser.OnRequestSaveGameRole(msg)
@@ -175,12 +175,12 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 
 			cuser := g_UserList.GetUser(lsidx)
 			if cuser == nil {
-				log.Println("Can't registe user[", lsidx, "]")
+				LogErrorln("Can't registe user[", lsidx, "]")
 			} else {
 				user := cuser.(*User)
 				user.svrconnidx = gsidx
 				user.conncode = conncode
-				log.Println("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
+				LogInfoln("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
 			}
 		}
 	case loginopstart + 21:
@@ -200,7 +200,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				name = string(msg[8+4+4 : 8+4+4+nameLength])
 				nameLength++
 			} else {
-				log.Println("Trying to update player rank with no name.")
+				LogErrorln("Trying to update player rank with no name.")
 				return
 			}
 
@@ -209,7 +209,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			binary.Read(bytes.NewBuffer(msg[8+4+4+nameLength+4+1:]), binary.LittleEndian, &power)
 
 			if 0 == level {
-				log.Println("Trying to update player rank with 0 level.")
+				LogErrorln("Trying to update player rank with 0 level.")
 				return
 			}
 
@@ -221,7 +221,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			rankInfo.Name = name
 			rankInfo.Power = int(power)
 			if !dbUpdateUserRankInfo(g_DBUser, &rankInfo) {
-				log.Println("Failed to insert player rank info")
+				LogErrorln("Failed to insert player rank info")
 			}
 		}
 	case loginopstart + 23:
@@ -246,7 +246,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			if ret {
 				retInt8 = 1
 			}
-			log.Println("Player[", uid, "] consume item:", itemid, "result:", ret)
+			LogDebugln("Player[", uid, "] consume item:", itemid, "result:", ret)
 			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId, itemid)
 		}
 	case loginopstart + 25:
@@ -268,7 +268,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				name = string(msg[8+4+4+4 : 8+4+4+4+nameLength])
 				nameLength++
 			} else {
-				log.Println("Invalid buyer name")
+				LogErrorln("Invalid buyer name")
 				return
 			}
 			binary.Read(bytes.NewBuffer(msg[8+4+4+4+nameLength:8+4+4+4+nameLength+4]), binary.LittleEndian, &itemid)
@@ -294,7 +294,7 @@ func OfflineSaveUserData(msg []byte) {
 	var uid uint32
 	binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
 
-	log.Println(name, " request to save data on offline mode.")
+	LogDebugln(name, " request to save data on offline mode.")
 
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(uid), 10) + "/hum.sav"
@@ -306,7 +306,7 @@ func OfflineSaveUserData(msg []byte) {
 	//no free !r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		log.Println("Can't open hum save.Err:", r1)
+		LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -321,12 +321,12 @@ func OfflineSaveUserData(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
 	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
 	if r1 != 0 {
-		log.Println("Failed to update gamerole head data")
+		LogErrorln("Failed to update gamerole head data")
 	}
 
 	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
 	if r1 != 0 {
-		log.Println("Failed to write gamerole data")
+		LogErrorln("Failed to write gamerole data")
 	}
 }
 
@@ -387,8 +387,8 @@ func (this *ServerUser) OnResponseClientLogin(msg []byte) {
 		binary.Read(bytes.NewBuffer(msg[8+1+4:8+1+4+1]), binary.LittleEndian, &addrlen)
 		var addr string = string(msg[8+1+4+1 : 8+1+4+1+addrlen])
 		//	send to client
-		log.Println(clientindex)
-		log.Println(addr)
+		LogDebugln(clientindex)
+		LogDebugln(addr)
 	}
 }
 
@@ -400,7 +400,7 @@ func (this *ServerUser) OnRequestSave(msg []byte) {
 	// no free!r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		log.Println("Can't open hum save.Err:", r1)
+		LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -457,7 +457,7 @@ func ReadControlAddr(path string) bool {
 	//	read control addr
 	file, err := os.Open(path)
 	if err != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return false
 	}
 
@@ -465,7 +465,7 @@ func ReadControlAddr(path string) bool {
 	defer file.Close()
 	readbytes, readerr := file.Read(buf)
 	if readerr != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return false
 	}
 
@@ -473,7 +473,7 @@ func ReadControlAddr(path string) bool {
 	g_ControlAddr = strings.Split(content, "\r\n")
 
 	for _, v := range g_ControlAddr {
-		log.Println("Controller: ", v, " length", len(v))
+		LogErrorln("Controller: ", v, " length", len(v))
 	}
 	return true
 }

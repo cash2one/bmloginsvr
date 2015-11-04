@@ -6,7 +6,7 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
+	//	"log"
 	//	"os"
 	"server"
 	//	"strings"
@@ -75,12 +75,12 @@ func HandleCMsg(msg *server.ConnEvent) {
 	headreader.SetDataSource(msg.Msg)
 	length = headreader.ReadMsgLength()
 	opcode = headreader.ReadMsgOpCode()
-	log.Println("Receive client[", msg.Conn.GetConnTag(), "] msg[length:", length, " opcode:", opcode, "]")
+	LogDebugln("Receive client[", msg.Conn.GetConnTag(), "] msg[length:", length, " opcode:", opcode, "]")
 
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
+			LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 		}
 	}()
 
@@ -104,7 +104,7 @@ func HandleCMsg(msg *server.ConnEvent) {
 					binary.Read(bytes.NewBuffer(data[9+namelen+1:9+namelen+1+pswlen]), binary.BigEndian, namebuf)
 					var pswstr string = string(namebuf)
 
-					log.Println("Begin to verify user " + namestr)
+					LogDebugln("Begin to verify user " + namestr)
 
 					var ret int = cltuser.VerifyUser(namestr, pswstr)
 					if 0 != ret {
@@ -151,7 +151,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
+			LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 			debug.PrintStack()
 		}
 	}()
@@ -178,7 +178,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 							verifyok := false
 							verifyok = true
 							if verifyok {
-								log.Println("server ", serverid, "verify ok")
+								LogInfoln("server ", serverid, "verify ok")
 								svruser.serverid = serverid
 								svruser.serverlsaddr = string(data[10+4+1 : 10+4+1+iplen])
 
@@ -187,27 +187,27 @@ func HandleSMsg(msg *server.ConnEvent) {
 								//g_AvaliableGS = msg.Conn.GetConnTag()
 								if svruser.serverid >= 0 && svruser.serverid < 100 {
 									g_AvaliableGS = msg.Conn.GetConnTag()
-									log.Println("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
+									LogInfoln("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
 									svruser.verified = true
 								} else if svruser.serverid >= 100 && svruser.serverid < 150 {
 									//	verify
 									svruser.verified = true
 								}
 							} else {
-								log.Println("server ", serverid, "verify failed")
+								LogErrorln("server ", serverid, "verify failed")
 								var vok uint8 = 0
 								user.SendUserMsg(loginopstart+3, &vok)
 							}
 						} else {
-							log.Println("verify length not equal", 8+2+4+1+uint32(iplen), " ", length)
+							LogErrorln("verify length not equal", 8+2+4+1+uint32(iplen), " ", length)
 						}
 					} else {
-						log.Println("verify pkg length not equal ", 8+2+4+1)
+						LogErrorln("verify pkg length not equal ", 8+2+4+1)
 					}
 				}
 			} else {
 				if svruser.serverid >= 0 && svruser.serverid < 100 {
-					log.Println("Receive server[", svruser.serverid, "] msg[length:", length, " opcode:", opcode, "]")
+					//log.Println("Receive server[", svruser.serverid, "] msg[length:", length, " opcode:", opcode, "]")
 					user.OnUserMsg(msg.Msg)
 				} else if svruser.serverid >= 100 && svruser.serverid < 150 {
 					//log.Println("Receive ctrl terminal[", svruser.serverid, "] msg[length:", length, "]")
@@ -215,9 +215,9 @@ func HandleSMsg(msg *server.ConnEvent) {
 				}
 			}
 		} else {
-			log.Println("Can't convert user to type ServerUser")
+			LogErrorln("Can't convert user to type ServerUser")
 		}
 	} else {
-		log.Println("Can't find the server tag[", msg.Conn.GetConnTag(), "]")
+		LogErrorln("Can't find the server tag[", msg.Conn.GetConnTag(), "]")
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"github.com/axgle/mahonia"
-	"log"
+	//	"log"
 	"regexp"
 	"time"
 )
@@ -20,7 +20,7 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 	head := &LSControlProto.LSCHead{}
 	err := proto.Unmarshal(msg[5:5+headlen], head)
 	if err != nil {
-		log.Println("Failed to unmarshal proto head")
+		LogErrorln("Failed to unmarshal proto head")
 		return
 	}
 
@@ -28,18 +28,18 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 	defer func() {
 		except := recover()
 		if except != nil {
-			log.Println(except)
+			LogErrorln(except)
 		}
 
 		if err != nil {
-			log.Println(err)
+			LogErrorln(err)
 		}
 	}()
 
 	opcode := LSControlProto.Opcode(head.GetOpcode())
 	var oft_body_start int = 5 + int(headlen)
 	if opcode != LSControlProto.Opcode_PKG_HeartBeat {
-		log.Println("Ctrl msg[", opcode, "]")
+		LogDebugln("Ctrl msg[", opcode, "]")
 	}
 
 	if !this.ctrlverify {
@@ -48,21 +48,21 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 			ctrlVerifyReq := &LSControlProto.LSCCtrlVerifyReq{}
 			err = proto.Unmarshal(msg[oft_body_start:], ctrlVerifyReq)
 			if err != nil {
-				log.Println("proto unmarshal error.", err)
+				LogErrorln("proto unmarshal error.", err)
 				return
 			}
 
-			log.Println("Verify ctrl terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+			LogInfoln("Verify ctrl terminal[", ctrlVerifyReq.GetVerifycode(), "]")
 
 			ret := &LSControlProto.LSCCtrlVerifyAck{}
 			ret.Result = proto.Bool(true)
 
 			if ControlValid(ctrlVerifyReq.GetVerifycode()) {
 				this.ctrlverify = true
-				log.Println("pass[", ctrlVerifyReq.GetVerifycode(), "]")
+				LogInfoln("pass[", ctrlVerifyReq.GetVerifycode(), "]")
 			} else {
 				ret.Result = proto.Bool(false)
-				log.Println("invalid terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+				LogWarnln("invalid terminal[", ctrlVerifyReq.GetVerifycode(), "]")
 				//this.conn.GetInternalConn().Close()
 			}
 
@@ -128,7 +128,7 @@ func (this *ServerUser) SendProtoBuf(opcode uint32, msg []byte) bool {
 	head.Opcode = proto.Uint32(opcode)
 	headbuf, err := proto.Marshal(head)
 	if err != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return false
 	}
 
@@ -186,7 +186,7 @@ func (this *ServerUser) OnRsRegistAccountReq(req *LSControlProto.RSRegistAccount
 	data, err := proto.Marshal(ack)
 
 	if err != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return
 	}
 
@@ -230,7 +230,7 @@ func (this *ServerUser) OnRegistAccountReq(req *LSControlProto.LSCRegistAccountR
 	data, err := proto.Marshal(ack)
 
 	if err != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return
 	}
 
@@ -249,7 +249,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 		rsp.Result = proto.Bool(false)
 		data, err := proto.Marshal(rsp)
 		if err != nil {
-			log.Println(err)
+			LogErrorln(err)
 			return
 		}
 
@@ -261,7 +261,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 		rsp.Result = proto.Bool(false)
 		data, err := proto.Marshal(rsp)
 		if err != nil {
-			log.Println(err)
+			LogErrorln(err)
 			return
 		}
 
@@ -272,7 +272,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 	rsp.Result = proto.Bool(true)
 	data, err := proto.Marshal(rsp)
 	if err != nil {
-		log.Println(err)
+		LogErrorln(err)
 		return
 	}
 

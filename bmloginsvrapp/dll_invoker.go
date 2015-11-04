@@ -2,7 +2,7 @@ package main
 
 import (
 	//"dbgutil"
-	"log"
+	//	"log"
 	"syscall"
 )
 
@@ -49,7 +49,7 @@ func initDllModule(name string) bool {
 	allLoaded := true
 	g_dllHumSave, err := syscall.LoadDLL(name)
 	if err != nil {
-		log.Println("Can't load [", name, "]")
+		LogErrorln("Can't load [", name, "]")
 		return false
 	}
 	//	Get all module
@@ -57,10 +57,10 @@ func initDllModule(name string) bool {
 		proc, err := g_dllHumSave.FindProc(str)
 		if err == nil {
 			g_procMap[str] = proc
-			log.Println("Proccess address[", str, "] loaded...")
+			LogInfoln("Proccess address[", str, "] loaded...")
 			//dbgutil.Display("ProcName", str, "ProcAddr", proc)
 		} else {
-			log.Println("ProcName[", str, "] load failed...", err)
+			LogErrorln("ProcName[", str, "] load failed...", err)
 			allLoaded = false
 		}
 	}
@@ -73,7 +73,7 @@ func releaseDllModule() {
 		for _, str := range g_procDllName {
 			delete(g_procMap, str)
 		}
-		log.Println(g_dllHumSave.Name, " has been released...")
+		LogInfoln(g_dllHumSave.Name, " has been released...")
 		g_dllHumSave.Release()
 	}
 }

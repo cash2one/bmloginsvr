@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -184,7 +184,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 						newCookie := http.Cookie{Name: "verifycode", Value: session.Guid, Path: "/"}
 						http.SetCookie(w, &newCookie)
 						rsp.Msg = "Verify success"
-						log.Println("New session  ip:", session.IP, " guid:", session.Guid)
+						LogInfoln("New session  ip:", session.IP, " guid:", session.Guid)
 					}
 				}
 			}

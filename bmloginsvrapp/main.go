@@ -43,7 +43,7 @@ func main() {
 		var input string
 		fmt.Scanln(&input)
 	}()
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	//log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	g_ControlAddr = make([]string, 0, 10)
 	ReadControlAddr("./login/gmlist.txt")
@@ -53,6 +53,7 @@ func main() {
 	ipaddrserver := flag.String("lsgsaddr", "", "Listen gameserver")
 	redisAddress := flag.String("redisaddr", "", "Redis address")
 	httpAddr := flag.String("httpaddr", "", "http listen address")
+	logConfig := flag.String("logconfig", "LogToFile:false_LogPrefix:LEVEL+FILELINE_LogPriority:DEBUG", "log config")
 	flag.Parse()
 	if len(*ipaddrclient) == 0 || len(*ipaddrserver) == 0 {
 		log.Println("invalid input parameters.")
@@ -60,6 +61,8 @@ func main() {
 		return
 	}
 	server.InitSeed(0)
+
+	DefaultLogHelper().Init("bmloginsvrapp", *logConfig)
 
 	log.Println("BackMIR Login Server started.")
 	//	Initialize directory
