@@ -228,11 +228,11 @@ bool StoveManager::LoadBuffer(const char* _pBuffer, size_t _uSize)
 			split(xWaitSplit, xSections, "|");
 
 			int nSize = xSections.size();
-			if(nSize > 5)
+			if(nSize > 5 + 1)
 			{
-				nSize = 5;
+				nSize = 5 + 1;
 			}
-			if(nSize <= 0)
+			if(nSize <= 1)
 			{
 				continue;
 			}
@@ -240,9 +240,19 @@ bool StoveManager::LoadBuffer(const char* _pBuffer, size_t _uSize)
 			MakeEquipInfo info = {0};
 			info.nItemId = nItemId;
 
+			//	read needLevel and exp
+			vector<string> xNeedLevelAndExp;
+			split(xSections[0], xNeedLevelAndExp, ",");
+			if(2 != xNeedLevelAndExp.size())
+			{
+				continue;
+			}
+			info.nNeedLevel = atoi(xNeedLevelAndExp[0].c_str());
+			info.nExp = atoi(xNeedLevelAndExp[1].c_str());
+
 			//	read materials
 			int nMaterialIndex = 0;
-			for(int i = 0; i < nSize; ++i)
+			for(int i = 1; i < nSize; ++i)
 			{
 				vector<string> xMaterials;
 				split(xSections[i], xMaterials, ",");

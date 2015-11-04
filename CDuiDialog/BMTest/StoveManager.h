@@ -27,6 +27,8 @@ struct LifeSkillInfo
 struct MakeEquipInfo
 {
 	int nItemId;
+	int nNeedLevel;
+	int nExp;
 	int nMaterialCount;
 	int nMaterialsId[5];
 	int nMaterialsCount[5];
