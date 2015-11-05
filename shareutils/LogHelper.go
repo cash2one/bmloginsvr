@@ -1,4 +1,4 @@
-package main
+package shareutils
 
 import (
 	"errors"
