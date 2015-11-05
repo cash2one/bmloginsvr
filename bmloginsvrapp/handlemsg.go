@@ -173,7 +173,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 							verifyok := false
 							verifyok = true
 							if verifyok {
-								LogInfoln("server ", serverid, "verify ok")
+								shareutils.LogInfoln("server ", serverid, "verify ok")
 								svruser.serverid = serverid
 								svruser.serverlsaddr = string(data[10+4+1 : 10+4+1+iplen])
 
@@ -182,7 +182,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 								//g_AvaliableGS = msg.Conn.GetConnTag()
 								if svruser.serverid >= 0 && svruser.serverid < 100 {
 									g_AvaliableGS = msg.Conn.GetConnTag()
-									LogInfoln("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
+									shareutils.LogInfoln("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
 									svruser.verified = true
 								} else if svruser.serverid >= 100 && svruser.serverid < 150 {
 									//	verify

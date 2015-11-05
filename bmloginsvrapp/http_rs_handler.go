@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//	"log"
 	"net/http"
+	"shareutils"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func rsHandler(w http.ResponseWriter, r *http.Request) {
 
 	action := r.FormValue("action")
 
-	log.Println("register server request:", action)
+	shareutils.LogInfoln("register server request:", action)
 
 	switch action {
 	case "registeraccount":
@@ -80,9 +81,9 @@ func rsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if evtRet {
-				log.Println("register account [", account, "] success")
+				shareutils.LogInfoln("register account [", account, "] success")
 			} else {
-				log.Println("register account [", account, "] failed")
+				shareutils.LogWarnln("register account [", account, "] failed")
 			}
 		}
 	case "modifypassword":
@@ -112,9 +113,9 @@ func rsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if evtRet {
-				log.Println("modify password [", account, "] success")
+				shareutils.LogInfoln("modify password [", account, "] success")
 			} else {
-				log.Println("modify password [", account, "] failed")
+				shareutils.LogWarnln("modify password [", account, "] failed")
 			}
 		}
 	default:

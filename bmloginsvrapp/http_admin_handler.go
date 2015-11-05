@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	//	"log"
 	"net/http"
+	"shareutils"
 	"strconv"
 	"strings"
 	"sync"
@@ -184,7 +185,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 						newCookie := http.Cookie{Name: "verifycode", Value: session.Guid, Path: "/"}
 						http.SetCookie(w, &newCookie)
 						rsp.Msg = "Verify success"
-						LogInfoln("New session  ip:", session.IP, " guid:", session.Guid)
+						shareutils.LogInfoln("New session  ip:", session.IP, " guid:", session.Guid)
 					}
 				}
 			}

@@ -32,14 +32,14 @@ var (
 
 func exceptionDetails() {
 	if err := recover(); err != nil {
-		log.Println("Exception!error:", err, "stack:")
+		shareutils.LogErrorln("Exception!error:", err, "stack:")
 		debug.PrintStack()
 	}
 }
 
 func main() {
 	defer func() {
-		log.Println("Server terminated.")
+		shareutils.LogInfoln("Server terminated.")
 		exceptionDetails()
 		var input string
 		fmt.Scanln(&input)
@@ -65,27 +65,21 @@ func main() {
 
 	shareutils.DefaultLogHelper().Init("bmloginsvrapp", *logConfig)
 
-	log.Println("BackMIR Login Server started.")
+	shareutils.LogInfoln("BackMIR Login Server started.")
 	//	Initialize directory
 	if !PathExist("./login") {
 		os.Mkdir("./login", os.ModeDir)
 	}
-	//	Set log file
-	/*logfile, lferr := os.Create("./login/login.log")
-	if lferr != nil {
-		log.Println(lferr)
-	} else {
-		log.SetOutput(logfile)
-	}*/
+
 	//	Initialize dll module
 	if !initDllModule("./login/BMHumSaveControl.dll") {
-		log.Println("Can't load the save control module.")
+		shareutils.LogErrorln("Can't load the save control module.")
 		//return
 	}
 	//	Initialize the database
 	g_DBUser = initDatabase("./login/users.db")
 	if nil == g_DBUser {
-		log.Println("Initialize database failed.")
+		shareutils.LogErrorln("Initialize database failed.")
 		return
 	}
 	defer g_DBUser.Close()
@@ -112,24 +106,6 @@ func main() {
 		allusers: make(map[uint32]IUserInterface),
 	}
 
-	//	test
-	/*extInfo := &UserLoginExtendInfo{}
-	donateInfo := &UserDonateInfo{}
-	if dbGetUserDonateInfo(g_DBUser, 1, donateInfo) {
-		//	nothing
-		log.Println("player[", 1, "] donate money:", donateInfo.donate)
-	}
-	extInfo.DonateMoney = donateInfo.donate
-	extInfo.SystemGift = dbGetSystemGiftIdByUid(g_DBUser, 1)
-	binaryExtInfo, jsErr := json.Marshal(extInfo)
-	if jsErr != nil {
-		log.Println("failed to marshal user extend login information:", jsErr)
-	} else {
-		//	发送扩展信息
-		log.Println(string(binaryExtInfo))
-	}*/
-	//	test
-
 	//	http server
 	if httpAddr != nil &&
 		len(*httpAddr) != 0 {
@@ -147,7 +123,7 @@ func main() {
 	timerTick := time.Tick(time.Duration(5) * time.Second)
 
 	if g_ServerS.StartListen(*ipaddrserver) && g_ServerC.StartListen(*ipaddrclient) {
-		log.Println("Start process event.listen server:", *ipaddrserver, " listen client:", *ipaddrclient)
+		shareutils.LogInfoln("Start process event.listen server:", *ipaddrserver, " listen client:", *ipaddrclient)
 
 		for {
 			select {
@@ -193,7 +169,7 @@ func main() {
 		}
 	}
 
-	log.Println("Quit process event...")
+	shareutils.LogInfoln("Quit process event...")
 	close(g_CtrlCh)
 	releaseDllModule()
 }
@@ -214,7 +190,7 @@ func ProcessServerCEvent(evt *server.ConnEvent) {
 		}
 	default:
 		{
-			log.Println("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
+			shareutils.LogWarnln("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
 		}
 	}
 }
@@ -235,7 +211,7 @@ func ProcessServerSEvent(evt *server.ConnEvent) {
 		}
 	default:
 		{
-			log.Println("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
+			shareutils.LogWarnln("Unsolved ConnEvent[evtid:", evt.Evtid, "]")
 		}
 	}
 }
@@ -250,11 +226,10 @@ func ProcessRedisEvent(evt *RedisEvent) {
 }
 
 func ProcessInput(input string) {
-	log.Println("rec ", input)
 	var cmd, param string = "", ""
 	_, err := fmt.Sscanf(input, "%s_%s", &cmd, &param)
 	if err != nil {
-		log.Println("Parse user input error!Error[", err, "]")
+		shareutils.LogErrorln("Parse user input error!Error[", err, "]")
 		return
 	}
 	switch cmd {
@@ -263,11 +238,10 @@ func ProcessInput(input string) {
 			g_CtrlCh <- uint8(0)
 		}
 	}
-	log.Println("Command: ", cmd, " parameters: ", param)
 }
 
 func go_handleInput(ch chan string) {
-	log.Println("Goroutine [go_handleInput] start...")
+	shareutils.LogInfoln("Goroutine [go_handleInput] start...")
 
 	var (
 		cmd string
@@ -276,11 +250,11 @@ func go_handleInput(ch chan string) {
 	for {
 		_, err := fmt.Scanln(&cmd)
 		if err != nil {
-			log.Println("Receive user input failed...Error[", err, "]")
+			shareutils.LogErrorln("Receive user input failed...Error[", err, "]")
 			break
 		}
 		ch <- cmd
 	}
 
-	log.Println("Goroutine [go_handleInput] quit...")
+	shareutils.LogInfoln("Goroutine [go_handleInput] quit...")
 }

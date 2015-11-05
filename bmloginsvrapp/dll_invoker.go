@@ -58,7 +58,7 @@ func initDllModule(name string) bool {
 		proc, err := g_dllHumSave.FindProc(str)
 		if err == nil {
 			g_procMap[str] = proc
-			LogInfoln("Proccess address[", str, "] loaded...")
+			shareutils.LogInfoln("Proccess address[", str, "] loaded...")
 			//dbgutil.Display("ProcName", str, "ProcAddr", proc)
 		} else {
 			shareutils.LogErrorln("ProcName[", str, "] load failed...", err)
@@ -74,7 +74,7 @@ func releaseDllModule() {
 		for _, str := range g_procDllName {
 			delete(g_procMap, str)
 		}
-		LogInfoln(g_dllHumSave.Name, " has been released...")
+		shareutils.LogInfoln(g_dllHumSave.Name, " has been released...")
 		g_dllHumSave.Release()
 	}
 }

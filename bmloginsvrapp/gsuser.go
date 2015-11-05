@@ -41,13 +41,12 @@ func CreateServerUser(clientconn *server.Connection) *ServerUser {
 }
 
 func (this *ServerUser) OnConnect() {
-	LogInfoln("GameServer ", this.ipaddr, " connected... id:", this.serverid)
+	shareutils.LogInfoln("GameServer ", this.ipaddr, " connected... id:", this.serverid)
 	if this.serverid >= 0 &&
 		this.serverid < 100 {
 
 	}
 	rankListData := getPlayerRankList()
-	//log.Println("get rank list:", rankListData)
 	this.SendUserMsg(loginopstart+22, rankListData)
 }
 
@@ -58,7 +57,7 @@ func (this *ServerUser) OnVerified() {
 func (this *ServerUser) OnDisconnect() {
 	if g_AvaliableGS == uint32(this.serverid) {
 		g_AvaliableGS = 0
-		LogInfoln("Lose game server...")
+		shareutils.LogInfoln("Lose game server...")
 	}
 }
 
@@ -181,7 +180,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				user := cuser.(*User)
 				user.svrconnidx = gsidx
 				user.conncode = conncode
-				LogInfoln("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
+				shareutils.LogInfoln("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
 			}
 		}
 	case loginopstart + 21:

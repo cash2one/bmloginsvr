@@ -2,7 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//	"log"
+	"shareutils"
 	"time"
 )
 
@@ -31,7 +32,7 @@ func getPlayerRankList() string {
 
 	jsBytes, err := json.Marshal(&rankData)
 	if err != nil {
-		log.Println("Err:Failed to marshal rank data.err:", err)
+		shareutils.LogErrorln("Err:Failed to marshal rank data.err:", err)
 		return ""
 	} else {
 		rankList = string(jsBytes)

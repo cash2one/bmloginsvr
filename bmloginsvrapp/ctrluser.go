@@ -53,17 +53,17 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 				return
 			}
 
-			LogInfoln("Verify ctrl terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+			shareutils.LogInfoln("Verify ctrl terminal[", ctrlVerifyReq.GetVerifycode(), "]")
 
 			ret := &LSControlProto.LSCCtrlVerifyAck{}
 			ret.Result = proto.Bool(true)
 
 			if ControlValid(ctrlVerifyReq.GetVerifycode()) {
 				this.ctrlverify = true
-				LogInfoln("pass[", ctrlVerifyReq.GetVerifycode(), "]")
+				shareutils.LogInfoln("pass[", ctrlVerifyReq.GetVerifycode(), "]")
 			} else {
 				ret.Result = proto.Bool(false)
-				LogWarnln("invalid terminal[", ctrlVerifyReq.GetVerifycode(), "]")
+				shareutils.LogWarnln("invalid terminal[", ctrlVerifyReq.GetVerifycode(), "]")
 				//this.conn.GetInternalConn().Close()
 			}
 

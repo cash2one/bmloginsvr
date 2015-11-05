@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//"log"
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
 	"runtime/pprof"
+	"shareutils"
 	"strconv"
 	"strings"
 )
@@ -30,7 +31,7 @@ func startHttpServer(addr string) {
 	http.HandleFunc("/admin", adminHandler)
 	http.HandleFunc("/rs", rsHandler)
 
-	log.Println("Start http server:", addr)
+	shareutils.LogInfoln("Start http server:", addr)
 	go http.ListenAndServe(addr, nil)
 }
 
@@ -125,7 +126,7 @@ func getGsAddressHandler(w http.ResponseWriter, r *http.Request) {
 
 	gsId, err := strconv.Atoi(id)
 	if err != nil {
-		log.Println("Invalid id argument.content:", id, "error:", err)
+		shareutils.LogErrorln("Invalid id argument.content:", id, "error:", err)
 		rsp.Msg = "Invalid id argument"
 		bytes, _ := json.Marshal(rsp)
 		w.Write(bytes)
@@ -148,7 +149,7 @@ func getGsAddressHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(bytes)
 	} else {
 		rsp.Msg = "Invalid game server id or incorrect password.please check again."
-		log.Println(rsp.Msg)
+		shareutils.LogErrorln(rsp.Msg)
 		bytes, _ := json.Marshal(rsp)
 		w.Write(bytes)
 	}
@@ -181,7 +182,7 @@ func getGsListHandler(w http.ResponseWriter, r *http.Request) {
 	rsp.Servers = gsList
 	bytes, err := json.Marshal(rsp)
 	if err != nil {
-		log.Println("Failed to marshal json.content:", gsList, "error:", err)
+		shareutils.LogErrorln("Failed to marshal json.content:", gsList, "error:", err)
 		return
 	}
 
@@ -204,7 +205,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 			rsp.Msg = "Invalid address arguments"
 			data, err := json.Marshal(rsp)
 			if err != nil {
-				log.Println("Failed to marshal json cotent.error:", err, "content:", rsp)
+				shareutils.LogErrorln("Failed to marshal json cotent.error:", err, "content:", rsp)
 				return
 			}
 			w.Write(data)
@@ -219,7 +220,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 		rsp.Msg = "Invalid port arguments"
 		data, err := json.Marshal(rsp)
 		if err != nil {
-			log.Println("Failed to marshal json cotent.error:", err, "content:", rsp)
+			shareutils.LogErrorln("Failed to marshal json cotent.error:", err, "content:", rsp)
 			return
 		}
 		w.Write(data)
@@ -235,7 +236,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 	us.Address = addrArg
 	portInt, err := strconv.Atoi(portArg)
 	if err != nil {
-		log.Println("Invalid port argument.not number.error:", err)
+		shareutils.LogErrorln("Invalid port argument.not number.error:", err)
 		return
 	}
 	us.Port = portInt
@@ -250,7 +251,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 	tmsg.Event = kMThreadMsg_RegisterGS
 	bytes, err := json.Marshal(us)
 	if nil != err {
-		log.Println("Failed to marshal json content.error:", err)
+		shareutils.LogErrorln("Failed to marshal json content.error:", err)
 		return
 	}
 	tmsg.Msg = string(bytes)
@@ -264,7 +265,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 		rsp.Msg = strconv.Itoa(tmsg.WParam)
 		data, err := json.Marshal(rsp)
 		if err != nil {
-			log.Println("Failed to marshal json cotent.error:", err, "content:", rsp)
+			shareutils.LogErrorln("Failed to marshal json cotent.error:", err, "content:", rsp)
 			return
 		}
 		w.Write(data)
@@ -272,7 +273,7 @@ func registergsHandler(w http.ResponseWriter, r *http.Request) {
 		rsp.Msg = "Failed to register gs"
 		data, err := json.Marshal(rsp)
 		if err != nil {
-			log.Println("Failed to marshal json cotent.error:", err, "content:", rsp)
+			shareutils.LogErrorln("Failed to marshal json cotent.error:", err, "content:", rsp)
 			return
 		}
 		w.Write(data)

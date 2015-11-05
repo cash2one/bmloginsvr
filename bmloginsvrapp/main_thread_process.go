@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"log"
+	//	"log"
 	"strconv"
 	"strings"
 	//	"strings"
 	"regexp"
+	"shareutils"
 	"time"
 )
 
@@ -132,7 +133,7 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 			if len(msg.Msg) != 0 {
 				err := json.Unmarshal([]byte(msg.Msg), &ugs)
 				if err != nil {
-					log.Println("Failed to unmarshal content:", msg.Msg, "error:", err)
+					shareutils.LogErrorln("Failed to unmarshal content:", msg.Msg, "error:", err)
 				} else {
 					msg.WParam = AddUserGameServer(&ugs)
 					ret = true
@@ -308,7 +309,7 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 		}
 	default:
 		{
-			log.Println("Unprocessed mthread event id:", msg.Event)
+			shareutils.LogWarnln("Unprocessed mthread event id:", msg.Event)
 		}
 	}
 }

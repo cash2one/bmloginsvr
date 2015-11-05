@@ -44,7 +44,7 @@ func bmDllTest() {
 		uintptr(job),
 		uintptr(sex))
 	if r1 != 0 {
-		log.Println("AddGameRole failed.ret:", r1)
+		shareutils.LogErrorln("AddGameRole failed.ret:", r1)
 	}
 	r1, _, _ = g_procMap["AddGameRole"].Call(filehandle,
 		uintptr(unsafe.Pointer(C.CString("god01"))),
