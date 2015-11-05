@@ -138,10 +138,10 @@ func (this *DefaultServerHandler) RunConnectionProcessLoop(conn *Connection) {
 		log.Println("Goroutine [RunConnectionProcessLoop] on ", conn.GetConnTag(), " quit...")
 	}()
 
-	stpch = make(chan bool)
+	//stpch = make(chan bool)
 	go this.RunConnectionWriteLoop(conn, stpch)
 	this.RunConnectionReadLoop(conn)
-	stpch <- true
+	//stpch <- true
 }
 
 func (this *DefaultServerHandler) RunConnectionReadLoop(conn *Connection) {
