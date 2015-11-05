@@ -6,6 +6,7 @@ import "C"
 import (
 	"fmt"
 	"log"
+	"shareutils"
 	"unsafe"
 )
 
@@ -15,7 +16,7 @@ func bmDllTest() {
 	defer func() {
 		e := recover()
 		if e != nil {
-			LogErrorln(e)
+			shareutils.LogErrorln(e)
 			var input string
 			fmt.Scanln(&input)
 		}
@@ -24,14 +25,14 @@ func bmDllTest() {
 	//	Test CreateHumSave
 	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString("hum.zip"))))
 	if r1 != 0 {
-		LogErrorln("CreateHumSave failed.")
+		shareutils.LogErrorln("CreateHumSave failed.")
 	}
 
 	//	Test OpenHumSave
 	var filehandle uintptr = 0
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString("hum.zip"))))
 	if r1 == 0 {
-		LogErrorln("OpenHumSave failed.")
+		shareutils.LogErrorln("OpenHumSave failed.")
 	} else {
 		filehandle = r1
 	}

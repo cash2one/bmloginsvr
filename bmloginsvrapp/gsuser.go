@@ -9,6 +9,7 @@ import (
 	//	"log"
 	"os"
 	"server"
+	"shareutils"
 	"strconv"
 	"strings"
 	"time"
@@ -144,19 +145,19 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			var cuser *User
 			var ok bool = false
 			if nil == iuser {
-				LogDebugln("Can't get the player wants save data")
+				shareutils.LogDebugln("Can't get the player wants save data")
 				this.OnOfflineSave(msg)
 				return
 			} else {
 				cuser, ok = iuser.(*User)
 				if !ok {
-					LogErrorln("Can't transform IUser to *User")
+					shareutils.LogErrorln("Can't transform IUser to *User")
 					return
 				}
 			}
 
 			if len(msg) != calclen {
-				LogErrorln("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
+				shareutils.LogErrorln("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
 			} else {
 				if uid != 0 {
 					cuser.OnRequestSaveGameRole(msg)
@@ -175,7 +176,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 
 			cuser := g_UserList.GetUser(lsidx)
 			if cuser == nil {
-				LogErrorln("Can't registe user[", lsidx, "]")
+				shareutils.LogErrorln("Can't registe user[", lsidx, "]")
 			} else {
 				user := cuser.(*User)
 				user.svrconnidx = gsidx
@@ -200,7 +201,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				name = string(msg[8+4+4 : 8+4+4+nameLength])
 				nameLength++
 			} else {
-				LogErrorln("Trying to update player rank with no name.")
+				shareutils.LogErrorln("Trying to update player rank with no name.")
 				return
 			}
 
@@ -209,7 +210,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			binary.Read(bytes.NewBuffer(msg[8+4+4+nameLength+4+1:]), binary.LittleEndian, &power)
 
 			if 0 == level {
-				LogErrorln("Trying to update player rank with 0 level.")
+				shareutils.LogErrorln("Trying to update player rank with 0 level.")
 				return
 			}
 
@@ -221,7 +222,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			rankInfo.Name = name
 			rankInfo.Power = int(power)
 			if !dbUpdateUserRankInfo(g_DBUser, &rankInfo) {
-				LogErrorln("Failed to insert player rank info")
+				shareutils.LogErrorln("Failed to insert player rank info")
 			}
 		}
 	case loginopstart + 23:
@@ -246,7 +247,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			if ret {
 				retInt8 = 1
 			}
-			LogDebugln("Player[", uid, "] consume item:", itemid, "result:", ret)
+			shareutils.LogDebugln("Player[", uid, "] consume item:", itemid, "result:", ret)
 			this.SendUserMsg(loginopstart+24, retInt8, uid, gsid, queryId, itemid)
 		}
 	case loginopstart + 25:
@@ -268,7 +269,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				name = string(msg[8+4+4+4 : 8+4+4+4+nameLength])
 				nameLength++
 			} else {
-				LogErrorln("Invalid buyer name")
+				shareutils.LogErrorln("Invalid buyer name")
 				return
 			}
 			binary.Read(bytes.NewBuffer(msg[8+4+4+4+nameLength:8+4+4+4+nameLength+4]), binary.LittleEndian, &itemid)
@@ -294,7 +295,7 @@ func OfflineSaveUserData(msg []byte) {
 	var uid uint32
 	binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
 
-	LogDebugln(name, " request to save data on offline mode.")
+	shareutils.LogDebugln(name, " request to save data on offline mode.")
 
 	//	Create save file
 	userfile := "./login/" + strconv.FormatUint(uint64(uid), 10) + "/hum.sav"
@@ -306,7 +307,7 @@ func OfflineSaveUserData(msg []byte) {
 	//no free !r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		LogErrorln("Can't open hum save.Err:", r1)
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -321,12 +322,12 @@ func OfflineSaveUserData(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
 	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
 	if r1 != 0 {
-		LogErrorln("Failed to update gamerole head data")
+		shareutils.LogErrorln("Failed to update gamerole head data")
 	}
 
 	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
 	if r1 != 0 {
-		LogErrorln("Failed to write gamerole data")
+		shareutils.LogErrorln("Failed to write gamerole data")
 	}
 }
 
@@ -387,8 +388,8 @@ func (this *ServerUser) OnResponseClientLogin(msg []byte) {
 		binary.Read(bytes.NewBuffer(msg[8+1+4:8+1+4+1]), binary.LittleEndian, &addrlen)
 		var addr string = string(msg[8+1+4+1 : 8+1+4+1+addrlen])
 		//	send to client
-		LogDebugln(clientindex)
-		LogDebugln(addr)
+		shareutils.LogDebugln(clientindex)
+		shareutils.LogDebugln(addr)
 	}
 }
 
@@ -400,7 +401,7 @@ func (this *ServerUser) OnRequestSave(msg []byte) {
 	// no free!r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		LogErrorln("Can't open hum save.Err:", r1)
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -457,7 +458,7 @@ func ReadControlAddr(path string) bool {
 	//	read control addr
 	file, err := os.Open(path)
 	if err != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return false
 	}
 
@@ -465,7 +466,7 @@ func ReadControlAddr(path string) bool {
 	defer file.Close()
 	readbytes, readerr := file.Read(buf)
 	if readerr != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return false
 	}
 
@@ -473,7 +474,7 @@ func ReadControlAddr(path string) bool {
 	g_ControlAddr = strings.Split(content, "\r\n")
 
 	for _, v := range g_ControlAddr {
-		LogErrorln("Controller: ", v, " length", len(v))
+		shareutils.LogErrorln("Controller: ", v, " length", len(v))
 	}
 	return true
 }

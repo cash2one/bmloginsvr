@@ -13,6 +13,7 @@ import (
 	"os"
 	"runtime/debug"
 	"server"
+	"shareutils"
 	"time"
 )
 
@@ -62,7 +63,7 @@ func main() {
 	}
 	server.InitSeed(0)
 
-	DefaultLogHelper().Init("bmloginsvrapp", *logConfig)
+	shareutils.DefaultLogHelper().Init("bmloginsvrapp", *logConfig)
 
 	log.Println("BackMIR Login Server started.")
 	//	Initialize directory

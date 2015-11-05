@@ -6,14 +6,9 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	//	"log"
-	//	"os"
-	"server"
-	//	"strings"
-	//	"strconv"
-	//	"time"
-	//	"unsafe"
 	"runtime/debug"
+	"server"
+	"shareutils"
 )
 
 var (
@@ -75,12 +70,12 @@ func HandleCMsg(msg *server.ConnEvent) {
 	headreader.SetDataSource(msg.Msg)
 	length = headreader.ReadMsgLength()
 	opcode = headreader.ReadMsgOpCode()
-	LogDebugln("Receive client[", msg.Conn.GetConnTag(), "] msg[length:", length, " opcode:", opcode, "]")
+	shareutils.LogDebugln("Receive client[", msg.Conn.GetConnTag(), "] msg[length:", length, " opcode:", opcode, "]")
 
 	defer func() {
 		err := recover()
 		if err != nil {
-			LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
+			shareutils.LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 		}
 	}()
 
@@ -104,7 +99,7 @@ func HandleCMsg(msg *server.ConnEvent) {
 					binary.Read(bytes.NewBuffer(data[9+namelen+1:9+namelen+1+pswlen]), binary.BigEndian, namebuf)
 					var pswstr string = string(namebuf)
 
-					LogDebugln("Begin to verify user " + namestr)
+					shareutils.LogDebugln("Begin to verify user " + namestr)
 
 					var ret int = cltuser.VerifyUser(namestr, pswstr)
 					if 0 != ret {
@@ -151,7 +146,7 @@ func HandleSMsg(msg *server.ConnEvent) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
+			shareutils.LogErrorln("A exception occured while processing msg[length:", length, " opcode:", opcode, "]", err)
 			debug.PrintStack()
 		}
 	}()
@@ -194,15 +189,15 @@ func HandleSMsg(msg *server.ConnEvent) {
 									svruser.verified = true
 								}
 							} else {
-								LogErrorln("server ", serverid, "verify failed")
+								shareutils.LogErrorln("server ", serverid, "verify failed")
 								var vok uint8 = 0
 								user.SendUserMsg(loginopstart+3, &vok)
 							}
 						} else {
-							LogErrorln("verify length not equal", 8+2+4+1+uint32(iplen), " ", length)
+							shareutils.LogErrorln("verify length not equal", 8+2+4+1+uint32(iplen), " ", length)
 						}
 					} else {
-						LogErrorln("verify pkg length not equal ", 8+2+4+1)
+						shareutils.LogErrorln("verify pkg length not equal ", 8+2+4+1)
 					}
 				}
 			} else {
@@ -215,9 +210,9 @@ func HandleSMsg(msg *server.ConnEvent) {
 				}
 			}
 		} else {
-			LogErrorln("Can't convert user to type ServerUser")
+			shareutils.LogErrorln("Can't convert user to type ServerUser")
 		}
 	} else {
-		LogErrorln("Can't find the server tag[", msg.Conn.GetConnTag(), "]")
+		shareutils.LogErrorln("Can't find the server tag[", msg.Conn.GetConnTag(), "]")
 	}
 }

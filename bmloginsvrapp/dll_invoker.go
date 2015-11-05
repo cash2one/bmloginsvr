@@ -3,6 +3,7 @@ package main
 import (
 	//"dbgutil"
 	//	"log"
+	"shareutils"
 	"syscall"
 )
 
@@ -49,7 +50,7 @@ func initDllModule(name string) bool {
 	allLoaded := true
 	g_dllHumSave, err := syscall.LoadDLL(name)
 	if err != nil {
-		LogErrorln("Can't load [", name, "]")
+		shareutils.LogErrorln("Can't load [", name, "]")
 		return false
 	}
 	//	Get all module
@@ -60,7 +61,7 @@ func initDllModule(name string) bool {
 			LogInfoln("Proccess address[", str, "] loaded...")
 			//dbgutil.Display("ProcName", str, "ProcAddr", proc)
 		} else {
-			LogErrorln("ProcName[", str, "] load failed...", err)
+			shareutils.LogErrorln("ProcName[", str, "] load failed...", err)
 			allLoaded = false
 		}
 	}

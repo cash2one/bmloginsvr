@@ -8,6 +8,7 @@ import (
 	"github.com/axgle/mahonia"
 	//	"log"
 	"regexp"
+	"shareutils"
 	"time"
 )
 
@@ -20,7 +21,7 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 	head := &LSControlProto.LSCHead{}
 	err := proto.Unmarshal(msg[5:5+headlen], head)
 	if err != nil {
-		LogErrorln("Failed to unmarshal proto head")
+		shareutils.LogErrorln("Failed to unmarshal proto head")
 		return
 	}
 
@@ -28,18 +29,18 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 	defer func() {
 		except := recover()
 		if except != nil {
-			LogErrorln(except)
+			shareutils.LogErrorln(except)
 		}
 
 		if err != nil {
-			LogErrorln(err)
+			shareutils.LogErrorln(err)
 		}
 	}()
 
 	opcode := LSControlProto.Opcode(head.GetOpcode())
 	var oft_body_start int = 5 + int(headlen)
 	if opcode != LSControlProto.Opcode_PKG_HeartBeat {
-		LogDebugln("Ctrl msg[", opcode, "]")
+		shareutils.LogDebugln("Ctrl msg[", opcode, "]")
 	}
 
 	if !this.ctrlverify {
@@ -48,7 +49,7 @@ func (this *ServerUser) OnCtrlMsg(msg []byte) {
 			ctrlVerifyReq := &LSControlProto.LSCCtrlVerifyReq{}
 			err = proto.Unmarshal(msg[oft_body_start:], ctrlVerifyReq)
 			if err != nil {
-				LogErrorln("proto unmarshal error.", err)
+				shareutils.LogErrorln("proto unmarshal error.", err)
 				return
 			}
 
@@ -128,7 +129,7 @@ func (this *ServerUser) SendProtoBuf(opcode uint32, msg []byte) bool {
 	head.Opcode = proto.Uint32(opcode)
 	headbuf, err := proto.Marshal(head)
 	if err != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return false
 	}
 
@@ -186,7 +187,7 @@ func (this *ServerUser) OnRsRegistAccountReq(req *LSControlProto.RSRegistAccount
 	data, err := proto.Marshal(ack)
 
 	if err != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return
 	}
 
@@ -230,7 +231,7 @@ func (this *ServerUser) OnRegistAccountReq(req *LSControlProto.LSCRegistAccountR
 	data, err := proto.Marshal(ack)
 
 	if err != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return
 	}
 
@@ -249,7 +250,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 		rsp.Result = proto.Bool(false)
 		data, err := proto.Marshal(rsp)
 		if err != nil {
-			LogErrorln(err)
+			shareutils.LogErrorln(err)
 			return
 		}
 
@@ -261,7 +262,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 		rsp.Result = proto.Bool(false)
 		data, err := proto.Marshal(rsp)
 		if err != nil {
-			LogErrorln(err)
+			shareutils.LogErrorln(err)
 			return
 		}
 
@@ -272,7 +273,7 @@ func (this *ServerUser) OnRsMofifyPassword(req *LSControlProto.RSModifyPasswordR
 	rsp.Result = proto.Bool(true)
 	data, err := proto.Marshal(rsp)
 	if err != nil {
-		LogErrorln(err)
+		shareutils.LogErrorln(err)
 		return
 	}
 
