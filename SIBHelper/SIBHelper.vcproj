@@ -318,11 +318,11 @@
 			Name="Module"
 			>
 			<File
-				RelativePath="..\..\CommonModule\DataEncryptor.cpp"
+				RelativePath="..\..\..\..\CommonModule\DataEncryptor.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\CommonModule\DataEncryptor.h"
+				RelativePath="..\..\..\..\CommonModule\DataEncryptor.h"
 				>
 			</File>
 			<File

@@ -9,7 +9,7 @@
 #include <ZipArchive.h>
 #include "ByteBuffer.h"
 #include "PotentialDlg.h"
-#include "../../CommonModule/DataEncryptor.h"
+#include "../../../../CommonModule/DataEncryptor.h"
 #include "MirMap.h"
 #include "Sha1Calc.h"
 

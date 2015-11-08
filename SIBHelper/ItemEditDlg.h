@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../CommonModule/SimpleIni.h"
-#include "../../CommonModule/ObjectData.h"
+#include "../../../../CommonModule/SimpleIni.h"
+#include "../../../../CommonModule/ObjectData.h"
 
 // CItemEditDlg ¶Ô»°¿ò
 

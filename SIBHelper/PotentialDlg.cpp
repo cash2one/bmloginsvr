@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SIBHelper.h"
 #include "PotentialDlg.h"
-#include "../../CommonModule/PotentialAttribHelper.h"
+#include "../../../../CommonModule/PotentialAttribHelper.h"
 
 
 // CPotentialDlg ¶Ô»°¿ò
@@ -40,8 +40,12 @@ void CPotentialDlg::OnOK()
 	CString xPotentialOffset;
 	GetDlgItem(IDC_EDIT2)->GetWindowText(xPotentialOffset);
 
+	CString xPotentialIndex;
+	GetDlgItem(IDC_EDIT9)->GetWindowText(xPotentialIndex);
+
 	int nPotentialBase = atoi(xPotentialBase);
 	int nPotentialOffset = atoi(xPotentialOffset);
+	int nPotentialIndex = atoi(xPotentialIndex);
 	char szValue[15] = {0};
 
 	if(0 == nPotentialBase &&
@@ -51,7 +55,7 @@ void CPotentialDlg::OnOK()
 	}
 	else
 	{
-		DWORD dwValue = PotentialAttribHelper::MakePotential(nPotentialBase, nPotentialOffset, 0, 0);
+		DWORD dwValue = PotentialAttribHelper::MakePotential(nPotentialBase, nPotentialOffset, nPotentialIndex, 0);
 		GetDlgItem(IDC_EDIT3)->SetWindowText(itoa(dwValue, szValue, 10));
 	}
 
