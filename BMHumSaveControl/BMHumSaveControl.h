@@ -7,6 +7,10 @@
 #define BM_EXPORT	__declspec (dllexport)
 #endif
 //////////////////////////////////////////////////////////////////////////
+//	Setting functions
+//	Set password
+BM_EXPORT int SetPassword(const char* _pszPassword);
+//////////////////////////////////////////////////////////////////////////
 //	Create a new hum save, 0:success|1:file already exists|2:create file failed
 BM_EXPORT int CreateHumSave(const char* _pszPath);
 //	Delete a exist hum save 0:success|1:delete failed|2:non-exist file
@@ -38,5 +42,12 @@ BM_EXPORT int UpdateGameRoleInfo(int _hFileHandle, const char* _pszRoleName, uns
 BM_EXPORT int ReadGameRoleHeadInfo(int _hFileHandle, int _index, void* _pData);
 //	Repair hum save 0:success|1:file not exists|2:can't open the specified file
 BM_EXPORT int RepairHumSave(const char* _pszSavePath);
+//	Read extend data size|ret:size
+BM_EXPORT int ReadExtendDataSize(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex);
+//	Read extend data 0:success|1:failed
+BM_EXPORT int ReadExtendData(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex, void* _pData);
+//	Write extend data 0:success|1:failed
+BM_EXPORT int WriteExtendData(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex, const char* _pData, int _nLength);
+
 //////////////////////////////////////////////////////////////////////////
 #endif

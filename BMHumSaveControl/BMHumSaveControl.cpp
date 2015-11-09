@@ -34,6 +34,13 @@ const char* g_szData[] =
 		"data2"
 };
 
+const char* GetExtendDataFileName(int _nHumIndex, int _nExtendIndex)
+{
+	static char s_szFileName[20] = {0};
+	sprintf(s_szFileName, "ext%d_%d", _nExtendIndex, _nHumIndex);
+	return s_szFileName;
+}
+
 typedef struct _tagHumHead{
 	char szName[20];
 	char sex;
@@ -103,6 +110,25 @@ int WriteHumHeadToData(char* _pszBuf, const HumHead* _pHead){
 //////////////////////////////////////////////////////////////////////////
 //	export function
 //////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////
+//	Setting functions
+static char s_szPassword[128] = {0};
+static const char* s_pszDefaultFile = "bmsv";
+
+int SetPassword(const char* _pszPassword)
+{
+	if(strlen(_pszPassword) >= sizeof(s_szPassword))
+	{
+		return 1;
+	}
+
+	strcpy(s_szPassword, _pszPassword);
+	return 0;
+}
+
+
+//	component functions
 int CreateHumSave(const char* _pszPath){
 	if(NULL != _pszPath){
 #ifdef _DEBUG
@@ -117,6 +143,25 @@ int CreateHumSave(const char* _pszPath){
 		bool bRet = xArchive.Open(_pszPath, CZipArchive::zipCreate);
 		if(bRet){
 			xArchive.Close();
+
+			//	write default flag file
+			CZipArchive xDefaultArchive;
+			if(xDefaultArchive.Open(_pszPath))
+			{
+				ZIP_INDEX_TYPE zIndex = 0;
+				zIndex = xDefaultArchive.FindFile(s_pszDefaultFile);
+				if(zIndex == ZIP_FILE_INDEX_NOT_FOUND)
+				{
+					//	New file, never remove it
+					CZipFileHeader header;
+					header.SetFileName(s_pszDefaultFile);
+					xDefaultArchive.OpenNewFile(header);
+					xDefaultArchive.WriteNewFile(s_pszDefaultFile, strlen(s_pszDefaultFile));
+					xDefaultArchive.CloseNewFile();
+				}
+
+				xDefaultArchive.Close();
+			}
 		}else{
 			//	Set password
 		}
@@ -305,6 +350,16 @@ int DelGameRole(int _hFileHandle, const char* _pszRoleName){
 	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
 		pSave->pFile->RemoveFile(zIndex);
 	}
+
+	//	remove all extend data
+	for(int i = 0; i < 10; ++i)
+	{
+		zIndex = pSave->pFile->FindFile(GetExtendDataFileName(nIndex, i));
+		if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+			pSave->pFile->RemoveFile(zIndex);
+		}
+	}
+
 	ZeroMemory(&pSave->head[nIndex], sizeof(HumHead));
 	return 0;
 }
@@ -685,6 +740,129 @@ int RepairHumSave(const char* _pszSavePath)
 	return 0;
 }
 
+int ReadExtendDataSize(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex)
+{
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+	char* pData = NULL;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+#ifdef _DEBUG
+		printf("\nCan't find head %s\n",
+			_pszRoleName);
+#endif
+		return 0;
+	}
+
+	ZIP_INDEX_TYPE zIndex = 0;
+	zIndex = pSave->pFile->FindFile(GetExtendDataFileName(nIndex, _nExtendIndex));
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
+		return pHeader->m_uUncomprSize;
+	}
+	else
+	{
+#ifdef _DEBUG
+		printf("\ncan't locate %s\n",
+			_pszRoleName);
+#endif
+	}
+
+	return 0;
+}
+
+int ReadExtendData(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex, void* _pData)
+{
+	char* pBuf = (char*)_pData;
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+#ifdef _DEBUG
+		printf("\nCan't find head %s\n",
+			_pszRoleName);
+#endif
+		return 0;
+	}
+
+	ZIP_INDEX_TYPE zIndex = 0;
+	zIndex = pSave->pFile->FindFile(GetExtendDataFileName(nIndex, _nExtendIndex));
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		CZipFileHeader* pHeader = pSave->pFile->GetFileInfo(zIndex);
+		if(NULL != pHeader){
+			pSave->pFile->OpenFile(zIndex);
+			pSave->pFile->ReadFile(pBuf, pHeader->m_uUncomprSize);
+			pSave->pFile->CloseFile();
+			return 0;
+		}
+	}
+	else
+	{
+#ifdef _DEBUG
+		printf("\ncan't locate %s\n",
+			_pszRoleName);
+#endif
+	}
+
+	return 1;
+}
+
+int WriteExtendData(int _hFileHandle, const char* _pszRoleName, int _nExtendIndex, const char* _pData, int _nLength)
+{
+	PHumSave pSave = (PHumSave)_hFileHandle;
+	int nIndex = -1;
+
+	for(int i = 0; i < 3; ++i){
+		if(0 == strcmp(pSave->head[i].szName, _pszRoleName)){
+			nIndex = i;
+			break;
+		}
+	}
+
+	if(nIndex == -1){
+		return 1;
+	}
+
+	ZIP_INDEX_TYPE zIndex = 0;
+	const char* pszFileName = GetExtendDataFileName(nIndex, _nExtendIndex);
+	zIndex = pSave->pFile->FindFile(pszFileName);
+	if(zIndex != ZIP_FILE_INDEX_NOT_FOUND){
+		pSave->pFile->RemoveFile(zIndex);
+
+		//	Overwrite file
+		CZipFileHeader header;
+		header.SetFileName(pszFileName);
+		pSave->pFile->OpenNewFile(header);
+		pSave->pFile->WriteNewFile(_pData, _nLength);
+		pSave->pFile->CloseNewFile();
+	}
+	else
+	{
+		//return 2;
+		//	New file
+		CZipFileHeader header;
+		header.SetFileName(pszFileName);
+		pSave->pFile->OpenNewFile(header);
+		pSave->pFile->WriteNewFile(_pData, _nLength);
+		pSave->pFile->CloseNewFile();
+	}
+
+	return 0;
+}
 
 
 
