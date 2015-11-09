@@ -44,7 +44,6 @@ func main() {
 		var input string
 		fmt.Scanln(&input)
 	}()
-	//log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	g_ControlAddr = make([]string, 0, 10)
 	ReadControlAddr("./login/gmlist.txt")
@@ -92,6 +91,7 @@ func main() {
 
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
+	handler.SetTimeoutSec(60)
 	g_ServerS = server.CreateWithConfig(nil)
 	g_ServerS.EvtHandler = handler
 	g_ServerList = &UserInfoList{

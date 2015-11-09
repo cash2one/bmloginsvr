@@ -1,9 +1,8 @@
 package server
 
 import (
-	"log"
 	"net"
-	//"time"
+	"shareutils"
 )
 
 type Server struct {
@@ -40,17 +39,17 @@ func (this *Server) SetOutputEvtSum(sum uint32) {
 
 func (this *Server) StartListen(listenaddr string) bool {
 	if this.EvtHandler == nil {
-		log.Fatalln("Must set the handler to handle the connection event...")
+		shareutils.LogFatalln("Must set the handler to handle the connection event...")
 		return false
 	}
 
 	listener, err := net.Listen("tcp", listenaddr)
 	if err != nil {
-		log.Fatalln("Can listen on ", listenaddr, " ,following are error info[", err, "]")
+		shareutils.LogFatalln("Can listen on ", listenaddr, " ,following are error info[", err, "]")
 		return false
 	}
 
-	log.Println("Start listen on ", listenaddr)
+	shareutils.LogInfoln("Start listen on ", listenaddr)
 	this.ListenAddr = listenaddr
 
 	//	Create a goroutine to handle the accept event
@@ -60,12 +59,12 @@ func (this *Server) StartListen(listenaddr string) bool {
 }
 
 func (this *Server) go_handleAccept(listener net.Listener) {
-	log.Println("Goroutine [go_handleAccept] start...")
+	shareutils.LogInfoln("Goroutine [go_handleAccept] start...")
 
 	for {
 		aconn, err := listener.Accept()
 		if err != nil {
-			log.Fatalln("Server listen failed...Server force to quit... Error info[", err, "]")
+			shareutils.LogFatalln("Server listen failed...Server force to quit... Error info[", err, "]")
 			break
 		}
 
@@ -77,10 +76,10 @@ func (this *Server) go_handleAccept(listener net.Listener) {
 		}*/
 		newconn := CreateConnection(aconn, 50)
 
-		log.Println("New connection [", newconn.conn.RemoteAddr(), "]")
+		shareutils.LogInfoln("New connection [", newconn.conn.RemoteAddr(), "]")
 		go this.EvtHandler.RunConnectionProcessLoop(newconn)
 		this.EvtHandler.GetEventQueue() <- this.EvtHandler.createConnectEvt(newconn)
 	}
 
-	log.Println("Goroutine [go_handleAccept quit...]")
+	shareutils.LogInfoln("Goroutine [go_handleAccept quit...]")
 }

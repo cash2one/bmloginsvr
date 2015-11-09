@@ -3,8 +3,10 @@ package server
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
+	"errors"
 	"net"
+	"shareutils"
+	"time"
 )
 
 type Connection struct {
@@ -75,6 +77,7 @@ type ConnEvent struct {
 
 type DefaultServerHandler struct {
 	connEventsCh chan *ConnEvent
+	timeoutSec   uint64
 }
 
 func CreateDefaultServerHandler(queuesize uint32) *DefaultServerHandler {
@@ -85,9 +88,13 @@ func CreateDefaultServerHandler(queuesize uint32) *DefaultServerHandler {
 	return handler
 }
 
+func (this *DefaultServerHandler) SetTimeoutSec(sec uint64) {
+	this.timeoutSec = sec
+}
+
 func (this *DefaultServerHandler) checkError(err error, info string) bool {
 	if err != nil {
-		log.Println(info, " Error[", err, "]")
+		shareutils.LogErrorln(info, " Error[", err, "]")
 		return false
 	}
 	return true
@@ -128,29 +135,83 @@ func (this *DefaultServerHandler) RunConnectionProcessLoop(conn *Connection) {
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("Error occurs,Error[", err, "]")
+			shareutils.LogErrorln("Error occurs,Error[", err, "]")
 		}
 		if stpch != nil {
 			close(stpch)
 		}
 		conn.conn.Close()
-		this.createDisconnectEvt(conn)
-		log.Println("Goroutine [RunConnectionProcessLoop] on ", conn.GetConnTag(), " quit...")
+		disConnEvt := this.createDisconnectEvt(conn)
+		this.connEventsCh <- disConnEvt
+		shareutils.LogInfoln("Goroutine [RunConnectionProcessLoop] on ", conn.GetConnTag(), " quit...")
 	}()
+
+	shareutils.LogInfoln("Goroutine [RunConnectionProcessLoop] on", conn.GetConnTag(), "is running.Timeout sec:", this.timeoutSec)
 
 	stpch = make(chan bool)
 	go this.RunConnectionWriteLoop(conn, stpch)
 	this.RunConnectionReadLoop(conn)
-	//stpch <- true
+
+	//	note:不需要为stpch写入数据 当channel close掉后 所有监听该channel处都会立即返回
+}
+
+func (this *DefaultServerHandler) ReadPacketFromConn(buf []byte, conn *Connection) (uint32, error) {
+	//	First length
+	length, err := conn.conn.Read(buf[0:CONS_MSGHEAD_LENGTH])
+
+	if err != nil {
+		this.checkError(err, "Connect read failed...")
+		return 0, err
+	}
+
+	//	check head
+	for length < CONS_MSGHEAD_LENGTH {
+		//	Keep reading
+		recl, err := conn.conn.Read(buf[length:CONS_MSGHEAD_LENGTH])
+		length += recl
+		if err != nil {
+			this.checkError(err, "Connect read failed...")
+			return 0, err
+		}
+	}
+
+	//	read content, head totallength and opcode
+	var msglength uint32 = 0
+	err = binary.Read(bytes.NewBuffer(buf[0:CONS_MSGHEAD_LENGTH]), binary.BigEndian, &msglength)
+	if err != nil {
+		this.checkError(err, "Get message length failed...")
+		return 0, err
+	}
+	if msglength >= CONS_MSGHEADBODY_MAXLENGTH {
+		shareutils.LogErrorln("Invalid msg,msg too long...")
+		return 0, errors.New("Msg length is too long")
+	}
+
+	//	Get the full message
+	leftlength := int(msglength - CONS_MSGHEAD_LENGTH)
+	for leftlength > 0 {
+		recl, err := conn.conn.Read(buf[CONS_MSGHEAD_LENGTH:msglength])
+		if err != nil {
+			this.checkError(err, "Read message body failed...")
+			return 0, err
+		}
+		leftlength -= recl
+	}
+
+	//	OK
+	if msglength < 8 {
+		shareutils.LogErrorln("Discard a msg because the length of the msg is less than 8")
+		return 0, errors.New("Invalid msg head length")
+	}
+
+	return msglength, nil
 }
 
 func (this *DefaultServerHandler) RunConnectionReadLoop(conn *Connection) {
 	buf := make([]byte, CONS_MSGHEADBODY_MAXLENGTH)
 
-	//defer log.Println("Connection readloop of[", conn.GetConnTag(), "] quit...")
-
 	for {
-		//	First length
+		/*//	First length
 		length, err := conn.conn.Read(buf[0:CONS_MSGHEAD_LENGTH])
 
 		if err != nil {
@@ -183,7 +244,6 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn *Connection) {
 			log.Println("invalid msg,msg too long...")
 			break
 		}
-		//log.Println("head read ,[head length: ", length, " msg length", msglength)
 
 		//	Get the full message
 		leftlength := int(msglength - CONS_MSGHEAD_LENGTH)
@@ -202,7 +262,23 @@ func (this *DefaultServerHandler) RunConnectionReadLoop(conn *Connection) {
 		if msglength < 8 {
 			log.Println("Discard a msg because the length of the msg is less than 8")
 			continue
+		}*/
+		if 0 != this.timeoutSec {
+			conn.conn.SetReadDeadline(time.Now().Add(time.Duration(this.timeoutSec) * time.Second))
 		}
+
+		msglength, err := this.ReadPacketFromConn(buf, conn)
+
+		if 0 != this.timeoutSec {
+			conn.conn.SetReadDeadline(time.Time{})
+		}
+
+		if err != nil {
+			shareutils.LogErrorln("Read data from connection failed.Error:", err)
+			return
+		}
+
+		//	dispatch the packet
 		this.connEventsCh <- this.createReadReadyEvt(conn, buf[0:msglength])
 	}
 }
@@ -211,14 +287,12 @@ func (this *DefaultServerHandler) RunConnectionWriteLoop(conn *Connection, stpch
 	defer func() {
 		err := recover()
 		if err != nil {
-			log.Println("Exception.Error occurs,Error[", err, "]")
+			shareutils.LogErrorln("Exception.Error occurs,Error[", err, "]")
 		}
-		log.Println("Connection writeloop of[", conn.GetConnTag(), "] quit...")
-		//conn.conn.Close()
-		//this.createDisconnectEvt(conn)
+		shareutils.LogInfoln("Connection writeloop of[", conn.GetConnTag(), "] quit...")
 	}()
 
-	log.Println("Goroutine [RunConnectionWriteLoop] begin...")
+	shareutils.LogInfoln("Goroutine [RunConnectionWriteLoop] begin...")
 	for {
 		select {
 		case msg := <-conn.wrtch:
@@ -231,7 +305,7 @@ func (this *DefaultServerHandler) RunConnectionWriteLoop(conn *Connection, stpch
 			}
 		case <-stpch:
 			{
-				log.Println("Receive read loop stop signal")
+				shareutils.LogInfoln("Receive read loop stop signal")
 				return
 			}
 		}
