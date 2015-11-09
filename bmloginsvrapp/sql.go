@@ -172,7 +172,130 @@ func initDatabase(path string) *sql.DB {
 		}
 	}
 
+	//	check donate_request
+	donateRequestExists, err := dbTableExist(db, "donate_request")
+	if err != nil {
+		shareutils.LogErrorln("failed to check donate_request table.err:", err)
+	} else {
+		if !donateRequestExists {
+			sqlexpr := `
+			create table donate_request(id integer primary key, name varchar(20), uid integer, orderid varchar(50), money integer, note varchar(40), result integer)
+			`
+
+			_, err = db.Exec(sqlexpr)
+			if err != nil {
+				shareutils.LogErrorln("Failed to create new table,err:", err)
+				db.Close()
+				return nil
+			} else {
+				shareutils.LogInfoln("Create new table[donate_request]")
+			}
+		}
+	}
+
 	return db
+}
+
+//	donate_request
+type DonateRequest struct {
+	Id      int
+	Name    string
+	Uid     int
+	OrderId string
+	Money   int
+	Note    string
+	Result  int
+}
+
+const (
+	kDonateResult_None = iota
+	kDonateResult_Ok
+	kDonateResult_Invalid
+)
+
+func dbDonateRequestExists(db *sql.DB, orderId string) bool {
+	rows, err := db.Query("select count(*) as cnt from donate_request where orderid = '" + orderId + "'")
+	if err != nil {
+		shareutils.LogErrorf("Error on selecting uid,error[%s]", err.Error())
+		return true
+	}
+
+	defer rows.Close()
+	if rows.Next() {
+		count := 0
+		rows.Scan(&count)
+
+		if count == 0 {
+			return false
+		}
+		return true
+	}
+	return false
+}
+
+func dbInsertDonateRequest(db *sql.DB, dr *DonateRequest) bool {
+	if nil == dr {
+		return false
+	}
+
+	if len(dr.Name) == 0 ||
+		len(dr.OrderId) == 0 ||
+		0 == dr.Uid {
+		return false
+	}
+	if dbDonateRequestExists(db, dr.OrderId) {
+		return true
+	}
+	expr := "insert into donate_request values(null, '" + dr.Name + "'," + strconv.Itoa(dr.Uid) + ",'" + dr.OrderId + "'," + strconv.Itoa(dr.Money) + ",'" + dr.Note + "'," + strconv.Itoa(dr.Result) + ")"
+	_, err := db.Exec(expr)
+	if err != nil {
+		shareutils.LogErrorln("db exec failed.expr:", expr, " err:", err)
+		return false
+	}
+
+	return true
+}
+
+func dbUpdateDonateRequestResult(db *sql.DB, orderId string, result int) bool {
+	expr := "update donate_request set result=" + strconv.Itoa(result) + " where orderid='" + orderId + "'"
+
+	_, err := db.Exec(expr)
+	if err != nil {
+		shareutils.LogErrorf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
+}
+
+func dbUpdateDonateRequestMoney(db *sql.DB, orderId string, money int) bool {
+	expr := "update donate_request set money=" + strconv.Itoa(money) + " where orderid='" + orderId + "'"
+
+	_, err := db.Exec(expr)
+	if err != nil {
+		shareutils.LogErrorf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
+}
+
+func dbRemoveDonateRequest(db *sql.DB, orderId string) bool {
+	if !dbDonateRequestExists(db, orderId) {
+		return true
+	}
+
+	expr := "delete from donate_request where orderid='" + orderId + "'"
+	_, err := db.Exec(expr)
+	if err != nil {
+		shareutils.LogErrorf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
 }
 
 //	admin_account
