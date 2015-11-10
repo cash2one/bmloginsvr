@@ -143,25 +143,6 @@ int CreateHumSave(const char* _pszPath){
 		bool bRet = xArchive.Open(_pszPath, CZipArchive::zipCreate);
 		if(bRet){
 			xArchive.Close();
-
-			//	write default flag file
-			CZipArchive xDefaultArchive;
-			if(xDefaultArchive.Open(_pszPath))
-			{
-				ZIP_INDEX_TYPE zIndex = 0;
-				zIndex = xDefaultArchive.FindFile(s_pszDefaultFile);
-				if(zIndex == ZIP_FILE_INDEX_NOT_FOUND)
-				{
-					//	New file, never remove it
-					CZipFileHeader header;
-					header.SetFileName(s_pszDefaultFile);
-					xDefaultArchive.OpenNewFile(header);
-					xDefaultArchive.WriteNewFile(s_pszDefaultFile, strlen(s_pszDefaultFile));
-					xDefaultArchive.CloseNewFile();
-				}
-
-				xDefaultArchive.Close();
-			}
 		}else{
 			//	Set password
 		}
@@ -218,10 +199,22 @@ int OpenHumSave(const char* _pszPath){
 		return 0;
 	}
 
-	//	Get hum information
 	char buf[512] = {0};
 	ZIP_INDEX_TYPE zIndex = 0;
 
+	//	write default flag file
+	zIndex = pSave->pFile->FindFile(s_pszDefaultFile);
+	if(zIndex == ZIP_FILE_INDEX_NOT_FOUND)
+	{
+		//	New file, never remove it
+		CZipFileHeader header;
+		header.SetFileName(s_pszDefaultFile);
+		pSave->pFile->OpenNewFile(header);
+		pSave->pFile->WriteNewFile(s_pszDefaultFile, strlen(s_pszDefaultFile));
+		pSave->pFile->CloseNewFile();
+	}
+
+	//	Get hum information
 	for(int i = 0; i < 3; ++i){
 		zIndex = pSave->pFile->FindFile(g_szHeader[i]);
 		if(ZIP_FILE_INDEX_NOT_FOUND != zIndex){
