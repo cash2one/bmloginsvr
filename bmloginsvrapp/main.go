@@ -91,7 +91,6 @@ func main() {
 
 	//	for server
 	handler := server.CreateDefaultServerHandler(50)
-	handler.SetTimeoutSec(60)
 	g_ServerS = server.CreateWithConfig(nil)
 	g_ServerS.EvtHandler = handler
 	g_ServerList = &UserInfoList{
@@ -100,6 +99,7 @@ func main() {
 
 	//	for client
 	chandler := server.CreateDefaultServerHandler(50)
+	chandler.SetTimeoutSec(60)
 	g_ServerC = server.CreateWithConfig(nil)
 	g_ServerC.EvtHandler = chandler
 	g_UserList = &UserInfoList{
