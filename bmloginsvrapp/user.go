@@ -8,7 +8,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"server"
 	"shareutils"
@@ -49,7 +48,7 @@ func CreateUser(clientconn *server.Connection) *User {
 }
 
 func (this *User) OnConnect() {
-	log.Println("Peer ", this.ipaddr, " connected...")
+	shareutils.LogInfoln("Peer ", this.ipaddr, " connected...")
 
 	//	Send game type
 	var gametype uint8 = 2
@@ -61,7 +60,7 @@ func (this *User) OnConnect() {
 }
 
 func (this *User) OnDisconnect() {
-	log.Println("Peer ", this.ipaddr, " disconnected...")
+	shareutils.LogInfoln("Peer ", this.ipaddr, " disconnected...")
 	this.SendUserMsg(loginopstart, nil)
 }
 
@@ -81,7 +80,7 @@ func (this *User) OnVerified() {
 	if !PathExist(userpath) {
 		err := os.Mkdir(userpath, os.ModeDir)
 		if err != nil {
-			log.Println("Cant't create user directory.Error:", err)
+			shareutils.LogErrorln("Cant't create user directory.Error:", err)
 			return
 		}
 	}
@@ -96,7 +95,7 @@ func (this *User) OnVerified() {
 	// no free!r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		log.Println("Can't open hum save.Err:", r1)
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -555,7 +554,7 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 	// no free!r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		log.Println("Can't open hum save.Err:", r1)
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -570,12 +569,12 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &level)
 	r1, _, _ = g_procMap["UpdateGameRoleInfo"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(level))
 	if r1 != 0 {
-		log.Println("Failed to update gamerole head data")
+		shareutils.LogErrorln("Failed to update gamerole head data")
 	}
 
 	r1, _, _ = g_procMap["WriteGameRoleData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
 	if r1 != 0 {
-		log.Println("Failed to write gamerole data")
+		shareutils.LogErrorln("Failed to write gamerole data")
 	}
 }
 
@@ -587,13 +586,13 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	var sex uint8 = 0
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+1]), binary.LittleEndian, &job)
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen+1:8+1+namelen+1+1]), binary.LittleEndian, &sex)
-	log.Println("Create new hero name ", name, " job ", job, " sex ", sex)
+	shareutils.LogInfoln("Create new hero name ", name, " job ", job, " sex ", sex)
 	//	Add a role
 	userpath := "./login/" + strconv.FormatUint(uint64(this.uid), 10)
 	if !PathExist(userpath) {
 		err := os.Mkdir(userpath, os.ModeDir)
 		if err != nil {
-			log.Println("Cant't create user directory.Error:", err)
+			shareutils.LogErrorln("Cant't create user directory.Error:", err)
 			return
 		}
 	}
@@ -609,7 +608,7 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 	//	no free!r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if r1 == 0 {
-		log.Println("Can't open hum save.Err:", r1)
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
 		return
 	}
 	var filehandle uintptr = r1
@@ -681,20 +680,20 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8:8+1]), binary.LittleEndian, &namelen)
 	var name string = string(msg[8+1 : 8+1+namelen])
 	//	delete a role
-	log.Println(name)
+	shareutils.LogInfoln("Delete gamerole", name)
 
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	cuserfile := C.CString(userfile)
 	defer C.free(unsafe.Pointer(cuserfile))
 
 	if !PathExist(userfile) {
-		log.Printf("non-exist user[%d] request to delete gamerole")
+		shareutils.LogErrorf("non-exist user[%d] request to delete gamerole", name)
 		return
 	}
 	//	no free!filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if filehandle == 0 {
-		log.Println("Can't open hum save.")
+		shareutils.LogErrorln("Can't open hum save.")
 		return
 	}
 	defer g_procMap["CloseHumSave"].Call(filehandle)
@@ -706,7 +705,7 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 		//	no free!uintptr(unsafe.Pointer(C.CString(name))))
 		uintptr(unsafe.Pointer(cname)))
 	if r1 != 0 {
-		log.Println("Can't remove gamerole ", name)
+		shareutils.LogErrorln("Can't remove gamerole ", name)
 		return
 	}
 
@@ -747,10 +746,10 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	binary.Read(bytes.NewBuffer(msg[8+1+namelen:8+1+namelen+2]), binary.LittleEndian, &svrindex)
 	//	read role data
 	//	send the data to the gamesvr
-	log.Println(name, " request to enter game server")
+	shareutils.LogErrorln(name, " request to enter game server")
 
 	if this.svrconnidx == 0 {
-		log.Println("invalid svr index")
+		shareutils.LogErrorln("invalid svr index")
 		return
 	}
 
@@ -759,7 +758,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	if nil == igs {
 		var qm uint16 = 7
 		this.SendUserMsg(loginopstart+12, &qm)
-		log.Println("Tag[", g_AvaliableGS, "] not available")
+		shareutils.LogErrorln("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
 
@@ -776,7 +775,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		var qm uint16 = 1
 		binary.Write(buf, binary.LittleEndian, &qm)
 		this.SendUserMsg(loginopstart+12, buf.Bytes())
-		log.Println("Tag[", g_AvaliableGS, "] not available")
+		shareutils.LogErrorln("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
 
@@ -785,7 +784,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	defer C.free(unsafe.Pointer(cuserfile))
 
 	if !PathExist(userfile) {
-		log.Printf("non-exist user[%d] request to login gamerole")
+		shareutils.LogErrorln("non-exist user[%d] request to login gamerole")
 		buf := new(bytes.Buffer)
 		var qm uint16 = 2
 		binary.Write(buf, binary.LittleEndian, &qm)
@@ -796,7 +795,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	//	no free!filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	filehandle, _, _ := g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
 	if filehandle == 0 {
-		log.Println("Can't open hum save.")
+		shareutils.LogErrorln("Can't open hum save.")
 		var qm uint16 = 2
 		this.SendUserMsg(loginopstart+12, &qm)
 		return
@@ -833,7 +832,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	if r1 < 0 || r1 > 2 {
 		var qm uint16 = 5
 		this.SendUserMsg(loginopstart+12, &qm)
-		log.Println("Can't get role index")
+		shareutils.LogErrorln("Can't get role index")
 		return
 	}
 
@@ -845,7 +844,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	r1, _, _ = g_procMap["GetGameRoleInfo_Value"].Call(filehandle, uintptr(heroidx), uintptr(unsafe.Pointer(&job)),
 		uintptr(unsafe.Pointer(&sex)), uintptr(unsafe.Pointer(&level)))
 	namelen4 = uint32(len(name))
-	log.Println(name, "job ", job, " sex ", sex, "login success")
+	shareutils.LogInfoln(name, "job ", job, " sex ", sex, "login success")
 	binary.Write(buf, binary.LittleEndian, &namelen4)
 	binary.Write(buf, binary.LittleEndian, []byte(name))
 	binary.Write(buf, binary.LittleEndian, &zero)
@@ -861,7 +860,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		//binary.Write(buf, binary.LittleEndian, &donateInfo.donate)
 		//gs.SendUseData(loginopstart+11, buf.Bytes())
 	} else {
-		log.Println("Not new hum, read size ", datasize)
+		shareutils.LogInfoln("Not new hum, read size ", datasize)
 
 		humdata := make([]byte, datasize)
 		r1, _, _ = g_procMap["ReadGameRoleData"].Call(filehandle,
@@ -889,14 +888,14 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		//	nothing
 		extInfo.DonateLeft = int32(dbGetUserDonateLeft(g_DBUser, this.uid))
 
-		log.Println("player[", this.uid, "] donate money:", donateInfo.donate, "donate left:", extInfo.DonateLeft)
+		shareutils.LogInfoln("player[", this.uid, "] donate money:", donateInfo.donate, "donate left:", extInfo.DonateLeft)
 	}
 
 	extInfo.DonateMoney = donateInfo.donate
 	extInfo.SystemGift = dbGetSystemGiftIdByUid(g_DBUser, this.uid)
 	binaryExtInfo, jsErr := json.Marshal(extInfo)
 	if jsErr != nil {
-		log.Println("failed to marshal user extend login information:", jsErr)
+		shareutils.LogErrorln("failed to marshal user extend login information:", jsErr)
 
 		//	字符长度为0
 		zeroLength := uint32(0)
@@ -927,15 +926,15 @@ func (this *User) IsVerified() bool {
 }
 
 func logSendMsgFieldErr(opcode uint32, reqlen uint32) {
-	log.Println("Msg[", opcode, "] require ", reqlen, " fields")
+	shareutils.LogErrorln("Msg[", opcode, "] require ", reqlen, " fields")
 }
 
 func logSendMsgTypeErr(opcode uint32, destype string, reqtype string) {
-	log.Println("Msg[", opcode, "] require type[", reqtype, "] rec type[", destype, "]")
+	shareutils.LogErrorln("Msg[", opcode, "] require type[", reqtype, "] rec type[", destype, "]")
 }
 
 func logErr(err error, info string) {
-	log.Println("Error occurs, Error[", err, "]")
+	shareutils.LogErrorln("Error occurs, Error[", err, "]")
 }
 
 func (this *User) VerifyUser(account, password string) int {
@@ -956,7 +955,7 @@ func (this *User) VerifyUser(account, password string) int {
 
 	var info UserAccountInfo
 	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
-	log.Println("Accout ", info.account, " Password ", info.password)
+	shareutils.LogInfoln("Accout ", info.account, " Password ", info.password)
 	if !dbret {
 		ret = 1
 	} else {
@@ -988,10 +987,10 @@ func (this *User) VerifyUser(account, password string) int {
 					binary.Write(buf, binary.LittleEndian, &svridx)
 					this.SendUseData(loginopstart+15, buf.Bytes())
 
-					log.Println("Pass")
+					shareutils.LogInfoln("Pass")
 				}
 			} else {
-				log.Println("Server tag[", g_AvaliableGS, "] not available")
+				shareutils.LogErrorln("Server tag[", g_AvaliableGS, "] not available")
 			}
 		}
 	} else {
