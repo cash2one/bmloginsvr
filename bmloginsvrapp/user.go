@@ -529,6 +529,11 @@ func (this *User) OnUserMsg(msg []byte) {
 				this.OnRequestLoginGameSvr(msg)
 			}
 		}
+	case loginopstart + 29:
+		{
+			//	heat beat
+			shareutils.LogDebugln("Recv client heatbeat")
+		}
 	}
 }
 
