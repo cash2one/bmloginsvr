@@ -551,10 +551,8 @@ func (this *User) OnRequestSaveGameRole(msg []byte) {
 	userfile := "./login/" + strconv.FormatUint(uint64(this.uid), 10) + "/hum.sav"
 	cuserfile := C.CString(userfile)
 	defer C.free(unsafe.Pointer(cuserfile))
-
 	//	no free!r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
-
 	//	Open it
 	// no free!r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
 	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
@@ -920,6 +918,38 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	}
 
 	gs.SendUseData(loginopstart+11, buf.Bytes())
+
+	//	发送额外的人物数据
+	extDataIndex := uint8(0)
+	r1, _, _ = g_procMap["ReadExtendDataSize"].Call(filehandle,
+		uintptr(unsafe.Pointer(cname)),
+		0)
+	if 0 != r1 {
+		datasize = uint32(r1)
+		buf = new(bytes.Buffer)
+		binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
+		binary.Write(buf, binary.LittleEndian, &this.conncode)
+		binary.Write(buf, binary.LittleEndian, &this.uid)
+		binary.Write(buf, binary.LittleEndian, &extDataIndex)
+
+		humextdata := make([]byte, datasize)
+		r1, _, _ = g_procMap["ReadExtendData"].Call(filehandle,
+			uintptr(unsafe.Pointer(cname)),
+			0,
+			uintptr(unsafe.Pointer(&humextdata[0])))
+		if r1 != 0 {
+			var qm uint16 = 3
+			this.SendUserMsg(loginopstart+12, &qm)
+			return
+		}
+
+		//	send gamerole data to server
+		var datalen uint32 = uint32(len(humextdata))
+		binary.Write(buf, binary.LittleEndian, &datalen)
+		binary.Write(buf, binary.LittleEndian, humextdata)
+
+		gs.SendUseData(loginopstart+30, buf.Bytes())
+	}
 }
 
 func (this *User) GetUserTag() uint32 {

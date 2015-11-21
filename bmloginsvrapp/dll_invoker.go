@@ -26,6 +26,9 @@ var (
 		"ReadGameRoleSize",
 		"UpdateGameRoleInfo",
 		"ReadGameRoleHeadInfo",
+		"ReadExtendDataSize",
+		"ReadExtendData",
+		"WriteExtendData",
 	}
 )
 
@@ -44,6 +47,9 @@ const (
 	FUNC_ReadGameRoleSize
 	FUNC_UpdateGameRoleInfo
 	FUNC_ReadGameRoleHeadInfo
+	FUNC_ReadExtendDataSize
+	FUNC_ReadExtendData
+	FUNC_WriteExtendData
 )
 
 func initDllModule(name string) bool {

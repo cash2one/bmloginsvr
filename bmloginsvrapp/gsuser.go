@@ -281,6 +281,66 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			}
 			this.SendUserMsg(loginopstart+26, retInt8, uid, gsid, int32(left))
 		}
+	case loginopstart + 31:
+		{
+			//	player request to save extend data
+			var namelen uint8
+			var userindex uint32
+			binary.Read(bytes.NewBuffer(msg[8+8:8+8+1]), binary.LittleEndian, &namelen)
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &userindex)
+			var uid uint32
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
+			var datalen uint32
+			binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
+			var calclen int = int(uint32(namelen) + datalen + 1 + 4 + 4 + 2 + 8 + 4)
+			if len(msg) != calclen {
+				shareutils.LogErrorln("Invalid packet length[", len(msg), "], calc[", calclen, "]", "namelen", namelen, "datalen", datalen)
+				return
+			}
+
+			SaveHumExtData(msg)
+		}
+	}
+}
+
+func SaveHumExtData(msg []byte) {
+	var namelen uint8
+	binary.Read(bytes.NewBuffer(msg[8+8:8+8+1]), binary.LittleEndian, &namelen)
+	var name string = string(msg[8+8+1 : 8+8+1+namelen])
+	var datalen uint32
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen+2:8+8+1+namelen+2+4]), binary.LittleEndian, &datalen)
+	var data []byte = msg[8+8+1+namelen+2+4 : 8+8+1+uint32(namelen)+2+4+datalen]
+	var uid uint32
+	binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &uid)
+	var extIndex uint16
+	binary.Read(bytes.NewBuffer(msg[8+8+1+namelen:8+8+1+namelen+2]), binary.LittleEndian, &extIndex)
+
+	shareutils.LogDebugln(name, " request to save extend data.ext index:", extIndex)
+
+	//	Create save file
+	userfile := "./login/" + strconv.FormatUint(uint64(uid), 10) + "/hum.sav"
+	cuserfile := C.CString(userfile)
+	defer C.free(unsafe.Pointer(cuserfile))
+	//no free !r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ := g_procMap["CreateHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
+	//	Open it
+	//no free !r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(C.CString(userfile))))
+	r1, _, _ = g_procMap["OpenHumSave"].Call(uintptr(unsafe.Pointer(cuserfile)))
+	if r1 == 0 {
+		shareutils.LogErrorln("Can't open hum save.Err:", r1)
+		return
+	}
+	var filehandle uintptr = r1
+	//	Close
+	defer g_procMap["CloseHumSave"].Call(filehandle)
+
+	cname := C.CString(name)
+	//	no free!
+	defer C.free(unsafe.Pointer(cname))
+
+	r1, _, _ = g_procMap["WriteExtendData"].Call(filehandle, uintptr(unsafe.Pointer(cname)), uintptr(extIndex), uintptr(unsafe.Pointer(&data[0])), uintptr(datalen))
+	if r1 != 0 {
+		shareutils.LogErrorln("Failed to write gamerole extend data")
 	}
 }
 
