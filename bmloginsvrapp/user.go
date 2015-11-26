@@ -35,6 +35,7 @@ type User struct {
 	conn            *server.Connection
 	verified        bool
 	conntime        time.Time
+	playing         bool
 }
 
 type GameServerInfo struct {
@@ -56,6 +57,16 @@ func CreateUser(clientconn *server.Connection) *User {
 	}
 	user.conn.SetConnTag(server.GetSeed())
 	return user
+}
+
+func GetUserByUid(uid uint32) *User {
+	for _, v := range g_UserList.allusers {
+		user := v.(*User)
+		if user.uid == uid {
+			return user
+		}
+	}
+	return nil
 }
 
 func (this *User) OnConnect() {
@@ -663,17 +674,13 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		//	Add user name
 		var userinfo UserAccountInfo
 		if !dbGetUserAccountInfoByUID(g_DBUser, this.uid, &userinfo) {
-			buf := new(bytes.Buffer)
 			var msg uint16 = 5
-			binary.Write(buf, binary.LittleEndian, &msg)
-			this.SendUseData(loginopstart+12, buf.Bytes())
+			this.SendUserMsg(loginopstart+12, &msg)
 			return
 		}
 		if !dbAddUserName(g_DBUser, userinfo.account, name) {
-			buf := new(bytes.Buffer)
 			var msg uint16 = 6
-			binary.Write(buf, binary.LittleEndian, &msg)
-			this.SendUseData(loginopstart+12, buf.Bytes())
+			this.SendUserMsg(loginopstart+12, &msg)
 			return
 		}
 	} else {
@@ -762,13 +769,33 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	//	send the data to the gamesvr
 	shareutils.LogErrorln(name, " request to enter game server")
 
+	if this.playing {
+		//	已经登陆过了
+		return
+	}
+
 	if this.svrconnidx == 0 {
 		shareutils.LogErrorln("invalid svr index")
 		return
 	}
 
 	//	Get the avaliable game server
-	igs := g_ServerList.GetUser(g_AvaliableGS)
+	connectGsTag := this.connectedSvrTag
+
+	//	already in other servers
+	connectedTag := g_OnlinePlayerManager.GetPlayerConnectedServerTag(this.uid)
+	if 0 == connectGsTag {
+		var qm uint16 = 10
+		this.SendUserMsg(loginopstart+12, &qm)
+		return
+	}
+	if connectGsTag != connectedTag {
+		var qm uint16 = 11
+		this.SendUserMsg(loginopstart+12, &qm)
+		return
+	}
+
+	igs := g_ServerList.GetUser(connectGsTag)
 	if nil == igs {
 		var qm uint16 = 7
 		this.SendUserMsg(loginopstart+12, &qm)
@@ -785,10 +812,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	if len(g_ServerList.allusers) == 0 {
 		//	no available game server
-		buf := new(bytes.Buffer)
 		var qm uint16 = 1
-		binary.Write(buf, binary.LittleEndian, &qm)
-		this.SendUserMsg(loginopstart+12, buf.Bytes())
+		this.SendUserMsg(loginopstart+12, &qm)
 		shareutils.LogErrorln("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
@@ -799,10 +824,8 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	if !PathExist(userfile) {
 		shareutils.LogErrorln("non-exist user[%d] request to login gamerole")
-		buf := new(bytes.Buffer)
 		var qm uint16 = 2
-		binary.Write(buf, binary.LittleEndian, &qm)
-		this.SendUserMsg(loginopstart+12, buf.Bytes())
+		this.SendUserMsg(loginopstart+12, &qm)
 		return
 	}
 
@@ -961,6 +984,7 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 		gs.SendUseData(loginopstart+30, buf.Bytes())
 	}
+	this.playing = true
 }
 
 func (this *User) GetUserTag() uint32 {
@@ -1001,7 +1025,6 @@ func (this *User) VerifyUser(account, password string) int {
 
 	var info UserAccountInfo
 	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
-	shareutils.LogInfoln("Accout ", info.account)
 	if !dbret {
 		ret = 1
 	} else {
@@ -1010,6 +1033,19 @@ func (this *User) VerifyUser(account, password string) int {
 		} else {
 			//	pass
 			this.uid = info.uid
+		}
+	}
+
+	if 0 == ret {
+		//	检测是否有相同Uid玩家的登录
+		oldUser := GetUserByUid(this.uid)
+		//	老用户还没有登陆上游戏服务器 则拒绝登录 需要用户登录上了游戏服务器 才能继续登录
+		if oldUser.connectedSvrTag == 0 ||
+			!oldUser.playing {
+			this.uid = 0
+			var msg uint16 = 8
+			this.SendUserMsg(loginopstart+12, &msg)
+			ret = 3
 		}
 	}
 
@@ -1054,9 +1090,9 @@ func (this *User) VerifyUser(account, password string) int {
 							gs.verified &&
 							gs.serverid >= 0 &&
 							gs.serverid < 100 {
-							gsList.Servers[gsIndex].Id = int(gs.serverid)
+							gsList.Servers[gsIndex].Id = int(gs.conn.GetConnTag())
 							gsList.Servers[gsIndex].Addr = gs.serverlsaddr
-							gsList.Servers[gsIndex].Name = ""
+							gsList.Servers[gsIndex].Name = gs.serverName
 							gsIndex++
 						}
 					}
