@@ -192,7 +192,7 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				user.svrconnidx = gsidx
 				user.conncode = conncode
 				user.connectedSvrTag = this.conn.GetConnTag()
-				g_OnlinePlayerManager.SetPlayerConnectedServerTag(user.uid, user.connectedSvrTag)
+				//g_OnlinePlayerManager.SetPlayerConnectedServerTag(user.uid, user.connectedSvrTag)
 				shareutils.LogInfoln("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
 			}
 		}

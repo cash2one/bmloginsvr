@@ -59,16 +59,6 @@ func CreateUser(clientconn *server.Connection) *User {
 	return user
 }
 
-func GetUserByUid(uid uint32) *User {
-	for _, v := range g_UserList.allusers {
-		user := v.(*User)
-		if user.uid == uid {
-			return user
-		}
-	}
-	return nil
-}
-
 func (this *User) OnConnect() {
 	shareutils.LogInfoln("Peer ", this.ipaddr, " connected...")
 
@@ -781,19 +771,21 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	//	Get the avaliable game server
 	connectGsTag := this.connectedSvrTag
-
-	//	already in other servers
-	connectedTag := g_OnlinePlayerManager.GetPlayerConnectedServerTag(this.uid)
 	if 0 == connectGsTag {
 		var qm uint16 = 10
 		this.SendUserMsg(loginopstart+12, &qm)
 		return
 	}
-	if connectGsTag != connectedTag {
-		var qm uint16 = 11
-		this.SendUserMsg(loginopstart+12, &qm)
-		return
-	}
+
+	//	already in other servers
+	/*connectedTag := g_OnlinePlayerManager.GetPlayerConnectedServerTag(this.uid)
+	if 0 != connectedTag {
+		if connectGsTag != connectedTag {
+			var qm uint16 = 11
+			this.SendUserMsg(loginopstart+12, &qm)
+			return
+		}
+	}*/
 
 	igs := g_ServerList.GetUser(connectGsTag)
 	if nil == igs {
@@ -1033,19 +1025,6 @@ func (this *User) VerifyUser(account, password string) int {
 		} else {
 			//	pass
 			this.uid = info.uid
-		}
-	}
-
-	if 0 == ret {
-		//	检测是否有相同Uid玩家的登录
-		oldUser := GetUserByUid(this.uid)
-		//	老用户还没有登陆上游戏服务器 则拒绝登录 需要用户登录上了游戏服务器 才能继续登录
-		if oldUser.connectedSvrTag == 0 ||
-			!oldUser.playing {
-			this.uid = 0
-			var msg uint16 = 8
-			this.SendUserMsg(loginopstart+12, &msg)
-			ret = 3
 		}
 	}
 
