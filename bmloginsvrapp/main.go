@@ -18,17 +18,23 @@ import (
 )
 
 var (
-	g_ServerS        *server.Server
-	g_ServerC        *server.Server
-	g_UserList       *UserInfoList
-	g_ServerList     *UserInfoList
-	g_CtrlCh         chan uint8
-	g_DBUser         *sql.DB
-	g_Redis          *RedisOperator
-	g_AvaliableGS    uint32
-	g_strVersionInfo string = "1.0.1"
-	g_ControlAddr    []string
+	g_ServerS             *server.Server
+	g_ServerC             *server.Server
+	g_UserList            *UserInfoList
+	g_ServerList          *UserInfoList
+	g_CtrlCh              chan uint8
+	g_DBUser              *sql.DB
+	g_Redis               *RedisOperator
+	g_AvaliableGS         uint32
+	g_AvailableGSList     []uint32
+	g_strVersionInfo      string = "1.0.1"
+	g_ControlAddr         []string
+	g_OnlinePlayerManager *OnlinePlayerManager
 )
+
+func init() {
+	g_OnlinePlayerManager = NewOnlinePlayerManager()
+}
 
 func exceptionDetails() {
 	if err := recover(); err != nil {
@@ -46,6 +52,7 @@ func main() {
 	}()
 
 	g_ControlAddr = make([]string, 0, 10)
+	g_AvailableGSList = make([]uint32, 10, 10)
 	ReadControlAddr("./login/gmlist.txt")
 
 	//	Load config

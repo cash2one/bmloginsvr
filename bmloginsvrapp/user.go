@@ -27,13 +27,24 @@ type IUserInterface interface {
 }
 
 type User struct {
-	ipaddr     string
-	uid        uint32
-	svrconnidx uint32
-	conncode   uint32
-	conn       *server.Connection
-	verified   bool
-	conntime   time.Time
+	ipaddr          string
+	uid             uint32
+	svrconnidx      uint32
+	conncode        uint32
+	connectedSvrTag uint32
+	conn            *server.Connection
+	verified        bool
+	conntime        time.Time
+}
+
+type GameServerInfo struct {
+	Id   int    `json:"Id"`
+	Addr string `json:"Addr"`
+	Name string `json:"Name"`
+}
+
+type GameServerList struct {
+	Servers []GameServerInfo `json:"Servers"`
 }
 
 func CreateUser(clientconn *server.Connection) *User {
@@ -990,7 +1001,7 @@ func (this *User) VerifyUser(account, password string) int {
 
 	var info UserAccountInfo
 	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
-	shareutils.LogInfoln("Accout ", info.account, " Password ", info.password)
+	shareutils.LogInfoln("Accout ", info.account)
 	if !dbret {
 		ret = 1
 	} else {
@@ -1021,6 +1032,44 @@ func (this *User) VerifyUser(account, password string) int {
 					var svridx uint16 = 1
 					binary.Write(buf, binary.LittleEndian, &svridx)
 					this.SendUseData(loginopstart+15, buf.Bytes())
+
+					buf.Reset()
+					//	get server list
+					gameServerCount := 0
+					for _, svr := range g_ServerList.allusers {
+						gs, ok := svr.(*ServerUser)
+						if ok &&
+							gs.verified &&
+							gs.serverid >= 0 &&
+							gs.serverid < 100 {
+							gameServerCount++
+						}
+					}
+					gsList := &GameServerList{}
+					gsList.Servers = make([]GameServerInfo, gameServerCount)
+					gsIndex := 0
+					for _, svr := range g_ServerList.allusers {
+						gs, ok := svr.(*ServerUser)
+						if ok &&
+							gs.verified &&
+							gs.serverid >= 0 &&
+							gs.serverid < 100 {
+							gsList.Servers[gsIndex].Id = int(gs.serverid)
+							gsList.Servers[gsIndex].Addr = gs.serverlsaddr
+							gsList.Servers[gsIndex].Name = ""
+							gsIndex++
+						}
+					}
+					jsStr, err := json.Marshal(gsList)
+					if nil != err {
+						//	send server info
+						var jsLength uint32
+						jsLength = uint32(len(jsStr))
+						var jsTerminalChar uint8 = 0
+						binary.Write(buf, binary.LittleEndian, &jsLength)
+						binary.Write(buf, binary.LittleEndian, jsStr)
+						binary.Write(buf, binary.LittleEndian, &jsTerminalChar)
+					}
 
 					shareutils.LogInfoln("Pass")
 				}
