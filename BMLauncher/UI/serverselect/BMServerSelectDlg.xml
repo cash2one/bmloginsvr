@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Window mininfo="300,235" size="300,235" caption="0,0,0,35" defaultfontcolor="0xFF000000" disabledfontcolor="0xFFCCCCCC" >
+	<Font name="微软雅黑" size="12" bold="false" default="true" />
+	<Font name="微软雅黑" size="14" bold="true" />
+
+	<!--这一层是用来设置背景的-->
+	<!--VerticalLayout name="bg"  bordersize="1" bordercolor="0xFF0A6B9A" bkcolor="#FF1E90FF" bkimage="bkground.png" -->	
+	<VerticalLayout name="bg"  bordersize="1" bordercolor="0xFF0A6B9A" bkcolor="#FF291812" >	
+		<!--标题栏-->
+		<HorizontalLayout  name="header" height="35" padding="1,1,1,1">
+			<Label name="label_caption" text="请选择服务器" font="1" bkimage="headerBk.png" textpadding="10,0,0,0" textcolor="0xFFFFFFFF" />
+			<Button name="button_quit" bkimage="headerBk.png" width="41" height="35" normalimage=" file='btn_msgdlgClose.png' source='0,0,41,35' " hotimage=" file='btn_msgdlgClose.png' source='0,35,41,70' " pushedimage=" file='btn_msgdlgClose.png' source='0,70,41,105' " />
+		</HorizontalLayout>
+		<!--VerticalLayout  bkcolor="#FFE9F0F4" padding="3,0,3,2"-->
+		<VerticalLayout  bkcolor="0" padding="3,0,3,2">
+			<Label height="10" />
+			<HorizontalLayout name="layout_main">
+				<!--VerticalLayout width="96" bkcolor="0xff3296ff" bkcolor2="0xffffffff" -->
+				<Label height="10" />
+				<VerticalLayout name="layout_servers">
+				</VerticalLayout>
+				<Label height="10" />
+			</HorizontalLayout>
+		</VerticalLayout>	
+	</VerticalLayout>
+</Window>
