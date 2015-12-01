@@ -43,6 +43,7 @@ const (
 	kMThreadMsg_EnableOlRoom
 	kMThreadMsg_LsRegisterAccount
 	kMThreadMsg_LsModifyPassword
+	kMThreadMsg_ScheduleActive
 )
 
 var g_chanMainThread chan *MThreadMsg
@@ -306,6 +307,11 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 			}
 
 			msg.RetChan <- true
+		}
+	case kMThreadMsg_ScheduleActive:
+		{
+			shareutils.LogInfoln("Schedule job:", msg.WParam, "active.")
+			g_scheduleManager.RemoveJob(msg.WParam)
 		}
 	default:
 		{

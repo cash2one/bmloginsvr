@@ -115,10 +115,12 @@ func main() {
 	//	main thread message handler
 	MainThreadInit()
 
-	g_CtrlCh = make(chan uint8, 10)
-
+	/*g_CtrlCh = make(chan uint8, 10)
 	ch := make(chan string, 10)
-	go go_handleInput(ch)
+	go go_handleInput(ch)*/
+	g_scheduleManager.Start()
+	g_scheduleManager.AddJob(1, "@every 10s")
+	g_scheduleManager.AddJob(2, "*/20 * * * * *")
 
 	timerTick := time.Tick(time.Duration(5) * time.Second)
 
@@ -135,16 +137,16 @@ func main() {
 				{
 					ProcessServerCEvent(evt)
 				}
-			case input := <-ch:
-				{
-					ProcessInput(input)
-				}
+			/*case input := <-ch:
+			{
+				ProcessInput(input)
+			}
 			case ctrl := <-g_CtrlCh:
 				{
 					if ctrl == 0 {
 						break
 					}
-				}
+				}*/
 			case evt := <-g_Redis.outputChan:
 				{
 					ProcessRedisEvent(evt)
@@ -170,7 +172,7 @@ func main() {
 	}
 
 	shareutils.LogInfoln("Quit process event...")
-	close(g_CtrlCh)
+	//close(g_CtrlCh)
 	releaseDllModule()
 }
 
