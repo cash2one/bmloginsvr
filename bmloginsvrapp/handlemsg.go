@@ -184,13 +184,6 @@ func HandleSMsg(msg *server.ConnEvent) {
 									g_AvaliableGS = msg.Conn.GetConnTag()
 									shareutils.LogInfoln("Server[", serverid, "] registed... Tag[", g_AvaliableGS, "]")
 									svruser.verified = true
-									//	insert to available gs list
-									for i, v := range g_AvailableGSList {
-										if v == 0 {
-											g_AvailableGSList[i] = msg.Conn.GetConnTag()
-											break
-										}
-									}
 								} else if svruser.serverid >= 100 && svruser.serverid < 150 {
 									//	verify
 									svruser.verified = true

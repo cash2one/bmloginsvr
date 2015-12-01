@@ -21,7 +21,6 @@ type ServerUser struct {
 	//	for server
 	serverid     uint16
 	serverlsaddr string
-	serverName   string
 	//	for controller
 	ctrlverify bool
 }
@@ -59,16 +58,6 @@ func (this *ServerUser) OnDisconnect() {
 	if g_AvaliableGS == uint32(this.serverid) {
 		g_AvaliableGS = 0
 		shareutils.LogInfoln("Lose game server...")
-	}
-
-	//	close all available gs list
-	for i, v := range g_AvailableGSList {
-		if v != 0 &&
-			v == this.conn.GetConnTag() {
-			g_AvailableGSList[i] = 0
-			shareutils.LogInfoln("Remove server[", this.serverid, "] from available gs list")
-			break
-		}
 	}
 }
 
@@ -191,8 +180,6 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 				user := cuser.(*User)
 				user.svrconnidx = gsidx
 				user.conncode = conncode
-				user.connectedSvrTag = this.conn.GetConnTag()
-				//g_OnlinePlayerManager.SetPlayerConnectedServerTag(user.uid, user.connectedSvrTag)
 				shareutils.LogInfoln("Registe user gs index ok! gs index ", gsidx, " conn code:", conncode)
 			}
 		}

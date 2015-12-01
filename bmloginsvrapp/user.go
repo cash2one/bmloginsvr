@@ -27,25 +27,13 @@ type IUserInterface interface {
 }
 
 type User struct {
-	ipaddr          string
-	uid             uint32
-	svrconnidx      uint32
-	conncode        uint32
-	connectedSvrTag uint32
-	conn            *server.Connection
-	verified        bool
-	conntime        time.Time
-	playing         bool
-}
-
-type GameServerInfo struct {
-	Id   int    `json:"Id"`
-	Addr string `json:"Addr"`
-	Name string `json:"Name"`
-}
-
-type GameServerList struct {
-	Servers []GameServerInfo `json:"Servers"`
+	ipaddr     string
+	uid        uint32
+	svrconnidx uint32
+	conncode   uint32
+	conn       *server.Connection
+	verified   bool
+	conntime   time.Time
 }
 
 func CreateUser(clientconn *server.Connection) *User {
@@ -664,13 +652,17 @@ func (this *User) OnRequestAddGameRole(msg []byte) {
 		//	Add user name
 		var userinfo UserAccountInfo
 		if !dbGetUserAccountInfoByUID(g_DBUser, this.uid, &userinfo) {
+			buf := new(bytes.Buffer)
 			var msg uint16 = 5
-			this.SendUserMsg(loginopstart+12, &msg)
+			binary.Write(buf, binary.LittleEndian, &msg)
+			this.SendUseData(loginopstart+12, buf.Bytes())
 			return
 		}
 		if !dbAddUserName(g_DBUser, userinfo.account, name) {
+			buf := new(bytes.Buffer)
 			var msg uint16 = 6
-			this.SendUserMsg(loginopstart+12, &msg)
+			binary.Write(buf, binary.LittleEndian, &msg)
+			this.SendUseData(loginopstart+12, buf.Bytes())
 			return
 		}
 	} else {
@@ -759,35 +751,13 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 	//	send the data to the gamesvr
 	shareutils.LogErrorln(name, " request to enter game server")
 
-	if this.playing {
-		//	已经登陆过了
-		return
-	}
-
 	if this.svrconnidx == 0 {
 		shareutils.LogErrorln("invalid svr index")
 		return
 	}
 
 	//	Get the avaliable game server
-	connectGsTag := this.connectedSvrTag
-	if 0 == connectGsTag {
-		var qm uint16 = 10
-		this.SendUserMsg(loginopstart+12, &qm)
-		return
-	}
-
-	//	already in other servers
-	/*connectedTag := g_OnlinePlayerManager.GetPlayerConnectedServerTag(this.uid)
-	if 0 != connectedTag {
-		if connectGsTag != connectedTag {
-			var qm uint16 = 11
-			this.SendUserMsg(loginopstart+12, &qm)
-			return
-		}
-	}*/
-
-	igs := g_ServerList.GetUser(connectGsTag)
+	igs := g_ServerList.GetUser(g_AvaliableGS)
 	if nil == igs {
 		var qm uint16 = 7
 		this.SendUserMsg(loginopstart+12, &qm)
@@ -804,8 +774,10 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	if len(g_ServerList.allusers) == 0 {
 		//	no available game server
+		buf := new(bytes.Buffer)
 		var qm uint16 = 1
-		this.SendUserMsg(loginopstart+12, &qm)
+		binary.Write(buf, binary.LittleEndian, &qm)
+		this.SendUserMsg(loginopstart+12, buf.Bytes())
 		shareutils.LogErrorln("Tag[", g_AvaliableGS, "] not available")
 		return
 	}
@@ -816,8 +788,10 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	if !PathExist(userfile) {
 		shareutils.LogErrorln("non-exist user[%d] request to login gamerole")
+		buf := new(bytes.Buffer)
 		var qm uint16 = 2
-		this.SendUserMsg(loginopstart+12, &qm)
+		binary.Write(buf, binary.LittleEndian, &qm)
+		this.SendUserMsg(loginopstart+12, buf.Bytes())
 		return
 	}
 
@@ -976,7 +950,6 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 		gs.SendUseData(loginopstart+30, buf.Bytes())
 	}
-	this.playing = true
 }
 
 func (this *User) GetUserTag() uint32 {
@@ -1017,6 +990,7 @@ func (this *User) VerifyUser(account, password string) int {
 
 	var info UserAccountInfo
 	dbret, _ := dbGetUserAccountInfo(g_DBUser, account, &info)
+	shareutils.LogInfoln("Accout ", info.account, " Password ", info.password)
 	if !dbret {
 		ret = 1
 	} else {
@@ -1047,44 +1021,6 @@ func (this *User) VerifyUser(account, password string) int {
 					var svridx uint16 = 1
 					binary.Write(buf, binary.LittleEndian, &svridx)
 					this.SendUseData(loginopstart+15, buf.Bytes())
-
-					buf.Reset()
-					//	get server list
-					gameServerCount := 0
-					for _, svr := range g_ServerList.allusers {
-						gs, ok := svr.(*ServerUser)
-						if ok &&
-							gs.verified &&
-							gs.serverid >= 0 &&
-							gs.serverid < 100 {
-							gameServerCount++
-						}
-					}
-					gsList := &GameServerList{}
-					gsList.Servers = make([]GameServerInfo, gameServerCount)
-					gsIndex := 0
-					for _, svr := range g_ServerList.allusers {
-						gs, ok := svr.(*ServerUser)
-						if ok &&
-							gs.verified &&
-							gs.serverid >= 0 &&
-							gs.serverid < 100 {
-							gsList.Servers[gsIndex].Id = int(gs.conn.GetConnTag())
-							gsList.Servers[gsIndex].Addr = gs.serverlsaddr
-							gsList.Servers[gsIndex].Name = gs.serverName
-							gsIndex++
-						}
-					}
-					jsStr, err := json.Marshal(gsList)
-					if nil != err {
-						//	send server info
-						var jsLength uint32
-						jsLength = uint32(len(jsStr))
-						var jsTerminalChar uint8 = 0
-						binary.Write(buf, binary.LittleEndian, &jsLength)
-						binary.Write(buf, binary.LittleEndian, jsStr)
-						binary.Write(buf, binary.LittleEndian, &jsTerminalChar)
-					}
 
 					shareutils.LogInfoln("Pass")
 				}
