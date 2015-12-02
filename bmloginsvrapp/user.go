@@ -460,6 +460,25 @@ func (this *User) SendUserMsg(opcode uint32, args ...interface{}) bool {
 			binary.Write(buf, binary.LittleEndian, &left)
 			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
 		}
+	case loginopstart + 34:
+		{
+			var evtId uint32 = 0
+			for i, v := range args {
+				if i == 0 {
+					argValue, ok := v.(uint32)
+					if !ok {
+						logSendMsgTypeErr(opcode, "", "uint32")
+						return false
+					}
+
+					evtId = argValue
+				}
+			}
+
+			buf := new(bytes.Buffer)
+			binary.Write(buf, binary.LittleEndian, &evtId)
+			server.WriteMsgLittleEndian(this.conn, opcode, buf.Bytes())
+		}
 	}
 	return true
 }

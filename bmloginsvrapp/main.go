@@ -118,9 +118,8 @@ func main() {
 	/*g_CtrlCh = make(chan uint8, 10)
 	ch := make(chan string, 10)
 	go go_handleInput(ch)*/
+	//	start scheduler
 	g_scheduleManager.Start()
-	g_scheduleManager.AddJob(1, "@every 10s")
-	g_scheduleManager.AddJob(2, "*/20 * * * * *")
 
 	timerTick := time.Tick(time.Duration(5) * time.Second)
 

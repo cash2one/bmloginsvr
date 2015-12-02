@@ -12,6 +12,7 @@ type SchduleActiveCallback func(int)
 type ScheduleJob struct {
 	id       int
 	callback SchduleActiveCallback
+	data     interface{}
 }
 
 func NewScheduleJob(_id int, _job SchduleActiveCallback) *ScheduleJob {
@@ -50,20 +51,20 @@ func (this *ScheduleManager) Stop() {
 	this.cronJob.Stop()
 }
 
-func (this *ScheduleManager) AddJob(id int, scheduleExpr string) bool {
+func (this *ScheduleManager) AddJob(id int, scheduleExpr string) *ScheduleJob {
 	//	test if same id exists
 	for e := this.jobs.Front(); e != nil; e = e.Next() {
 		j := e.Value.(*ScheduleJob)
 		if j.id == id {
 			shareutils.LogErrorln("Job id:", id, "already exists")
-			return false
+			return nil
 		}
 	}
 
 	job := NewScheduleJob(id, this._scheduleActive)
 	this.jobs.PushBack(job)
 	this.cronJob.AddJob(scheduleExpr, job, strconv.Itoa(id))
-	return true
+	return job
 }
 
 func (this *ScheduleManager) RemoveJob(id int) {
@@ -75,6 +76,16 @@ func (this *ScheduleManager) RemoveJob(id int) {
 		}
 	}
 	this.cronJob.RemoveJob(strconv.Itoa(id))
+}
+
+func (this *ScheduleManager) GetJob(id int) *ScheduleJob {
+	for e := this.jobs.Front(); e != nil; e = e.Next() {
+		j := e.Value.(*ScheduleJob)
+		if j.id == id {
+			return j
+		}
+	}
+	return nil
 }
 
 func (this *ScheduleManager) _scheduleActive(id int) {

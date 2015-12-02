@@ -300,6 +300,35 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 
 			SaveHumExtData(msg)
 		}
+	case loginopstart + 32:
+		{
+			//	event id int32, cron expr string
+			var evtId int32
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &evtId)
+			var cronExprLength uint32
+			cronExpr := ""
+
+			binary.Read(bytes.NewBuffer(msg[8+4:8+4+4]), binary.LittleEndian, &cronExprLength)
+			if 0 != cronExprLength {
+				cronExpr = string(msg[8+4+4 : 8+4+4+cronExprLength])
+				cronExprLength++
+			} else {
+				shareutils.LogErrorln("Invalid cron expression")
+				return
+			}
+
+			job := g_scheduleManager.AddJob(int(evtId), cronExpr)
+			ud := &ScheduleUserData{}
+			ud.Type = kScheduleType_GsSchedule
+			ud.Data = int(this.conn.GetConnTag())
+			job.data = ud
+		}
+	case loginopstart + 33:
+		{
+			var evtId int32
+			binary.Read(bytes.NewBuffer(msg[8:8+4]), binary.LittleEndian, &evtId)
+			g_scheduleManager.RemoveJob(int(evtId))
+		}
 	}
 }
 

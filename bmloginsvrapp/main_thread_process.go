@@ -11,6 +11,15 @@ import (
 	"time"
 )
 
+const (
+	kScheduleType_GsSchedule = iota
+)
+
+type ScheduleUserData struct {
+	Type int
+	Data int
+}
+
 type MThreadMsg struct {
 	Event   int
 	WParam  int
@@ -311,7 +320,32 @@ func ProcessMThreadMsg(msg *MThreadMsg) {
 	case kMThreadMsg_ScheduleActive:
 		{
 			shareutils.LogInfoln("Schedule job:", msg.WParam, "active.")
-			g_scheduleManager.RemoveJob(msg.WParam)
+			job := g_scheduleManager.GetJob(msg.WParam)
+			if nil == job {
+				shareutils.LogErrorln("Invalid schedule job, id:", msg.WParam)
+				return
+			}
+
+			if nil == job.data {
+				return
+			}
+
+			ud, ok := job.data.(*ScheduleUserData)
+			if !ok {
+				return
+			}
+
+			switch ud.Type {
+			case kScheduleType_GsSchedule:
+				{
+					gs := g_ServerList.GetUser(uint32(ud.Data))
+					if nil == gs {
+						return
+					}
+
+					gs.SendUserMsg(loginopstart+34, uint32(msg.WParam))
+				}
+			}
 		}
 	default:
 		{
