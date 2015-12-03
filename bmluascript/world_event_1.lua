@@ -1,9 +1,10 @@
 --	世界事件1 怪物攻城 cron:0 0 20 * * *
 local worldEventId = 1
 local worldEventHandler = {}
+worldEventHandler.id = worldEventId
 
 --	注册事件
-RegisterWorldEvent(worldEventId, worldEventHandler)
+RegisterWorldActivity(worldEventHandler)
 
 --	事件回调
 function worldEventHandler:OnInit()
@@ -15,13 +16,52 @@ function worldEventHandler:OnActive()
 end
 
 function worldEventHandler:OnUpdate()
-	self;onUpdate()
+	self:onUpdate()
 end
 
 function worldEventHandler:OnFinish()
 	self:onFinish()
 end
 
+--	世界启动
+local function onWorldRunning()
+	--	在48场景创建10020
+	debug("1 running")
+	GameSceneManager:GetInstance():GetSceneInt(48):CreateNPC(10020, 73, 73)
+end
+
+local handleWorldRunning = luaRegisterHandler(4, onWorldRunning)
+
+--	NPC处理
+local npcHandlerTable = {}
+
+npcHandlerTable[10020] = function(player, npc, bid)
+	if 0 == bid then
+		player:ResetIDlg()
+		player:AddIDlg_String(0, 0, "老兵:")
+		player:AddIDlg_String(0, 20, "世界NPC处理")
+		player:AddIDlg_Button(20, 255, 12, "我愿意")
+		player:AddIDlg_CloseButton(20, 270, "不用了")
+		player:ShowIDlg(npc)
+	elseif 12 == bid then
+		player:ResetIDlg()
+		player:AddIDlg_String(0, 0, "老兵:")
+		player:AddIDlg_String(0, 20, "点击！")
+		player:AddIDlg_CloseButton(20, 270, "不用了")
+		player:ShowIDlg(npc)
+	end
+end
+
+local function onNPCActive(_player, _npc, _bid)
+	local npcId = _npc:GetAttribID()
+	
+	local npcHandler = npcHandlerTable[npcId]
+	if nil == npcHandler then return end
+	
+	npcHandler(_player, _npc, _bid)
+end
+
+local handleNPCActive = luaRegisterHandler(3, onNPCActive)
 
 --	具体逻辑
 
@@ -103,9 +143,4 @@ function worldEventHandler:mobUpdate()
 	if os.time() < self.nextRoundTime or 0 == self.nextRoundTime then return false end
 	
 	--	进行刷怪
-end
-
-
---	NPC处理
-local function npcHandler()
 end

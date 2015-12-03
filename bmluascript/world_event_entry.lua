@@ -1,39 +1,11 @@
 --	世界事件脚本
 
---	世界NPC列表
-local registeredWorldNPCTable = {}
-
-function RegisterWorldNPCHandler(_id, _func)
-	local handlers = registeredWorldNPCTable[_id]
-	if nil == handler then
-		handlers = {}
-		registeredWorldNPCTable[_id] = handlers
-	end
-	
-	table.insert(handlers, _func)
+--	世界启动
+local function onWorldRunning()
+	debug("entry")
 end
 
-function UnreigsterWorldNPCHandler(_id, _func)
-	local handlers = registeredWorldNPCTable[_id]
-	if nil == handler then
-		return
-	end
-	
-	for i = #handlers, 1, -1 do
-		if handlers[i] == _func then
-			table.remove(handlers, i)
-		end
-	end
-end
-
-function OnNPCActive(_event, _param, _npc, _player)
-	local handlers = registeredWorldNPCTable[_npc:GetAttribID()]
-	if nil == handlers then return end
-	
-	for _, v in ipairs(handlers) do
-		v(_event, _param, _npc, _player)
-	end
-end
+local handleWorldRunning = luaRegisterHandler(4, onWorldRunning)
 
 --	世界事件注册表
 local registeredWorldActivityTable = {}
