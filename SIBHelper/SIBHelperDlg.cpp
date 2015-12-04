@@ -913,7 +913,8 @@ bool CSIBHelperDlg::PackLuaEx(const char* _pszPath, const char* _pszPsw /* = NUL
 
 		if(_bEncryptBjt)
 		{
-			DataEncryptor::DoEncryptFile(szDestFilePath);
+			//DataEncryptor::DoEncryptFile(szDestFilePath);
+			DataEncryptor::EncryptFileXXTea(szDestFilePath);
 		}
 	}
 
