@@ -54,7 +54,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -202,6 +202,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\filepath_utils.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ItemEditDlg.cpp"
 				>
 			</File>
@@ -261,6 +265,10 @@
 			</File>
 			<File
 				RelativePath=".\ConvertUTF.h"
+				>
+			</File>
+			<File
+				RelativePath=".\filepath_utils.h"
 				>
 			</File>
 			<File
@@ -331,6 +339,14 @@
 			</File>
 			<File
 				RelativePath=".\Sha1Calc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\CommonModule\xxtea.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\CommonModule\xxtea.h"
 				>
 			</File>
 		</Filter>

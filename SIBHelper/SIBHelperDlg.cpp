@@ -12,6 +12,7 @@
 #include "../../../../CommonModule/DataEncryptor.h"
 #include "MirMap.h"
 #include "Sha1Calc.h"
+#include "filepath_utils.h"
 
 #include <Shlwapi.h>
 #include <list>
@@ -40,13 +41,13 @@ class CAboutDlg : public CDialog
 public:
 	CAboutDlg();
 
-// 对话框数据
+	// 对话框数据
 	enum { IDD = IDD_ABOUTBOX };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
-// 实现
+	// 实现
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -69,7 +70,7 @@ END_MESSAGE_MAP()
 
 
 CSIBHelperDlg::CSIBHelperDlg(CWnd* pParent /*=NULL*/)
-	: CDialog(CSIBHelperDlg::IDD, pParent)
+: CDialog(CSIBHelperDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -141,7 +142,7 @@ BOOL CSIBHelperDlg::OnInitDialog()
 	}
 
 	LoadSettings();
-	
+
 	return TRUE;  // 除非设置了控件的焦点，否则返回 TRUE
 }
 
@@ -451,7 +452,7 @@ void CSIBHelperDlg::OnOK()
 		{
 			pEdit->GetWindowText(xParam1);
 		}
-		
+
 		PackSIB(xParam0, xParam1);
 	}
 	if(bExeExtra)
@@ -484,9 +485,9 @@ void CSIBHelperDlg::OnOK()
 
 		CButton* pEncryptBjt = (CButton*)GetDlgItem(IDC_CHECK6);
 
-		if(PackLua(xParam0, xParam1.IsEmpty() ? NULL : xParam1, pEncryptBjt->GetCheck() != 0))
+		if(PackLuaEx(xParam0, xParam1.IsEmpty() ? NULL : xParam1, pEncryptBjt->GetCheck() != 0))
 		{
-			AfxMessageBox("打包Lua脚本完成");
+			//AfxMessageBox("打包Lua脚本完成");
 		}
 	}
 	if(bGenMapInfo)
@@ -724,15 +725,15 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 
 	/*for(int i = 0; i < 200; ++i)
 	{
-		sprintf(szPath, "%s/scene%d.bbt",
-			xWorkingPath, i);
-		DeleteFile(szPath);
+	sprintf(szPath, "%s/scene%d.bbt",
+	xWorkingPath, i);
+	DeleteFile(szPath);
 	}
 	sprintf(szPath, "%s/world.bbt",
-		xWorkingPath);
+	xWorkingPath);
 	DeleteFile(szPath);
 	sprintf(szPath, "%s/db.bbt",
-		xWorkingPath);
+	xWorkingPath);
 	DeleteFile(szPath);*/
 
 	bool bResult = true;
@@ -749,7 +750,7 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 		xRunParam.Format("7z a -tzip %s\\dog.idx %s\\*.bbt",
 			xWorkingPath, xWorkingPath);
 	}
-	
+
 	BOOL bRet = CreateProcess(NULL, xRunParam.GetBuffer(), NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
 	if(TRUE == bRet)
 	{
@@ -819,6 +820,168 @@ bool CSIBHelperDlg::PackLua(const char* _pszPath, const char* _pszPsw /* = NULL 
 	}
 
 	return bResult;
+}
+
+bool CSIBHelperDlg::PackLuaEx(const char* _pszPath, const char* _pszPsw /* = NULL */, bool _bEncryptBjt /* = false */)
+{
+	//	pack server files
+	char szServerPath[MAX_PATH];
+	char szClientPath[MAX_PATH];
+	char szWorkingPath[MAX_PATH];
+	char szSrcFilePath[MAX_PATH];
+	char szDestFilePath[MAX_PATH];
+	char szCmd[500];
+
+	PROCESS_INFORMATION pi;
+	STARTUPINFO si = {sizeof(si)};
+	si.wShowWindow = SW_HIDE;
+
+	if(!PathFileExists(_pszPath))
+	{
+		return false;
+	}
+	sprintf(szServerPath, "%s/server", _pszPath);
+	sprintf(szClientPath, "%s/client", _pszPath);
+
+	sprintf(szWorkingPath, "%s/temp", _pszPath);
+	if(PathFileExists(szWorkingPath))
+	{
+		DeleteFolder(szWorkingPath);
+	}
+
+	mkdir(szWorkingPath);
+
+	char szServerWorkingPath[MAX_PATH];
+	sprintf(szServerWorkingPath, "%s/server", szWorkingPath);
+	if(!PathFileExists(szServerWorkingPath))
+	{
+		mkdir(szServerWorkingPath);
+	}
+	char szClientWorkingPath[MAX_PATH];
+	sprintf(szClientWorkingPath, "%s/client", szWorkingPath);
+	if(!PathFileExists(szClientWorkingPath))
+	{
+		mkdir(szClientWorkingPath);
+	}
+
+	BOOL bNeedEncrypt = FALSE;
+	if(_pszPsw != NULL)
+	{
+		if(strlen(_pszPsw) > 0)
+		{
+			bNeedEncrypt = TRUE;
+			SetValue(IDC_EDIT7, "SCRIPT_PSW");
+		}
+	}
+
+	int nServerPackedCount = 0;
+	int nClientPackedCount = 0;
+	DWORD dwPackBeginTime = GetTickCount();
+	FolderFilenameList xNames;
+	std::string xSubPath = "";
+	dfsFolder(szServerPath, xSubPath, xNames, ".lua");
+
+	//	生成所有的服务器二进制脚本
+	FolderFilenameList::const_iterator begIter = xNames.begin();
+	for(begIter;
+		begIter != xNames.end();
+		++begIter)
+	{
+		const FolderFileInfo& refInfo = *begIter;
+		CreateAllPath(szServerWorkingPath, refInfo.xSubPath.c_str());
+
+		sprintf(szSrcFilePath, "%s/%s/%s", szServerPath, refInfo.xSubPath.c_str(), refInfo.xFilename.c_str());
+		char szFileName[100];
+		strcpy(szFileName, refInfo.xFilename.c_str());
+		PathRemoveExtension(szFileName);
+		sprintf(szDestFilePath, "%s/%s/%s.bjt", szServerWorkingPath, refInfo.xSubPath.c_str(), szFileName);
+		sprintf(szCmd, "luajit.exe -b %s %s", szSrcFilePath, szDestFilePath);
+		//AfxMessageBox(szCmd);
+
+		BOOL bRet = CreateProcess(NULL, szCmd, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+		if(TRUE == bRet)
+		{
+			WaitForSingleObject(pi.hThread, INFINITE);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			++nServerPackedCount;
+		}
+		else
+		{
+			AfxMessageBox("Can't execute luajit.exe...");
+		}
+
+		if(_bEncryptBjt)
+		{
+			DataEncryptor::DoEncryptFile(szDestFilePath);
+		}
+	}
+
+	//	生成所有客户端二进制脚本
+	xNames.clear();
+	dfsFolder(szClientPath, xSubPath, xNames, ".lua");
+
+	begIter = xNames.begin();
+	for(begIter;
+		begIter != xNames.end();
+		++begIter)
+	{
+		const FolderFileInfo& refInfo = *begIter;
+		CreateAllPath(szClientWorkingPath, refInfo.xSubPath.c_str());
+
+		sprintf(szSrcFilePath, "%s/%s/%s", szClientPath, refInfo.xSubPath.c_str(), refInfo.xFilename.c_str());
+		char szFileName[100];
+		strcpy(szFileName, refInfo.xFilename.c_str());
+		PathRemoveExtension(szFileName);
+		sprintf(szDestFilePath, "%s/%s/%s.bbt", szClientWorkingPath, refInfo.xSubPath.c_str(), szFileName);
+		sprintf(szCmd, "luac.exe -o %s %s", szDestFilePath, szSrcFilePath);
+		//AfxMessageBox(szCmd);
+
+		BOOL bRet = CreateProcess(NULL, szCmd, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+		if(TRUE == bRet)
+		{
+			WaitForSingleObject(pi.hThread, INFINITE);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			++nClientPackedCount;
+		}
+		else
+		{
+			AfxMessageBox("Can't execute luac.exe...");
+		}
+	}
+
+	//	zip all server files
+	{
+		sprintf(szCmd, "%s/dog.idx", _pszPath);
+		DeleteFile(szCmd);
+
+		if(bNeedEncrypt)
+		{
+			sprintf(szCmd, "7z a -tzip -p%s %s\\dog.idx %s\\*", _pszPsw, _pszPath, szWorkingPath);
+		}
+		else
+		{
+			sprintf(szCmd, "7z a -tzip %s\\dog.idx %s\\*", _pszPath, szWorkingPath);
+		}
+
+		BOOL bRet = CreateProcess(NULL, szCmd, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, NULL, &si, &pi);
+		if(TRUE == bRet)
+		{
+			WaitForSingleObject(pi.hThread, INFINITE);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+		}
+		else
+		{
+			AfxMessageBox("Can't execute 7z.exe...");
+		}
+	}
+
+	sprintf(szCmd, "打包服务器脚本[%d]个 客户端脚本[%d]个 执行时间[%d]秒", nServerPackedCount, nClientPackedCount, (GetTickCount() - dwPackBeginTime) / 1000);
+	AfxMessageBox(szCmd);
+	
+	return true;
 }
 
 bool CSIBHelperDlg::PackINI(const char* _pszPath, const char* _pszPsw /* = NULL */)
@@ -1766,7 +1929,7 @@ bool CSIBHelperDlg::PackMap(const char* _pszDestMap, const char* _pszSrcPath, co
 				}
 
 				//	extract wil
-				
+
 				sprintf(szCmd, "WilExtractorEx.exe \"%s\" \"%s\" \"%s\"",
 					szWorkingIni, _pszSrcPath, xOutputDir);
 				ExeWaitForEnd(szCmd);
@@ -1811,7 +1974,7 @@ void ExeWaitForEnd(const char* _pszRunCmd)
 	DWORD rc = WaitForSingleObject(
 		pi.hProcess, // process handle
 		INFINITE);
-	
+
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 }
