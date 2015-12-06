@@ -488,6 +488,22 @@ func dbIsUserRankExists(db *sql.DB, name string) bool {
 	return false
 }
 
+func dbRemoveUserRankInfo(db *sql.DB, name string) bool {
+	if !dbIsUserRankExists(db, name) {
+		return true
+	}
+
+	expr := "delete from player_rank where name='" + name + "'"
+	_, err := db.Exec(expr)
+	if err != nil {
+		shareutils.LogErrorf("Error on executing expression[%s] Error[%s]",
+			expr, err.Error())
+		return false
+	}
+
+	return true
+}
+
 func dbGetUserRankInfo(db *sql.DB, uid uint32, info *UserRankInfo) bool {
 	if nil == db {
 		return false

@@ -743,6 +743,8 @@ func (this *User) OnRequestDelGameRole(msg []byte) {
 		this.SendUserMsg(loginopstart+12, &msg)
 		return
 	}
+	//	Remove name from player_rank
+	dbRemoveUserRankInfo(g_DBUser, name)
 
 	//	success , send a packet
 	//	delete role result,namelen 1byte;name namelen
