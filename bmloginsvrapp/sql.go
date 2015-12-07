@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func initDatabase(path string) *sql.DB {
+func initDatabaseUser(path string) *sql.DB {
 	newdb := false
 	if !PathExist(path) {
 		file, err := os.Create(path)

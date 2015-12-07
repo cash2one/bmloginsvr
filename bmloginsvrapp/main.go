@@ -24,6 +24,7 @@ var (
 	g_ServerList     *UserInfoList
 	g_CtrlCh         chan uint8
 	g_DBUser         *sql.DB
+	g_DBCrashReport  *sql.DB
 	g_Redis          *RedisOperator
 	g_AvaliableGS    uint32
 	g_strVersionInfo string = "1.0.1"
@@ -76,12 +77,15 @@ func main() {
 		//return
 	}
 	//	Initialize the database
-	g_DBUser = initDatabase("./login/users.db")
+	g_DBUser = initDatabaseUser("./login/users.db")
 	if nil == g_DBUser {
 		shareutils.LogErrorln("Initialize database failed.")
 		return
 	}
 	defer g_DBUser.Close()
+
+	//	Initialize bug report database
+	g_DBCrashReport = initDatabaseCrashReport("./login/crashreport.db")
 
 	//	Initialize redis
 	g_Redis = NewRedisOperator()
