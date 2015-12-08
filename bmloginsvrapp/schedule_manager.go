@@ -51,6 +51,10 @@ func (this *ScheduleManager) Stop() {
 	this.cronJob.Stop()
 }
 
+func (this *ScheduleManager) GetJobs() *list.List {
+	return this.jobs
+}
+
 func (this *ScheduleManager) AddJob(id int, scheduleExpr string) *ScheduleJob {
 	//	test if same id exists
 	for e := this.jobs.Front(); e != nil; e = e.Next() {

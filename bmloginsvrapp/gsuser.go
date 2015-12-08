@@ -55,9 +55,27 @@ func (this *ServerUser) OnVerified() {
 }
 
 func (this *ServerUser) OnDisconnect() {
-	if g_AvaliableGS == uint32(this.serverid) {
+	if g_AvaliableGS == uint32(this.conn.GetConnTag()) {
 		g_AvaliableGS = 0
-		shareutils.LogInfoln("Lose game server...")
+		shareutils.LogInfoln("Server", this.conn.GetConnTag(), "disconnected")
+
+		//	remove all relative cron job
+		jobs := g_scheduleManager.GetJobs()
+		for e := jobs.Front(); e != nil; e = e.Next() {
+			job, ok := e.Value.(*ScheduleJob)
+			if !ok {
+				continue
+			}
+
+			jobId, ok := job.data.(int)
+			if !ok {
+				continue
+			}
+
+			if jobId == int(this.conn.GetConnTag()) {
+				jobs.Remove(e)
+			}
+		}
 	}
 }
 
