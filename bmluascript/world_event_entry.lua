@@ -5,7 +5,7 @@ local function onWorldRunning()
 	debug("entry")
 end
 
-local handleWorldRunning = luaRegisterHandler(4, onWorldRunning)
+local handleWorldRunning = luaRegisterHandler(kLuaEvent_WorldStartRunning, onWorldRunning)
 
 --	世界事件注册表
 local registeredWorldActivityTable = {}
@@ -54,4 +54,4 @@ end
 
 
 --	载入各事件脚本
-ENGINE:LoadModule("world_event_1")
+--require("server/world/world_event_1")

@@ -30,7 +30,7 @@ local function onWorldRunning()
 	GameSceneManager:GetInstance():GetSceneInt(48):CreateNPC(10020, 73, 73)
 end
 
-local handleWorldRunning = luaRegisterHandler(4, onWorldRunning)
+local handleWorldRunning = luaRegisterHandler(kLuaEvent_WorldStartRunning, onWorldRunning)
 
 --	NPC¥¶¿Ì
 local npcHandlerTable = {}
