@@ -340,6 +340,8 @@ func (this *ServerUser) OnUserMsg(msg []byte) {
 			ud.Type = kScheduleType_GsSchedule
 			ud.Data = int(this.conn.GetConnTag())
 			job.data = ud
+
+			shareutils.LogInfoln("Cron schedule[", evtId, "] register ok!expr:", cronExpr)
 		}
 	case loginopstart + 33:
 		{
