@@ -1,29 +1,6 @@
 --	世界事件脚本
 
---	世界启动
-local function onWorldRunning()
-	debug("entry")
-end
-
-local handleWorldRunning = luaRegisterHandler(kLuaEvent_WorldStartRunning, onWorldRunning)
-
---	世界事件注册表
-local registeredWorldActivityTable = {}
-
-function RegisterWorldActivity(_activity)
-	local aid = _activity.id
-	if nil == aid then
-		return
-	end
-	
-	registeredWorldActivityTable[aid] = _activity
-end
-
-function GetWorldActivity(_id)
-	return registeredWorldActivityTable[_id]
-end
-
-function WorldEventActive(_id)
+local function WorldEventActive(_id)
 	local activity = GetWorldActivity(_id)
 	if nil == activity then
 		return
@@ -32,8 +9,9 @@ function WorldEventActive(_id)
 	activity:OnActive()
 	activity.running = true
 end
+local handleWorldEventActive = 0
 
-function WorldEventUpdate()
+local function WorldEventUpdate()
 	for _, v in pairs(registeredWorldActivityTable) do
 		if v.running then
 			local ret = v:OnUpdate()
@@ -44,14 +22,34 @@ function WorldEventUpdate()
 		end
 	end
 end
+local handleWorldEventUpdate = 0
 
-function WorldEventInit()
-	--	初始化所有的事件
-	for _, v in pairs(registeredWorldActivityTable) do
-		v.OnInit()
+--	世界启动
+local function onWorldRunning()
+	--	启动后 注册事件监听
+	handleWorldEventActive = luaRegisterHandler(kLuaEvent_WorldScheduleActive, WorldEventActive)
+	handleWorldEventUpdate = luaRegisterHandler(kLuaEvent_WorldUpdate, WorldEventUpdate)
+end
+local handleWorldRunning = luaRegisterHandler(kLuaEvent_WorldStartRunning, onWorldRunning)
+
+--	世界事件注册表
+local registeredWorldActivityTable = {}
+
+local function RegisterWorldActivity(_activity)
+	local aid = _activity.id
+	if nil == aid then
+		return
 	end
+	
+	registeredWorldActivityTable[aid] = _activity
+	_activity:OnRegistered()
+end
+
+local function GetWorldActivity(_id)
+	return registeredWorldActivityTable[_id]
 end
 
 
 --	载入各事件脚本
---require("server/world/world_event_1")
+local worldEvent1 = require("server/world/world_event_1").new()
+RegisterWorldActivity(worldEvent1)
