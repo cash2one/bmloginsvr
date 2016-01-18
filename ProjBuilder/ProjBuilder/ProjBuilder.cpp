@@ -190,6 +190,9 @@ int  removeDir(const char*  dirPath)
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+#ifdef _DEBUG
+	MessageBox(NULL, "DEBUG", "D", MB_OK);
+#endif
 	//	get params
 	CommandLineHelper xCmdParser;
 	if(!xCmdParser.InitParam())
@@ -232,8 +235,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	if(NULL == pszAddMacro ||
 		strlen(pszAddMacro) == 0)
 	{
+		printf("Invalid param 'proj_addition_macro'\n");
 		return -6;
 	}
+
+	const char* pszProjFileName = xCmdParser.GetParam("proj_file_name");
+	if(NULL == pszProjFileName)
+	{
+		printf("Invalid param 'proj_file_name'\n");
+		return -20;
+	}
+
+
 	//	parse macro name and value
 	char szMacroName[MAX_PATH] = {0};
 	char szMacroValue[MAX_PATH] = {0};
@@ -269,10 +282,31 @@ int _tmain(int argc, _TCHAR* argv[])
 	strftime (szTimestamp,sizeof(szTimestamp),"%y%m%d%H%M%S",timeinfo);
 	strcpy(szMacroValue, szTimestamp);
 
+	//	copy to destinate directory
+	char szDestinateDirectory[MAX_PATH];
+	sprintf(szDestinateDirectory, "%s\\%s_build%s", pszProjOutputDir, pszProjName, szMacroValue);
+	if(PathFileExists(szDestinateDirectory))
+	{
+		return -5;
+	}
+
+	char szCommand[MAX_PATH * 2];
+	sprintf(szCommand, "%s %s /s /i /y", pszProjSourceDir, szDestinateDirectory);
+	if(0 == run_command("xcopy.exe", szCommand))
+	{
+		printf("Copy project to %s done\n", szDestinateDirectory);
+	}
+	else
+	{
+		printf("Copy project failed\n");
+		return -8;
+	}
+
+	//	edit config file
 	bool bProjConfigUpdated = false;
 	char szProjConfileFilePath[MAX_PATH] = {0};
 	sprintf(szProjConfileFilePath, "%s/%s.vcproj",
-		pszProjSourceDir, pszProjName);
+		szDestinateDirectory, pszProjFileName);
 
 	TiXmlDocument doc;
 	if(!doc.LoadFile(szProjConfileFilePath))
@@ -407,29 +441,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		doc.SaveFile(szProjConfileFilePath);
 	}
 
-	//	copy to destinate directory
-	char szDestinateDirectory[MAX_PATH];
-	sprintf(szDestinateDirectory, "%s\\%s_build%s", pszProjOutputDir, pszProjName, szMacroValue);
-	if(PathFileExists(szDestinateDirectory))
-	{
-		return -5;
-	}
-
-	char szCommand[MAX_PATH * 2];
-	sprintf(szCommand, "%s %s /s /i /y", pszProjSourceDir, szDestinateDirectory);
-	if(0 == run_command("xcopy.exe", szCommand))
-	{
-		printf("Copy project to %s done\n", szDestinateDirectory);
-	}
-	else
-	{
-		printf("Copy project failed\n");
-		return -8;
-	}
-
 	printf("Compiling project...\n");
 
-	sprintf(szCommand, "%s/%s.vcproj \"Release|Win32\"", szDestinateDirectory, pszProjName);
+	sprintf(szCommand, "%s/%s.vcproj \"Release|Win32\"", szDestinateDirectory, pszProjFileName);
 	if(0 == run_command(pszVcToolDir, szCommand))
 	{
 		printf("Compile project done\n");
