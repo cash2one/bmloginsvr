@@ -312,3 +312,138 @@ HTEXTURE Gfx_GetBrightTexture(HGE* _pHge, HTEXTURE _hSource, int _nBrightAdd)
 
 	return texNew;
 }
+
+HTEXTURE Gfx_GetOutlineTexture(HGE* _pHge, HTEXTURE _tex, int _nSize, DWORD _dwOutlineColor)
+{
+	int nTextureWidth = _pHge->Texture_GetWidth(_tex);
+	int nTextureHeight = _pHge->Texture_GetHeight(_tex);
+
+	if(0 == nTextureHeight ||
+		0 == nTextureWidth)
+	{
+		return NULL;
+	}
+
+	HTEXTURE texNew = _pHge->Texture_Create(nTextureWidth, nTextureHeight);
+	DWORD* pDestData = _pHge->Texture_Lock(texNew, false);
+	DWORD* pSrcData = _pHge->Texture_Lock(_tex);
+
+	static int s_nAroundOffset[] = {
+		-1,-1,
+		-1,0,
+		-1,1,
+		0,-1,
+		0,1,
+		1,-1,
+		1,0,
+		1,1
+	};
+	static int s_nUpDownOffset[] = {
+		-1,0,
+		1,0,
+		0,-1,
+		0,1
+	};
+
+	for(int nRow = 0; nRow < nTextureHeight; ++nRow)
+	{
+		for(int nCol = 0; nCol < nTextureWidth; ++nCol)
+		{
+			DWORD dwPixelIndex = nRow * nTextureWidth + nCol;
+			DWORD dwPixel = pSrcData[dwPixelIndex];
+			BYTE bAlpha = (dwPixel & 0xff000000) >> 24;
+
+			if(bAlpha)
+			{
+				//	取出RGB值
+				BYTE bR = (dwPixel & 0x00ff0000) >> 16;
+				BYTE bG = (dwPixel & 0x0000ff00) >> 8;
+				BYTE bB = dwPixel & 0x000000ff;
+
+				if(0 == bR &&
+					0 == bG &&
+					0 == bB)
+				{
+					continue;
+				}
+
+				int nPredX = 0;
+				int nPredY = 0;
+				DWORD dwPredIndex = 0;
+				bool bOutlinePixel = false;
+
+				//	是否是影子像素
+				if(bR == 16 &&
+					bG == 8 &&
+					bB == 8)
+				{
+					bool bShadowPixel = true;
+
+					for(int i = 0; i < sizeof(s_nUpDownOffset) / sizeof(s_nUpDownOffset[0]) / 2; ++i)
+					{
+						nPredX = nCol + s_nUpDownOffset[i * 2] * _nSize;
+						nPredY = nRow + s_nUpDownOffset[i * 2 + 1] * _nSize;
+						dwPredIndex = nPredY * nTextureWidth + nPredX;
+
+						if(nPredX < 0 ||
+							nPredY < 0 ||
+							nPredX >= nCol ||
+							nPredY >= nRow)
+						{
+							continue;
+						}
+
+						//	not out of boundry
+						if(pSrcData[dwPredIndex] != ARGB(255, 0, 0, 0))
+						{
+							bShadowPixel = false;
+							break;
+						}
+					}
+
+					if(bShadowPixel)
+					{
+						continue;
+					}
+				}
+
+				for(int i = 0; i < sizeof(s_nAroundOffset) / sizeof(s_nAroundOffset[0]) / 2; ++i)
+				{
+					nPredX = nCol + s_nAroundOffset[i * 2] * _nSize;
+					nPredY = nRow + s_nAroundOffset[i * 2 + 1] * _nSize;
+					dwPredIndex = nPredY * nTextureWidth + nPredX;
+
+					if(nPredX < 0 ||
+						nPredY < 0 ||
+						nPredX >= nTextureWidth ||
+						nPredY >= nTextureHeight)
+					{
+						bOutlinePixel = true;
+						break;
+					}
+
+					//	not out of boundry
+					if(pSrcData[dwPredIndex] == ARGB(255, 0, 0, 0))
+					{
+						bOutlinePixel = true;
+						break;
+					}
+				}
+
+				if(bOutlinePixel)
+				{
+					pDestData[dwPixelIndex] = _dwOutlineColor;
+				}
+				else
+				{
+					int a = 0;
+				}
+			}
+		}
+	}
+
+	_pHge->Texture_Unlock(_tex);
+	_pHge->Texture_Unlock(texNew);
+
+	return texNew;
+}
