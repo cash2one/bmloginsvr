@@ -420,6 +420,8 @@ int _tmain(int argc, _TCHAR* argv[])
 							}
 							xFullMacro += ";";
 							xFullMacro += pszAddMacro;
+							xFullMacro += "=";
+							xFullMacro += szMacroValue;
 
 							pElement->SetAttribute("PreprocessorDefinitions", xFullMacro.c_str());
 							printf("Add PreprocessorDefinitions=%s\n", xFullMacro.c_str());
