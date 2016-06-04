@@ -378,6 +378,10 @@ int SPBFile::Pack(const char* _pszInputDirectory, const char* _pszOutFile)
 					CloseHandle(hPngFile);
 					hPngFile = INVALID_HANDLE_VALUE;
 				}
+				else
+				{
+					printf("error on CreateFile %s\n", szFileName);
+				}
 			}
 		}
 	}
@@ -431,6 +435,10 @@ int SPBFile::Pack(const char* _pszInputDirectory, const char* _pszOutFile)
 					printf("Pack %06d.png\n", nFileNumber);
 					CloseHandle(hPngFile);
 					hPngFile = INVALID_HANDLE_VALUE;
+				}
+				else
+				{
+					printf("error on CreateFile %s\n", szFileName);
 				}
 			}
 		}
