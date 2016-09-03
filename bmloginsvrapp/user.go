@@ -942,17 +942,17 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 
 	//	发送额外的人物数据
 	extDataIndex := uint8(0)
+	buf = new(bytes.Buffer)
+	binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
+	binary.Write(buf, binary.LittleEndian, &this.conncode)
+	binary.Write(buf, binary.LittleEndian, &this.uid)
+	binary.Write(buf, binary.LittleEndian, &extDataIndex)
+
 	r1, _, _ = g_procMap["ReadExtendDataSize"].Call(filehandle,
 		uintptr(unsafe.Pointer(cname)),
 		0)
 	if 0 != r1 {
 		datasize = uint32(r1)
-		buf = new(bytes.Buffer)
-		binary.Write(buf, binary.LittleEndian, &this.svrconnidx)
-		binary.Write(buf, binary.LittleEndian, &this.conncode)
-		binary.Write(buf, binary.LittleEndian, &this.uid)
-		binary.Write(buf, binary.LittleEndian, &extDataIndex)
-
 		humextdata := make([]byte, datasize)
 		r1, _, _ = g_procMap["ReadExtendData"].Call(filehandle,
 			uintptr(unsafe.Pointer(cname)),
@@ -968,9 +968,13 @@ func (this *User) OnRequestLoginGameSvr(msg []byte) {
 		var datalen uint32 = uint32(len(humextdata))
 		binary.Write(buf, binary.LittleEndian, &datalen)
 		binary.Write(buf, binary.LittleEndian, humextdata)
-
-		gs.SendUseData(loginopstart+30, buf.Bytes())
+	} else {
+		//	just an empty hum data
+		var datalen uint32 = uint32(0)
+		binary.Write(buf, binary.LittleEndian, &datalen)
 	}
+
+	gs.SendUseData(loginopstart+30, buf.Bytes())
 }
 
 func (this *User) GetUserTag() uint32 {
